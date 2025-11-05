@@ -1,0 +1,217 @@
+.section-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-add {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.section-name-input {
+  flex: 2;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.section-prefix-input {
+  flex: 0 0 100px;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.section-add input:focus {
+  outline: none;
+  border-color: #2a5298;
+  box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+}
+
+.add-section-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #2a5298;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.add-section-button:hover {
+  background: #1e3c72;
+}
+
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-item {
+  padding: 1rem;
+  background-color: #f0f4f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  border-left: 4px solid #2a5298;
+}
+
+.section-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-name-container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.section-pagination {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.pagination-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-field label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.prefix-input,
+.start-input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 60px;
+  text-align: center;
+}
+
+.prefix-input:focus,
+.start-input:focus {
+  outline: none;
+  border-color: #2a5298;
+  box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
+}
+
+.section-name {
+  font-weight: 600;
+  color: #1e3c72;
+  font-size: 1.05rem;
+}
+
+.section-count {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.divider-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+}
+
+.divider-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.icon-button {
+  padding: 0.4rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.icon-button:hover:not(:disabled) {
+  background-color: #f0f4f8;
+  border-color: #2a5298;
+}
+
+.icon-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.icon-button.delete-button:hover:not(:disabled) {
+  background-color: #fee;
+  border-color: #f44;
+  color: #f44;
+}
+
+.icon-button.save-button:hover {
+  background-color: #efe;
+  border-color: #4a4;
+  color: #4a4;
+}
+
+.icon-button.cancel-button:hover {
+  background-color: #fee;
+  border-color: #f44;
+  color: #f44;
+}
+
+.section-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.section-edit input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #2a5298;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.section-edit input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+}
+
+.no-sections {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-style: italic;
+}
