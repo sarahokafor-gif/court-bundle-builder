@@ -146,7 +146,7 @@ export default function SectionManager({
                         checked={section.addDivider}
                         onChange={() => onToggleDivider(section.id)}
                       />
-                      <span>Divider page</span>
+                      <span>{section.addDivider ? `✓ Divider: ${section.name}` : 'Add divider page'}</span>
                     </label>
                     <button
                       className="icon-button"
