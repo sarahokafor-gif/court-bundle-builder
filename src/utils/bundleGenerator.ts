@@ -153,18 +153,29 @@ async function generateIndexPage(
 
     // Create link annotation to jump to the target page
     const targetPage = pdfDoc.getPage(entry.startPageIndex)
+    const targetPageRef = targetPage.ref
 
-    // Create link annotation - destination array should not be wrapped in obj()
-    const destArray = PDFArray.withContext(pdfDoc.context)
-    destArray.push(targetPage.ref)
-    destArray.push(PDFName.of('Fit'))
+    // Create destination array [page /XYZ left top zoom]
+    const destArray = pdfDoc.context.obj([
+      targetPageRef,
+      'XYZ',
+      null,
+      null,
+      null
+    ])
 
+    // Create link annotation dictionary
     const linkAnnotation = pdfDoc.context.obj({
-      Type: PDFName.of('Annot'),
-      Subtype: PDFName.of('Link'),
+      Type: 'Annot',
+      Subtype: 'Link',
       Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
       Border: [0, 0, 0],
-      Dest: destArray,
+      C: [0, 0, 1], // Blue color
+      A: pdfDoc.context.obj({
+        Type: 'Action',
+        S: 'GoTo',
+        D: destArray
+      })
     })
 
     const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
