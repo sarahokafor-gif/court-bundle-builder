@@ -57,6 +57,7 @@ export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps
         className="action-button save-button"
         onClick={handleSave}
         disabled={isSaving}
+        title="Save your bundle progress as a .json file"
       >
         <Save size={18} />
         {isSaving ? 'Saving...' : 'Save Work'}
@@ -65,7 +66,7 @@ export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".json,application/json"
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
@@ -74,9 +75,10 @@ export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps
         className="action-button load-button"
         onClick={handleLoadClick}
         disabled={isLoading}
+        title="Load a previously saved bundle (.json file)"
       >
         <FolderOpen size={18} />
-        {isLoading ? 'Loading...' : 'Load Work'}
+        {isLoading ? 'Loading...' : 'Load Saved Bundle'}
       </button>
     </div>
   )
