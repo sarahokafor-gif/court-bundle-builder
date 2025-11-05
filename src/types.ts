@@ -24,11 +24,14 @@ export interface PageNumberSettings {
   bold: boolean;
 }
 
+export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'general';
+
 export interface BundleMetadata {
   caseName: string;
   caseNumber: string;
   court: string;
   date: string;
+  bundleType?: BundleType;
 }
 
 export interface Bundle {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Section, Document, BundleMetadata, PageNumberSettings } from './types'
+import { Section, Document, BundleMetadata, PageNumberSettings, BundleType } from './types'
 import MetadataForm from './components/MetadataForm'
 import DocumentUploader from './components/DocumentUploader'
 import SectionManager from './components/SectionManager'
@@ -8,6 +8,7 @@ import BundleGenerator from './components/BundleGenerator'
 import DocumentPreview from './components/DocumentPreview'
 import PageNumberSettingsComponent from './components/PageNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
+import BundleTypeSelector from './components/BundleTypeSelector'
 import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
 import './App.css'
 
@@ -158,6 +159,10 @@ function App() {
     setPageNumberSettings(savedBundle.pageNumberSettings)
   }
 
+  const handleBundleTypeChange = (bundleType: BundleType) => {
+    setMetadata(prev => ({ ...prev, bundleType }))
+  }
+
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
 
   return (
@@ -174,6 +179,10 @@ function App() {
             <SaveLoadButtons onSave={handleSave} onLoad={handleLoad} />
           </div>
           <MetadataForm metadata={metadata} onChange={setMetadata} />
+          <BundleTypeSelector
+            selectedType={metadata.bundleType}
+            onTypeChange={handleBundleTypeChange}
+          />
         </section>
 
         <section className="section">

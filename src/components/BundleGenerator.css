@@ -72,3 +72,118 @@
   font-size: 0.9rem;
   margin: 0;
 }
+
+/* Pricing Tier Display */
+.pricing-tier {
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  border: 2px solid;
+  margin: -0.5rem 0;
+}
+
+.pricing-tier.free-tier {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #4caf50;
+}
+
+.pricing-tier.paid-tier {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-color: #ff9800;
+}
+
+.tier-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tier-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.tier-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e3c72;
+}
+
+.free-tier .tier-price {
+  color: #4caf50;
+}
+
+.paid-tier .tier-price {
+  color: #ff9800;
+}
+
+/* Paid Bundle Actions */
+.paid-bundle-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.preview-button {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  background: #f0f4f8;
+  color: #2a5298;
+  border: 2px solid #2a5298;
+  border-radius: 6px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.preview-button:hover:not(:disabled) {
+  background: #e3ebf3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(42, 82, 152, 0.2);
+}
+
+.preview-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.payment-button {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payment-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 152, 0, 0.4);
+  background: linear-gradient(135deg, #fb8c00 0%, #e65100 100%);
+}
+
+.payment-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.payment-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
