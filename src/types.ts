@@ -24,7 +24,7 @@ export interface PageNumberSettings {
   bold: boolean;
 }
 
-export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'general';
+export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'court-of-protection' | 'general';
 
 export interface BundleMetadata {
   caseName: string;

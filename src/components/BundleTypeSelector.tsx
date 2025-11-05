@@ -74,6 +74,20 @@ const BUNDLE_TYPES: BundleTypeOption[] = [
     ],
   },
   {
+    value: 'court-of-protection',
+    label: 'Court of Protection Bundle',
+    description: 'For Court of Protection proceedings (mental capacity)',
+    guidance: [
+      'Follow Practice Direction 14E',
+      'Include all relevant assessments (medical, social work)',
+      'Include care plans and support documents',
+      'Chronological order for medical evidence',
+      'Maximum 350 pages (seek permission for larger)',
+      'Consider P\'s views and wishes',
+    ],
+    practiceDirection: 'https://www.gov.uk/courts-tribunals/court-of-protection',
+  },
+  {
     value: 'general',
     label: 'General Court Bundle',
     description: 'For other court proceedings',
