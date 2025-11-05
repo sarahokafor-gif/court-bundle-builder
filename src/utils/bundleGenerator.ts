@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFString } from 'pdf-lib'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
 import { loadPdfFromFile } from './pdfUtils'
 
@@ -153,29 +153,17 @@ async function generateIndexPage(
 
     // Create link annotation to jump to the target page
     const targetPage = pdfDoc.getPage(entry.startPageIndex)
-    const targetPageRef = targetPage.ref
 
-    // Create destination array [page /XYZ left top zoom]
-    const destArray = pdfDoc.context.obj([
-      targetPageRef,
-      'XYZ',
-      null,
-      null,
-      null
-    ])
+    // Create destination array using context.obj for proper PDF structure
+    const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
 
-    // Create link annotation dictionary
+    // Create link annotation
     const linkAnnotation = pdfDoc.context.obj({
       Type: 'Annot',
       Subtype: 'Link',
       Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
       Border: [0, 0, 0],
-      C: [0, 0, 1], // Blue color
-      A: pdfDoc.context.obj({
-        Type: 'Action',
-        S: 'GoTo',
-        D: destArray
-      })
+      Dest: dest,
     })
 
     const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
@@ -287,6 +275,68 @@ async function addPageNumbers(
       color: rgb(0.3, 0.3, 0.3),
     })
   }
+}
+
+/**
+ * Adds PDF bookmarks/outlines for sidebar navigation
+ */
+function addBookmarks(
+  pdfDoc: PDFDocument,
+  indexEntries: IndexEntry[]
+): void {
+  const context = pdfDoc.context
+
+  // Create outline items array
+  const outlineItems: any[] = []
+  let prevItemRef: any = null
+
+  // Create outline item for each entry (skip section headers for now, or include them)
+  indexEntries.forEach((entry, index) => {
+    const targetPage = pdfDoc.getPage(entry.startPageIndex)
+
+    // Create destination array
+    const dest = context.obj([targetPage.ref, 'Fit'])
+
+    // Create outline item
+    const outlineItem = context.obj({
+      Title: PDFString.of(entry.title),
+      Parent: null as any, // Will be set later
+      Dest: dest,
+      ...(prevItemRef && { Prev: prevItemRef }),
+    })
+
+    const outlineItemRef = context.register(outlineItem)
+    outlineItems.push({ ref: outlineItemRef, dict: outlineItem })
+
+    // Set Next on previous item
+    if (prevItemRef) {
+      const prevDict = outlineItems[index - 1].dict
+      prevDict.set(PDFName.of('Next'), outlineItemRef)
+    }
+
+    prevItemRef = outlineItemRef
+  })
+
+  if (outlineItems.length === 0) return
+
+  // Create outlines dictionary
+  const outlinesDict = context.obj({
+    Type: 'Outlines',
+    First: outlineItems[0].ref,
+    Last: outlineItems[outlineItems.length - 1].ref,
+    Count: outlineItems.length,
+  })
+
+  const outlinesDictRef = context.register(outlinesDict)
+
+  // Set parent on all outline items
+  outlineItems.forEach(item => {
+    item.dict.set(PDFName.of('Parent'), outlinesDictRef)
+  })
+
+  // Add outlines to catalog
+  const catalog = pdfDoc.catalog
+  catalog.set(PDFName.of('Outlines'), outlinesDictRef)
 }
 
 /**
@@ -407,6 +457,9 @@ export async function generateBundle(
 
     // Add page numbers to all pages (except index)
     await addPageNumbers(mergedPdf, pageNumbers, pageNumberSettings)
+
+    // Add bookmarks/outlines for sidebar navigation
+    addBookmarks(mergedPdf, indexEntries)
 
     // Save and download
     const pdfBytes = await mergedPdf.save()
