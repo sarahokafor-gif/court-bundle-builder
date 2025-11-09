@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.3.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.344.0",
     "pdf-lib": "^1.17.1",
     "react": "^18.3.1",

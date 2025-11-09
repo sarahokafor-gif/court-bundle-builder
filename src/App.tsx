@@ -9,6 +9,7 @@ import DocumentPreview from './components/DocumentPreview'
 import PageNumberSettingsComponent from './components/PageNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
 import BundleTypeSelector from './components/BundleTypeSelector'
+import PricingDisplay from './components/PricingDisplay'
 import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
 import './App.css'
 
@@ -148,6 +149,21 @@ function App() {
     })
   }
 
+  const handleUpdateDocumentDate = (sectionId: string, docId: string, date: string) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId ? { ...doc, documentDate: date } : doc
+              ),
+            }
+          : section
+      )
+    )
+  }
+
   const handleSave = async () => {
     await saveBundle(metadata, sections, pageNumberSettings)
   }
@@ -173,6 +189,10 @@ function App() {
       </header>
 
       <main className="app-main">
+        <section className="section">
+          <PricingDisplay />
+        </section>
+
         <section className="section">
           <div className="section-header-with-actions">
             <h2>Bundle Information</h2>
@@ -214,6 +234,7 @@ function App() {
             onReorderDocument={handleReorderDocument}
             onMoveToSection={handleMoveToSection}
             onPreview={setPreviewDoc}
+            onUpdateDocumentDate={handleUpdateDocumentDate}
           />
         </section>
 

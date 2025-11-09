@@ -46,6 +46,7 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
         pageCount: doc.pageCount,
         order: doc.order,
         fileData,
+        documentDate: doc.documentDate,
       })
     }
 
@@ -76,6 +77,7 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
       name: doc.name,
       pageCount: doc.pageCount,
       order: doc.order,
+      documentDate: doc.documentDate,
     })),
     addDivider: section.addDivider,
     order: section.order,

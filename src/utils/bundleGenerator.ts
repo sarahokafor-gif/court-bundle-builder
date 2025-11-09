@@ -1,14 +1,24 @@
-import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFString } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFString, degrees } from 'pdf-lib'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
 import { loadPdfFromFile } from './pdfUtils'
+import { calculateVolumes, splitPdfIntoVolumes, createVolumeZip, downloadVolumesZip, formatVolumeInfo } from './volumeSplitter'
 
 interface IndexEntry {
   title: string
-  startPage: string // Now uses section-based page numbers like "A1", "B5"
+  startPage: string // Now uses section-based page numbers like "A001", "B015"
   endPage: string
   startPageIndex: number // Actual 0-based page index in PDF for creating links
   isSection?: boolean
   indent?: boolean
+  documentDate?: string // Optional date in DD-MM-YYYY format
+}
+
+/**
+ * Format page number with 3-digit zero padding for alignment
+ * Example: formatPageNumber("A", 5) returns "A005"
+ */
+function formatPageNumber(prefix: string, pageNum: number): string {
+  return `${prefix}${pageNum.toString().padStart(3, '0')}`
 }
 
 /**
@@ -18,7 +28,8 @@ interface IndexEntry {
 async function generateIndexPage(
   pdfDoc: PDFDocument,
   metadata: BundleMetadata,
-  indexEntries: IndexEntry[]
+  indexEntries: IndexEntry[],
+  addLinks: boolean = true
 ): Promise<number> {
   let page = pdfDoc.addPage([595, 842]) // A4 size
   const { width, height } = page.getSize()
@@ -100,7 +111,7 @@ async function generateIndexPage(
     const entrySize = entry.isSection ? 11 : 10
     const xOffset = entry.indent ? 80 : 60
 
-    // Calculate page range first to determine available width for title
+    // Calculate page range and date widths first
     let pageRange = ''
     let pageRangeWidth = 0
     if (entry.startPage) {
@@ -110,15 +121,20 @@ async function generateIndexPage(
       pageRangeWidth = entryFont.widthOfTextAtSize(pageRange, entrySize)
     }
 
-    // Document name (truncate if too long)
+    const dateText = entry.documentDate || ''
+    const dateWidth = dateText ? entryFont.widthOfTextAtSize(dateText, entrySize) : 0
+
+    // Calculate available width for title
     const pageNumberX = width - 100 // Fixed position for page numbers
-    const dotSpacing = 20 // Space for dots between title and page number
-    const maxWidth = pageNumberX - xOffset - dotSpacing
+    const spacing = 15 // Space between elements
+    const dateX = pageNumberX - pageRangeWidth - spacing - dateWidth
+    const maxTitleWidth = dateText ? dateX - xOffset - spacing : pageNumberX - xOffset - pageRangeWidth - spacing
+
     let displayTitle = entry.title
     const titleWidth = entryFont.widthOfTextAtSize(displayTitle, entrySize)
 
-    if (titleWidth > maxWidth) {
-      while (entryFont.widthOfTextAtSize(displayTitle + '...', entrySize) > maxWidth && displayTitle.length > 0) {
+    if (titleWidth > maxTitleWidth) {
+      while (entryFont.widthOfTextAtSize(displayTitle + '...', entrySize) > maxTitleWidth && displayTitle.length > 0) {
         displayTitle = displayTitle.slice(0, -1)
       }
       displayTitle += '...'
@@ -126,6 +142,7 @@ async function generateIndexPage(
 
     const textHeight = entrySize
 
+    // Draw title
     page.drawText(displayTitle, {
       x: xOffset,
       y: yPosition,
@@ -133,6 +150,17 @@ async function generateIndexPage(
       font: entryFont,
       color: entry.isSection ? rgb(0.12, 0.24, 0.45) : rgb(0.2, 0.2, 0.2),
     })
+
+    // Draw date if present (between title and page numbers)
+    if (dateText) {
+      page.drawText(dateText, {
+        x: dateX,
+        y: yPosition,
+        size: entrySize,
+        font: font,
+        color: rgb(0.4, 0.4, 0.4),
+      })
+    }
 
     // Page range (skip for section headers without pages)
     if (entry.startPage) {
@@ -147,32 +175,34 @@ async function generateIndexPage(
       })
     }
 
-    // Add clickable link annotation for the entire row
-    const linkWidth = width - xOffset - 50
-    const linkHeight = textHeight + 4
+    // Add clickable link annotation for the entire row (only if addLinks is true)
+    if (addLinks) {
+      const linkWidth = width - xOffset - 50
+      const linkHeight = textHeight + 4
 
-    // Create link annotation to jump to the target page
-    const targetPage = pdfDoc.getPage(entry.startPageIndex)
+      // Create link annotation to jump to the target page
+      const targetPage = pdfDoc.getPage(entry.startPageIndex)
 
-    // Create destination array using context.obj for proper PDF structure
-    const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
+      // Create destination array using context.obj for proper PDF structure
+      const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
 
-    // Create link annotation
-    const linkAnnotation = pdfDoc.context.obj({
-      Type: 'Annot',
-      Subtype: 'Link',
-      Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
-      Border: [0, 0, 0],
-      Dest: dest,
-    })
+      // Create link annotation
+      const linkAnnotation = pdfDoc.context.obj({
+        Type: 'Annot',
+        Subtype: 'Link',
+        Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
+        Border: [0, 0, 0],
+        Dest: dest,
+      })
 
-    const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
+      const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
 
-    const annots = page.node.get(PDFName.of('Annots'))
-    if (annots instanceof PDFArray) {
-      annots.push(linkAnnotationRef)
-    } else {
-      page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotationRef]))
+      const annots = page.node.get(PDFName.of('Annots'))
+      if (annots instanceof PDFArray) {
+        annots.push(linkAnnotationRef)
+      } else {
+        page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotationRef]))
+      }
     }
 
     yPosition -= entry.isSection ? 30 : 25
@@ -340,38 +370,66 @@ function addBookmarks(
 }
 
 /**
- * Generates the complete court bundle PDF
+ * Adds watermark to all pages of a PDF
  */
-export async function generateBundle(
+async function addWatermark(pdfDoc: PDFDocument): Promise<void> {
+  const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const pages = pdfDoc.getPages()
+
+  for (const page of pages) {
+    const { width, height } = page.getSize()
+
+    // Calculate diagonal text position (center of page)
+    const text = 'PREVIEW - NOT FOR OFFICIAL USE'
+    const textSize = 48
+    const textWidth = font.widthOfTextAtSize(text, textSize)
+
+    // Calculate center position
+    const centerX = width / 2
+    const centerY = height / 2
+
+    // Draw watermark with rotation (45 degrees)
+    page.drawText(text, {
+      x: centerX - textWidth / 2,
+      y: centerY,
+      size: textSize,
+      font: font,
+      color: rgb(0.9, 0.1, 0.1),
+      opacity: 0.3,
+      rotate: degrees(45)
+    })
+  }
+}
+
+/**
+ * Generates a watermarked preview of the bundle
+ */
+export async function generateBundlePreview(
   metadata: BundleMetadata,
   sections: Section[],
   pageNumberSettings: PageNumberSettings
-): Promise<void> {
+): Promise<string> {
+  // Generate the bundle same as normal but return blob URL instead of downloading
   try {
-    // Create a new PDF document
-    const mergedPdf = await PDFDocument.create()
-
-    // Track index entries and page numbers
+    // PHASE 1: Build a temporary PDF with just documents to calculate index entries
+    const tempPdf = await PDFDocument.create()
     const indexEntries: IndexEntry[] = []
-    const pageNumbers: string[] = [] // Array of page numbers for each page
-
-    // Track the current page index in the PDF (before index insertion)
+    const documentPageNumbers: string[] = []
     let currentPageIndex = 0
 
-    // Process each section
+    // Collect document pages and build index entries
     for (const section of sections) {
-      // Skip empty sections
       if (section.documents.length === 0) continue
 
       let sectionPageNum = section.startPage
       let dividerPageNumber = ''
       let dividerPageIndex = -1
 
-      // Add divider page if requested
+      // Track divider page
       if (section.addDivider) {
-        await createDividerPage(mergedPdf, section.name)
-        dividerPageNumber = `${section.pagePrefix}${sectionPageNum}`
-        pageNumbers.push(dividerPageNumber)
+        await createDividerPage(tempPdf, section.name)
+        dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        documentPageNumbers.push(dividerPageNumber)
         dividerPageIndex = currentPageIndex
         currentPageIndex++
         sectionPageNum++
@@ -386,94 +444,346 @@ export async function generateBundle(
         isSection: true,
       })
 
-      // Load and merge all documents in this section
+      // Load documents
       for (const doc of section.documents) {
         const pdfDoc = await loadPdfFromFile(doc.file)
-        const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+        const copiedPages = await tempPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
 
-        const docStartPageNumber = `${section.pagePrefix}${sectionPageNum}`
+        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
         copiedPages.forEach((page) => {
-          mergedPdf.addPage(page)
-          pageNumbers.push(`${section.pagePrefix}${sectionPageNum}`)
+          tempPdf.addPage(page)
+          documentPageNumbers.push(formatPageNumber(section.pagePrefix, sectionPageNum))
           sectionPageNum++
           currentPageIndex++
         })
 
-        const docEndPageNumber = `${section.pagePrefix}${sectionPageNum - 1}`
+        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
 
-        // Add to index
         indexEntries.push({
           title: doc.name.replace('.pdf', ''),
           startPage: docStartPageNumber,
           endPage: docEndPageNumber,
           startPageIndex: docStartPageIndex,
           indent: true,
+          documentDate: doc.documentDate,
         })
       }
     }
 
-    // First pass: generate index to count how many pages it will take
-    let indexPageCount = await generateIndexPage(mergedPdf, metadata, indexEntries)
+    // PHASE 2: Count how many index pages we'll need
+    const indexCountPdf = await PDFDocument.create()
+    const indexPageCount = await generateIndexPage(indexCountPdf, metadata, indexEntries, false)
 
-    // Remove the temporary index pages
-    for (let i = 0; i < indexPageCount; i++) {
-      mergedPdf.removePage(mergedPdf.getPageCount() - 1)
-    }
-
-    // Now adjust all the page indices in indexEntries to account for index pages
+    // PHASE 3: Adjust all page indices to account for index pages at the front
     indexEntries.forEach(entry => {
       entry.startPageIndex += indexPageCount
     })
 
-    // Second pass: generate the index again with correct page indices for links
-    indexPageCount = await generateIndexPage(mergedPdf, metadata, indexEntries)
+    // PHASE 4: Build the final PDF with index first, then documents
+    const finalPdf = await PDFDocument.create()
 
-    // Get the indices of the index pages (they're at the end right now)
-    const totalPages = mergedPdf.getPageCount()
-    const indexPageIndices = []
+    // Generate index pages with correct page references and links
+    await generateIndexPage(finalPdf, metadata, indexEntries, true)
+
+    // Copy all document pages from temp PDF
+    const documentPages = await finalPdf.copyPages(tempPdf, tempPdf.getPageIndices())
+    documentPages.forEach(page => finalPdf.addPage(page))
+
+    // Build complete page numbers array
+    const allPageNumbers: string[] = []
     for (let i = 0; i < indexPageCount; i++) {
-      indexPageIndices.push(totalPages - indexPageCount + i)
+      allPageNumbers.push('') // Empty for index pages
     }
-
-    // Copy the index pages
-    const indexPages = await mergedPdf.copyPages(mergedPdf, indexPageIndices)
-
-    // Remove the index pages from the end (in reverse order to maintain indices)
-    for (let i = indexPageCount - 1; i >= 0; i--) {
-      mergedPdf.removePage(totalPages - indexPageCount + i)
-    }
-
-    // Insert index pages at the beginning
-    for (let i = 0; i < indexPages.length; i++) {
-      mergedPdf.insertPage(i, indexPages[i])
-    }
-
-    // Add empty page numbers for index pages
-    for (let i = 0; i < indexPageCount; i++) {
-      pageNumbers.unshift('') // Add empty strings at the beginning for index pages
-    }
+    allPageNumbers.push(...documentPageNumbers)
 
     // Add page numbers to all pages (except index)
-    await addPageNumbers(mergedPdf, pageNumbers, pageNumberSettings)
+    await addPageNumbers(finalPdf, allPageNumbers, pageNumberSettings)
+
+    // Add watermark to every page
+    await addWatermark(finalPdf)
 
     // Add bookmarks/outlines for sidebar navigation
-    addBookmarks(mergedPdf, indexEntries)
+    const allBookmarks: IndexEntry[] = [
+      {
+        title: 'INDEX',
+        startPage: '',
+        endPage: '',
+        startPageIndex: 0,
+        isSection: true,
+      },
+      ...indexEntries,
+    ]
+    addBookmarks(finalPdf, allBookmarks)
+
+    // Save PDF and return blob URL
+    const pdfBytes = await finalPdf.save()
+    const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+
+    return url
+  } catch (error) {
+    console.error('Error generating preview:', error)
+    throw error
+  }
+}
+
+/**
+ * Generates index only as a standalone PDF for review/circulation
+ */
+export async function generateIndexOnly(
+  metadata: BundleMetadata,
+  sections: Section[]
+): Promise<void> {
+  try {
+    // Build index entries without actually processing the documents
+    const indexEntries: IndexEntry[] = []
+    let currentPageIndex = 0
+
+    for (const section of sections) {
+      if (section.documents.length === 0) continue
+
+      let sectionPageNum = section.startPage
+      let dividerPageIndex = -1
+
+      // Account for divider page
+      if (section.addDivider) {
+        const dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        dividerPageIndex = currentPageIndex
+        currentPageIndex++
+        sectionPageNum++
+
+        // Add section header with divider page
+        indexEntries.push({
+          title: section.name.toUpperCase(),
+          startPage: dividerPageNumber,
+          endPage: dividerPageNumber,
+          startPageIndex: dividerPageIndex,
+          isSection: true,
+        })
+      } else {
+        // Add section header without page reference
+        indexEntries.push({
+          title: section.name.toUpperCase(),
+          startPage: '',
+          endPage: '',
+          startPageIndex: currentPageIndex,
+          isSection: true,
+        })
+      }
+
+      // Add document entries
+      for (const doc of section.documents) {
+        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageIndex = currentPageIndex
+
+        // Calculate end page based on document's page count
+        sectionPageNum += doc.pageCount
+        currentPageIndex += doc.pageCount
+
+        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+
+        indexEntries.push({
+          title: doc.name.replace('.pdf', ''),
+          startPage: docStartPageNumber,
+          endPage: docEndPageNumber,
+          startPageIndex: docStartPageIndex,
+          indent: true,
+          documentDate: doc.documentDate,
+        })
+      }
+    }
+
+    // Create PDF with just the index (no links since target pages don't exist)
+    const indexPdf = await PDFDocument.create()
+    await generateIndexPage(indexPdf, metadata, indexEntries, false)
+
+    // Add watermark/notice to each page
+    const font = await indexPdf.embedFont(StandardFonts.HelveticaBold)
+    const pages = indexPdf.getPages()
+    pages.forEach(page => {
+      const { height } = page.getSize()
+      page.drawText('DRAFT INDEX FOR REVIEW - NOT FINAL BUNDLE', {
+        x: 50,
+        y: height - 20,
+        size: 10,
+        font: font,
+        color: rgb(0.7, 0, 0),
+      })
+    })
 
     // Save and download
-    const pdfBytes = await mergedPdf.save()
+    const pdfBytes = await indexPdf.save()
     const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
     const url = URL.createObjectURL(blob)
 
     const link = document.createElement('a')
     link.href = url
-    link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}.pdf`
+    link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}_INDEX_DRAFT.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
     URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error generating index:', error)
+    throw error
+  }
+}
+
+/**
+ * Generates the complete court bundle PDF
+ */
+export async function generateBundle(
+  metadata: BundleMetadata,
+  sections: Section[],
+  pageNumberSettings: PageNumberSettings
+): Promise<void> {
+  try {
+    // PHASE 1: Build a temporary PDF with just documents to calculate index entries
+    const tempPdf = await PDFDocument.create()
+    const indexEntries: IndexEntry[] = []
+    const documentPageNumbers: string[] = []
+    let currentPageIndex = 0
+
+    // Collect document pages and build index entries
+    for (const section of sections) {
+      if (section.documents.length === 0) continue
+
+      let sectionPageNum = section.startPage
+      let dividerPageNumber = ''
+      let dividerPageIndex = -1
+
+      // Track divider page
+      if (section.addDivider) {
+        await createDividerPage(tempPdf, section.name)
+        dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        documentPageNumbers.push(dividerPageNumber)
+        dividerPageIndex = currentPageIndex
+        currentPageIndex++
+        sectionPageNum++
+      }
+
+      // Add section header to index
+      indexEntries.push({
+        title: section.name.toUpperCase(),
+        startPage: section.addDivider ? dividerPageNumber : '',
+        endPage: section.addDivider ? dividerPageNumber : '',
+        startPageIndex: dividerPageIndex >= 0 ? dividerPageIndex : 0,
+        isSection: true,
+      })
+
+      // Load documents
+      for (const doc of section.documents) {
+        const pdfDoc = await loadPdfFromFile(doc.file)
+        const copiedPages = await tempPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+
+        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageIndex = currentPageIndex
+
+        copiedPages.forEach((page) => {
+          tempPdf.addPage(page)
+          documentPageNumbers.push(formatPageNumber(section.pagePrefix, sectionPageNum))
+          sectionPageNum++
+          currentPageIndex++
+        })
+
+        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+
+        indexEntries.push({
+          title: doc.name.replace('.pdf', ''),
+          startPage: docStartPageNumber,
+          endPage: docEndPageNumber,
+          startPageIndex: docStartPageIndex,
+          indent: true,
+          documentDate: doc.documentDate,
+        })
+      }
+    }
+
+    // PHASE 2: Count how many index pages we'll need (no links needed for counting)
+    const indexCountPdf = await PDFDocument.create()
+    const indexPageCount = await generateIndexPage(indexCountPdf, metadata, indexEntries, false)
+
+    // PHASE 3: Adjust all page indices to account for index pages at the front
+    indexEntries.forEach(entry => {
+      entry.startPageIndex += indexPageCount
+    })
+
+    // PHASE 4: Build the final PDF with index first, then documents
+    const finalPdf = await PDFDocument.create()
+
+    // Generate index pages with correct page references and links
+    await generateIndexPage(finalPdf, metadata, indexEntries, true)
+
+    // Copy all document pages from temp PDF
+    const documentPages = await finalPdf.copyPages(tempPdf, tempPdf.getPageIndices())
+    documentPages.forEach(page => finalPdf.addPage(page))
+
+    // Build complete page numbers array (empty for index, then document page numbers)
+    const allPageNumbers: string[] = []
+    for (let i = 0; i < indexPageCount; i++) {
+      allPageNumbers.push('') // Empty for index pages
+    }
+    allPageNumbers.push(...documentPageNumbers)
+
+    // Add page numbers to all pages (except index)
+    await addPageNumbers(finalPdf, allPageNumbers, pageNumberSettings)
+
+    // Add bookmarks/outlines for sidebar navigation (including index)
+    const allBookmarks: IndexEntry[] = [
+      {
+        title: 'INDEX',
+        startPage: '',
+        endPage: '',
+        startPageIndex: 0,
+        isSection: true,
+      },
+      ...indexEntries,
+    ]
+    addBookmarks(finalPdf, allBookmarks)
+
+    // Check if bundle needs to be split into volumes (> 350 pages)
+    const totalPages = finalPdf.getPageCount()
+    const volumes = calculateVolumes(totalPages)
+
+    if (volumes.length > 1) {
+      // Bundle exceeds 350 pages - split into volumes
+      console.log(`Bundle has ${totalPages} pages - splitting into ${volumes.length} volumes`)
+
+      // Alert user about volume splitting
+      alert(`Your bundle has ${totalPages} pages and will be split into ${volumes.length} volumes (max 350 pages each) in accordance with Practice Direction requirements.\n\n${formatVolumeInfo(volumes)}\n\nDownloading as ZIP file...`)
+
+      // Split the PDF into volumes
+      const volumePdfs = await splitPdfIntoVolumes(finalPdf, volumes)
+
+      // Create ZIP file containing all volumes
+      const zipBlob = await createVolumeZip(volumePdfs, {
+        caseNumber: metadata.caseNumber,
+        caseName: metadata.caseName
+      })
+
+      // Download the ZIP
+      downloadVolumesZip(zipBlob, {
+        caseNumber: metadata.caseNumber,
+        caseName: metadata.caseName
+      })
+    } else {
+      // Single volume - download as single PDF
+      const pdfBytes = await finalPdf.save()
+      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      URL.revokeObjectURL(url)
+    }
   } catch (error) {
     console.error('Error generating bundle:', error)
     throw error

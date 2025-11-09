@@ -8,6 +8,7 @@ interface SectionDocumentListProps {
   onReorderDocument: (sectionId: string, docIndex: number, newIndex: number) => void
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
   onPreview: (doc: Document) => void
+  onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
 }
 
 export default function SectionDocumentList({
@@ -16,6 +17,7 @@ export default function SectionDocumentList({
   onReorderDocument,
   onMoveToSection,
   onPreview,
+  onUpdateDocumentDate,
 }: SectionDocumentListProps) {
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
@@ -69,7 +71,7 @@ export default function SectionDocumentList({
                     </div>
                   </div>
                   <div className="divider-page-number">
-                    {section.pagePrefix}{section.startPage}
+                    {section.pagePrefix}{section.startPage.toString().padStart(3, '0')}
                   </div>
                 </div>
               )}
@@ -81,6 +83,22 @@ export default function SectionDocumentList({
                     <div className="document-details">
                       <div className="document-name">{doc.name}</div>
                       <div className="document-pages">{doc.pageCount} page{doc.pageCount !== 1 ? 's' : ''}</div>
+                      <input
+                        type="date"
+                        className="document-date-input"
+                        value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            // Convert from YYYY-MM-DD to DD-MM-YYYY
+                            const [year, month, day] = e.target.value.split('-')
+                            onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
+                          } else {
+                            onUpdateDocumentDate(section.id, doc.id, '')
+                          }
+                        }}
+                        placeholder="Document date (optional)"
+                        title="Document date (optional)"
+                      />
                     </div>
                   </div>
 

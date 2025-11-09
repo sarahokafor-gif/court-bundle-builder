@@ -176,6 +176,38 @@
   color: #666;
 }
 
+.document-date-input {
+  margin-top: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  max-width: 150px;
+}
+
+.document-date-input:hover {
+  border-color: #2a5298;
+}
+
+.document-date-input:focus {
+  outline: none;
+  border-color: #2a5298;
+  box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
+}
+
+.document-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.document-date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 .document-actions {
   display: flex;
   gap: 0.5rem;

@@ -4,6 +4,7 @@ export interface Document {
   name: string;
   pageCount: number;
   order: number;
+  documentDate?: string; // Optional date in DD-MM-YYYY format
 }
 
 export interface Section {
@@ -63,4 +64,5 @@ export interface SerializedDocument {
   pageCount: number;
   order: number;
   fileData: string; // base64 encoded file data
+  documentDate?: string; // Optional date in DD-MM-YYYY format
 }

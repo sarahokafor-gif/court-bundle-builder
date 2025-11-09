@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Download, FileText, Eye, CreditCard } from 'lucide-react'
+import { Download, FileText, List, Eye, CreditCard } from 'lucide-react'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
-import { generateBundle } from '../utils/bundleGenerator'
+import { generateBundle, generateIndexOnly, generateBundlePreview } from '../utils/bundleGenerator'
 import { getPricingTier, formatPrice, isPaymentRequired } from '../utils/pricing'
 import './BundleGenerator.css'
 
@@ -13,6 +13,8 @@ interface BundleGeneratorProps {
 
 export default function BundleGenerator({ metadata, sections, pageNumberSettings }: BundleGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingIndex, setIsGeneratingIndex] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
@@ -24,16 +26,35 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
   const pricingTier = getPricingTier(totalDocs)
   const needsPayment = isPaymentRequired(totalDocs)
 
-  const handlePreview = async () => {
+  const handleGenerateIndexOnly = async () => {
     if (!metadata.caseName || !metadata.caseNumber) {
-      alert('Please fill in at least the case name and case number before previewing the bundle.')
+      alert('Please fill in at least the case name and case number before generating the index.')
+      return
+    }
+
+    setIsGeneratingIndex(true)
+
+    try {
+      await generateIndexOnly(metadata, sections)
+    } catch (error) {
+      console.error('Error generating index:', error)
+      alert('An error occurred while generating the index. Please try again.')
+    } finally {
+      setIsGeneratingIndex(false)
+    }
+  }
+
+  const handleGeneratePreview = async () => {
+    if (!metadata.caseName || !metadata.caseNumber) {
+      alert('Please fill in at least the case name and case number before generating the bundle.')
       return
     }
 
     setIsGenerating(true)
 
     try {
-      await generateBundle(metadata, sections, pageNumberSettings)
+      const url = await generateBundlePreview(metadata, sections, pageNumberSettings)
+      setPreviewUrl(url)
     } catch (error) {
       console.error('Error generating preview:', error)
       alert('An error occurred while generating the preview. Please try again.')
@@ -51,30 +72,22 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
     setIsProcessingPayment(true)
 
     try {
-      // Call Netlify function to create Stripe checkout session
-      const response = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentCount: totalDocs,
-          bundleName: `${metadata.caseNumber} - ${metadata.caseName}`,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url
-      } else {
-        throw new Error('Failed to create checkout session')
-      }
+      // TODO: Implement Stripe payment flow
+      // For now, just generate clean bundle
+      alert('Payment processing will be implemented here. For now, generating clean bundle...')
+      await generateBundle(metadata, sections, pageNumberSettings)
     } catch (error) {
-      console.error('Payment error:', error)
-      alert('Failed to initiate payment. Please try again.')
+      console.error('Error processing payment:', error)
+      alert('An error occurred. Please try again.')
+    } finally {
       setIsProcessingPayment(false)
+    }
+  }
+
+  const handleClosePreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
     }
   }
 
@@ -106,45 +119,89 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
         </div>
       </div>
 
-      {/* Action Buttons */}
-      {!needsPayment ? (
-        // FREE tier: Direct download
-        <button
-          className="generate-button"
-          onClick={handlePreview}
-          disabled={isGenerating}
-        >
-          <Download size={20} />
-          {isGenerating ? 'Generating Bundle...' : 'Generate & Download Bundle (FREE)'}
-        </button>
-      ) : (
-        // PAID tier: Preview + Payment
-        <div className="paid-bundle-actions">
+      {/* Generate Index Only Button (Always Available) */}
+      <button
+        className="index-only-button"
+        onClick={handleGenerateIndexOnly}
+        disabled={isGeneratingIndex}
+      >
+        <List size={20} />
+        {isGeneratingIndex ? 'Generating Index...' : 'Generate Index Only (FREE)'}
+      </button>
+
+      <p className="index-hint">
+        Generate a draft index PDF to share with other parties for review and approval before creating the full bundle.
+      </p>
+
+      {/* Preview or Generate Button */}
+      {!previewUrl ? (
+        <>
           <button
-            className="preview-button"
-            onClick={handlePreview}
+            className="generate-button"
+            onClick={handleGeneratePreview}
             disabled={isGenerating}
           >
             <Eye size={20} />
-            {isGenerating ? 'Generating Preview...' : 'Preview Bundle (FREE)'}
+            {isGenerating ? 'Generating Preview...' : 'Generate Preview (FREE)'}
           </button>
 
-          <button
-            className="payment-button"
-            onClick={handlePayAndDownload}
-            disabled={isProcessingPayment || isGenerating}
-          >
-            <CreditCard size={20} />
-            {isProcessingPayment ? 'Processing...' : `Pay ${formatPrice(pricingTier.price)} & Download`}
-          </button>
-        </div>
+          <p className="generate-hint">
+            Generate a watermarked preview to review before{' '}
+            {needsPayment ? `paying ${formatPrice(pricingTier.price)} for` : 'downloading'} the final bundle.
+          </p>
+        </>
+      ) : (
+        <>
+          {/* Preview Display */}
+          <div className="preview-container">
+            <div className="preview-header">
+              <h3>Bundle Preview (Watermarked)</h3>
+              <button className="close-preview-button" onClick={handleClosePreview}>
+                ✕ Close
+              </button>
+            </div>
+            <iframe
+              src={previewUrl}
+              className="pdf-preview"
+              title="Bundle Preview"
+            />
+            <div className="preview-notice">
+              <strong>⚠️ Preview Only:</strong> This PDF contains a "PREVIEW - NOT FOR OFFICIAL USE" watermark.
+              {needsPayment
+                ? ` Pay ${formatPrice(pricingTier.price)} to download the clean version for court submission.`
+                : ' Download the clean version below.'}
+            </div>
+          </div>
+
+          {/* Payment/Download Button */}
+          {needsPayment ? (
+            <button
+              className="payment-button"
+              onClick={handlePayAndDownload}
+              disabled={isProcessingPayment}
+            >
+              <CreditCard size={20} />
+              {isProcessingPayment
+                ? 'Processing Payment...'
+                : `Pay ${formatPrice(pricingTier.price)} & Download Clean Version`}
+            </button>
+          ) : (
+            <button
+              className="generate-button"
+              onClick={async () => {
+                try {
+                  await generateBundle(metadata, sections, pageNumberSettings)
+                } catch (error) {
+                  alert('An error occurred while generating the bundle.')
+                }
+              }}
+            >
+              <Download size={20} />
+              Download Clean Version (FREE)
+            </button>
+          )}
+        </>
       )}
-
-      <p className="generate-hint">
-        {!needsPayment
-          ? 'The generated bundle will include a table of contents with sections, dividers, page numbers, and all documents.'
-          : 'Preview your bundle for free. Payment is required to download bundles with 6+ documents.'}
-      </p>
     </div>
   )
 }
