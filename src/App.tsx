@@ -179,6 +179,21 @@ function App() {
     )
   }
 
+  const handleUpdateSelectedPages = (sectionId: string, docId: string, selectedPages: number[]) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId ? { ...doc, selectedPages } : doc
+              ),
+            }
+          : section
+      )
+    )
+  }
+
   const handleSave = async () => {
     await saveBundle(metadata, sections, pageNumberSettings)
   }
@@ -251,6 +266,7 @@ function App() {
             onPreview={setPreviewDoc}
             onUpdateDocumentDate={handleUpdateDocumentDate}
             onUpdateDocumentTitle={handleUpdateDocumentTitle}
+            onUpdateSelectedPages={handleUpdateSelectedPages}
           />
         </section>
 

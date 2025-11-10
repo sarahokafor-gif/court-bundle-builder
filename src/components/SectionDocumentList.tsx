@@ -1,5 +1,7 @@
-import { ChevronUp, ChevronDown, Trash2, FileText, Eye, Layers } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronUp, ChevronDown, Trash2, FileText, Eye, Layers, Edit3 } from 'lucide-react'
 import { Section, Document } from '../types'
+import PageManager from './PageManager'
 import './SectionDocumentList.css'
 
 interface SectionDocumentListProps {
@@ -10,6 +12,7 @@ interface SectionDocumentListProps {
   onPreview: (doc: Document) => void
   onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
+  onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
 }
 
 export default function SectionDocumentList({
@@ -20,7 +23,9 @@ export default function SectionDocumentList({
   onPreview,
   onUpdateDocumentDate,
   onUpdateDocumentTitle,
+  onUpdateSelectedPages,
 }: SectionDocumentListProps) {
+  const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
     (sum, section) => sum + section.documents.reduce((docSum, doc) => docSum + doc.pageCount, 0),
@@ -84,7 +89,14 @@ export default function SectionDocumentList({
                     <FileText size={18} className="document-icon" />
                     <div className="document-details">
                       <div className="document-name">{doc.name}</div>
-                      <div className="document-pages">{doc.pageCount} page{doc.pageCount !== 1 ? 's' : ''}</div>
+                      <div className="document-pages">
+                        {doc.pageCount} page{doc.pageCount !== 1 ? 's' : ''}
+                        {doc.selectedPages && doc.selectedPages.length !== doc.pageCount && (
+                          <span className="selected-pages-badge">
+                            {doc.selectedPages.length} selected
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         className="document-title-input"
@@ -128,6 +140,13 @@ export default function SectionDocumentList({
                       </select>
                     )}
                     <button
+                      className="action-button manage-pages-button"
+                      onClick={() => setManagingDocument({ sectionId: section.id, doc })}
+                      title="Manage Pages - Select/Remove pages"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
                       className="action-button"
                       onClick={() => onPreview(doc)}
                       title="Preview"
@@ -164,6 +183,16 @@ export default function SectionDocumentList({
           )}
         </div>
       ))}
+
+      {managingDocument && (
+        <PageManager
+          document={managingDocument.doc}
+          onClose={() => setManagingDocument(null)}
+          onSave={(selectedPages) => {
+            onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, selectedPages)
+          }}
+        />
+      )}
     </div>
   )
 }

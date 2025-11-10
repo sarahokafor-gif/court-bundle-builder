@@ -6,6 +6,8 @@ export interface Document {
   order: number;
   documentDate?: string; // Optional date in DD-MM-YYYY format
   customTitle?: string; // Optional custom title for display in index
+  selectedPages?: number[]; // Array of selected page indices (0-based). If undefined, all pages are selected
+  modifiedFile?: File; // Modified/redacted version of the file (if edited)
 }
 
 export interface Section {
