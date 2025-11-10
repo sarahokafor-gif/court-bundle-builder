@@ -462,7 +462,7 @@ export async function generateBundlePreview(
         const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
 
         indexEntries.push({
-          title: doc.name.replace('.pdf', ''),
+          title: doc.customTitle || doc.name.replace('.pdf', ''),
           startPage: docStartPageNumber,
           endPage: docEndPageNumber,
           startPageIndex: docStartPageIndex,
@@ -585,7 +585,7 @@ export async function generateIndexOnly(
         const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
 
         indexEntries.push({
-          title: doc.name.replace('.pdf', ''),
+          title: doc.customTitle || doc.name.replace('.pdf', ''),
           startPage: docStartPageNumber,
           endPage: docEndPageNumber,
           startPageIndex: docStartPageIndex,
@@ -692,7 +692,7 @@ export async function generateBundle(
         const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
 
         indexEntries.push({
-          title: doc.name.replace('.pdf', ''),
+          title: doc.customTitle || doc.name.replace('.pdf', ''),
           startPage: docStartPageNumber,
           endPage: docEndPageNumber,
           startPageIndex: docStartPageIndex,

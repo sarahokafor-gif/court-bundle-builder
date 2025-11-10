@@ -164,6 +164,21 @@ function App() {
     )
   }
 
+  const handleUpdateDocumentTitle = (sectionId: string, docId: string, title: string) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId ? { ...doc, customTitle: title } : doc
+              ),
+            }
+          : section
+      )
+    )
+  }
+
   const handleSave = async () => {
     await saveBundle(metadata, sections, pageNumberSettings)
   }
@@ -235,6 +250,7 @@ function App() {
             onMoveToSection={handleMoveToSection}
             onPreview={setPreviewDoc}
             onUpdateDocumentDate={handleUpdateDocumentDate}
+            onUpdateDocumentTitle={handleUpdateDocumentTitle}
           />
         </section>
 

@@ -9,6 +9,7 @@ interface SectionDocumentListProps {
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
   onPreview: (doc: Document) => void
   onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
+  onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
 }
 
 export default function SectionDocumentList({
@@ -18,6 +19,7 @@ export default function SectionDocumentList({
   onMoveToSection,
   onPreview,
   onUpdateDocumentDate,
+  onUpdateDocumentTitle,
 }: SectionDocumentListProps) {
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
@@ -83,6 +85,14 @@ export default function SectionDocumentList({
                     <div className="document-details">
                       <div className="document-name">{doc.name}</div>
                       <div className="document-pages">{doc.pageCount} page{doc.pageCount !== 1 ? 's' : ''}</div>
+                      <input
+                        type="text"
+                        className="document-title-input"
+                        value={doc.customTitle || ''}
+                        onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
+                        placeholder="Custom title for index (optional)"
+                        title="Custom title to display in the bundle index"
+                      />
                       <input
                         type="date"
                         className="document-date-input"

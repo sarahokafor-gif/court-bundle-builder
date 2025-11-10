@@ -176,6 +176,32 @@
   color: #666;
 }
 
+.document-title-input {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.document-title-input:hover {
+  border-color: #2a5298;
+}
+
+.document-title-input:focus {
+  outline: none;
+  border-color: #2a5298;
+  box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
+}
+
+.document-title-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
 .document-date-input {
   margin-top: 0.25rem;
   padding: 0.3rem 0.5rem;
