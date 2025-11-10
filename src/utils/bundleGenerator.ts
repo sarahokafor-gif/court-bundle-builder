@@ -447,7 +447,13 @@ export async function generateBundlePreview(
       // Load documents
       for (const doc of section.documents) {
         const pdfDoc = await loadPdfFromFile(doc.file)
-        const copiedPages = await tempPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+
+        // Determine which pages to include (use selectedPages if defined, otherwise all pages)
+        const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
+          ? doc.selectedPages
+          : pdfDoc.getPageIndices()
+
+        const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
         const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
@@ -578,9 +584,14 @@ export async function generateIndexOnly(
         const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
-        // Calculate end page based on document's page count
-        sectionPageNum += doc.pageCount
-        currentPageIndex += doc.pageCount
+        // Calculate the actual number of pages (selected pages or all pages)
+        const actualPageCount = doc.selectedPages !== undefined && doc.selectedPages.length > 0
+          ? doc.selectedPages.length
+          : doc.pageCount
+
+        // Calculate end page based on actual page count
+        sectionPageNum += actualPageCount
+        currentPageIndex += actualPageCount
 
         const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
 
@@ -677,7 +688,13 @@ export async function generateBundle(
       // Load documents
       for (const doc of section.documents) {
         const pdfDoc = await loadPdfFromFile(doc.file)
-        const copiedPages = await tempPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+
+        // Determine which pages to include (use selectedPages if defined, otherwise all pages)
+        const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
+          ? doc.selectedPages
+          : pdfDoc.getPageIndices()
+
+        const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
         const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
