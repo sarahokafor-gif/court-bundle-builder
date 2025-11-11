@@ -29,12 +29,10 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   const [tool, setTool] = useState<'redact' | 'erase'>('erase')
   const [rectangles, setRectangles] = useState<Rectangle[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
-  const [startPos, setStartPos] = useState<{ x: number; y: number; page: number } | null>(null)
-  const [viewMode, setViewMode] = useState<'single' | 'scroll'>('scroll')
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
   // Load PDF
   useEffect(() => {
@@ -135,12 +133,25 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
       const width = currentX - startPos.x
       const height = currentY - startPos.y
 
-      context.fillStyle = tool === 'redact' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.8)'
-      context.strokeStyle = tool === 'redact' ? '#000' : '#999'
-      context.lineWidth = 2
-      context.setLineDash([5, 5]) // Dashed line for preview
-      context.strokeRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
-      context.fillRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      if (tool === 'redact') {
+        // Black semi-transparent fill for redaction
+        context.fillStyle = 'rgba(0, 0, 0, 0.6)'
+        context.fillRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+        // Dashed black border
+        context.strokeStyle = '#000'
+        context.lineWidth = 3
+        context.setLineDash([8, 4])
+        context.strokeRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      } else {
+        // For erase: bright colored border to show selection, semi-transparent white fill
+        context.fillStyle = 'rgba(255, 255, 255, 0.7)'
+        context.fillRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+        // Bright blue dashed border for high visibility
+        context.strokeStyle = '#00BFFF'
+        context.lineWidth = 3
+        context.setLineDash([8, 4])
+        context.strokeRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      }
       context.setLineDash([]) // Reset line dash
     }
 
@@ -188,6 +199,31 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
       setRectangles([])
     }
   }
+
+  // Mouse wheel scrolling for page navigation
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Only change pages if not drawing
+      if (isDrawing) return
+
+      // Prevent default scrolling
+      e.preventDefault()
+
+      if (e.deltaY > 0) {
+        // Scroll down = next page
+        setCurrentPage(p => Math.min(pdfDoc?.numPages || 1, p + 1))
+      } else if (e.deltaY < 0) {
+        // Scroll up = previous page
+        setCurrentPage(p => Math.max(1, p - 1))
+      }
+    }
+
+    const container = containerRef.current
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false })
+      return () => container.removeEventListener('wheel', handleWheel)
+    }
+  }, [isDrawing, pdfDoc])
 
   const rectanglesOnPage = rectangles.filter(r => r.page === currentPage).length
 

@@ -4,23 +4,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding: 1rem;
+  padding: 0;
 }
 
 .pdf-editor-modal {
   background: #1a1a1a;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 1400px;
-  max-height: 95vh;
+  border-radius: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
   color: white;
 }
 
@@ -118,7 +117,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 1rem;
+  min-height: 0;
 }
 
 .pdf-canvas {
