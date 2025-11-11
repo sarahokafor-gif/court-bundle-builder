@@ -29,7 +29,6 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
-    "netlify-cli": "^23.10.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.0"
   }
