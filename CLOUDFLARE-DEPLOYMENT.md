@@ -28,13 +28,16 @@ git push
 
 ### Step 2: Create Cloudflare Pages Project
 
+**IMPORTANT**: Make sure you're creating a **Pages** project, NOT a Workers project!
+
 1. Go to https://dash.cloudflare.com
-2. Select **Pages** from the left sidebar
-3. Click **Create a project**
-4. Click **Connect to Git**
-5. Authorize Cloudflare to access your GitHub account
-6. Select your **court-bundle-builder** repository
-7. Click **Begin setup**
+2. Select **Workers & Pages** from the left sidebar
+3. Click **Create application**
+4. Select the **Pages** tab (NOT Workers!)
+5. Click **Connect to Git**
+6. Authorize Cloudflare to access your GitHub account
+7. Select your **court-bundle-builder** repository
+8. Click **Begin setup**
 
 ### Step 3: Configure Build Settings
 
@@ -94,6 +97,17 @@ Every time you push to the `main` branch:
 - Automatic cache invalidation
 
 ## Troubleshooting
+
+### Deployment Fails with "wrangler deploy" Error
+
+**Problem**: You created a Workers project instead of a Pages project.
+
+**Solution**:
+1. Go to Cloudflare dashboard → Workers & Pages
+2. Delete the current project
+3. Click **Create application** → Select **Pages** tab
+4. Reconnect to your GitHub repository
+5. Follow the setup steps above
 
 ### Build Fails
 
