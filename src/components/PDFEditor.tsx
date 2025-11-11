@@ -26,13 +26,15 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [scale, setScale] = useState(1.5)
-  const [tool, setTool] = useState<'redact' | 'erase'>('redact')
+  const [tool, setTool] = useState<'redact' | 'erase'>('erase')
   const [rectangles, setRectangles] = useState<Rectangle[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [startPos, setStartPos] = useState<{ x: number; y: number; page: number } | null>(null)
+  const [viewMode, setViewMode] = useState<'single' | 'scroll'>('scroll')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
   // Load PDF
   useEffect(() => {
@@ -96,23 +98,53 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPos || !canvasRef.current) return
+    if (!isDrawing || !startPos || !canvasRef.current || !pdfDoc) return
 
     const rect = canvasRef.current.getBoundingClientRect()
     const currentX = (e.clientX - rect.left) / scale
     const currentY = (e.clientY - rect.top) / scale
 
-    // Draw preview rectangle
-    const context = canvasRef.current.getContext('2d')!
-    context.fillStyle = tool === 'redact' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.8)'
-    context.strokeStyle = tool === 'redact' ? '#000' : '#999'
-    context.lineWidth = 2
+    // Re-render page to clear previous preview
+    const renderPreview = async () => {
+      const page = await pdfDoc.getPage(currentPage)
+      const viewport = page.getViewport({ scale })
+      const canvas = canvasRef.current!
+      const context = canvas.getContext('2d')!
 
-    const width = currentX - startPos.x
-    const height = currentY - startPos.y
+      canvas.width = viewport.width
+      canvas.height = viewport.height
 
-    context.strokeRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
-    context.fillRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      // Render PDF page
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise
+
+      // Draw existing rectangles for this page
+      rectangles
+        .filter(r => r.page === currentPage)
+        .forEach(r => {
+          context.fillStyle = r.type === 'redact' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 1)'
+          context.fillRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale)
+          context.strokeStyle = r.type === 'redact' ? '#000' : '#999'
+          context.lineWidth = 2
+          context.strokeRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale)
+        })
+
+      // Draw preview rectangle
+      const width = currentX - startPos.x
+      const height = currentY - startPos.y
+
+      context.fillStyle = tool === 'redact' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.8)'
+      context.strokeStyle = tool === 'redact' ? '#000' : '#999'
+      context.lineWidth = 2
+      context.setLineDash([5, 5]) // Dashed line for preview
+      context.strokeRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      context.fillRect(startPos.x * scale, startPos.y * scale, width * scale, height * scale)
+      context.setLineDash([]) // Reset line dash
+    }
+
+    renderPreview()
   }
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
