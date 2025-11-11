@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, Trash2, FileText, Eye, Layers, Edit3, Pen } fro
 import { Section, Document } from '../types'
 import PageManager from './PageManager'
 import PDFEditor from './PDFEditor'
+import { burnRectanglesIntoPDF } from '../utils/pdfEditing'
 import './SectionDocumentList.css'
 
 interface SectionDocumentListProps {
@@ -14,6 +15,7 @@ interface SectionDocumentListProps {
   onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
+  onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File) => void
 }
 
 export default function SectionDocumentList({
@@ -25,6 +27,7 @@ export default function SectionDocumentList({
   onUpdateDocumentDate,
   onUpdateDocumentTitle,
   onUpdateSelectedPages,
+  onUpdateDocumentFile,
 }: SectionDocumentListProps) {
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
@@ -207,11 +210,25 @@ export default function SectionDocumentList({
         <PDFEditor
           document={editingDocument.doc}
           onClose={() => setEditingDocument(null)}
-          onSave={(rectangles) => {
-            // TODO: Burn rectangles into PDF and save
-            console.log('Rectangles to save:', rectangles)
-            alert(`Saved ${rectangles.length} redactions/erasures! (Burning into PDF coming next)`)
-            setEditingDocument(null)
+          onSave={async (rectangles) => {
+            if (rectangles.length === 0) {
+              setEditingDocument(null)
+              return
+            }
+
+            try {
+              // Burn the rectangles into the PDF
+              const modifiedFile = await burnRectanglesIntoPDF(editingDocument.doc.file, rectangles)
+
+              // Update the document with the modified file
+              onUpdateDocumentFile(editingDocument.sectionId, editingDocument.doc.id, modifiedFile)
+
+              alert(`Successfully applied ${rectangles.length} redaction${rectangles.length !== 1 ? 's' : ''}/erasure${rectangles.length !== 1 ? 's' : ''}!`)
+              setEditingDocument(null)
+            } catch (error) {
+              console.error('Error saving PDF edits:', error)
+              alert('Failed to save PDF edits. Please try again.')
+            }
           }}
         />
       )}

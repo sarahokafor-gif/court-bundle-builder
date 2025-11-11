@@ -194,6 +194,21 @@ function App() {
     )
   }
 
+  const handleUpdateDocumentFile = (sectionId: string, docId: string, modifiedFile: File) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId ? { ...doc, file: modifiedFile, modifiedFile } : doc
+              ),
+            }
+          : section
+      )
+    )
+  }
+
   const handleSave = async () => {
     await saveBundle(metadata, sections, pageNumberSettings)
   }
@@ -267,6 +282,7 @@ function App() {
             onUpdateDocumentDate={handleUpdateDocumentDate}
             onUpdateDocumentTitle={handleUpdateDocumentTitle}
             onUpdateSelectedPages={handleUpdateSelectedPages}
+            onUpdateDocumentFile={handleUpdateDocumentFile}
           />
         </section>
 
