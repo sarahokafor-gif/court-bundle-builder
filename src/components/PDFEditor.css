@@ -1,0 +1,264 @@
+.pdf-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.pdf-editor-modal {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+.pdf-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #333;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.pdf-editor-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.pdf-editor-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  color: #ccc;
+}
+
+.pdf-editor-toolbar {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  background: #2d2d2d;
+  border-bottom: 1px solid #444;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tool-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tool-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #3a3a3a;
+  border: 2px solid transparent;
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.tool-button:hover:not(:disabled) {
+  background: #4a4a4a;
+  transform: translateY(-1px);
+}
+
+.tool-button.active {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  border-color: #ff9800;
+}
+
+.tool-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tool-button.danger {
+  background: #d32f2f;
+}
+
+.tool-button.danger:hover:not(:disabled) {
+  background: #f44336;
+}
+
+.zoom-level {
+  padding: 0 0.5rem;
+  font-weight: 600;
+  color: #ccc;
+  min-width: 50px;
+  text-align: center;
+}
+
+.pdf-editor-content {
+  flex: 1;
+  overflow: auto;
+  background: #0d0d0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.pdf-canvas {
+  cursor: crosshair;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  background: white;
+}
+
+.pdf-editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #333;
+  background: #2d2d2d;
+  border-radius: 0 0 12px 12px;
+}
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #3a3a3a;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-button:hover:not(:disabled) {
+  background: #4a4a4a;
+}
+
+.page-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-weight: 600;
+  color: white;
+  min-width: 120px;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.cancel-button {
+  padding: 0.75rem 1.5rem;
+  background: #3a3a3a;
+  border: 2px solid #666;
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background: #4a4a4a;
+  border-color: #888;
+}
+
+.save-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  border: none;
+  color: white;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+}
+
+/* Scrollbar Styling for dark theme */
+.pdf-editor-content::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.pdf-editor-content::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.pdf-editor-content::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 6px;
+}
+
+.pdf-editor-content::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .pdf-editor-modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .pdf-editor-toolbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .tool-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .pdf-editor-content {
+    padding: 1rem;
+  }
+
+  .pdf-editor-footer {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .page-controls,
+  .action-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+}
