@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChevronUp, ChevronDown, Trash2, FileText, Eye, Layers, Edit3 } from 'lucide-react'
+import { ChevronUp, ChevronDown, Trash2, FileText, Eye, Layers, Edit3, Pen } from 'lucide-react'
 import { Section, Document } from '../types'
 import PageManager from './PageManager'
+import PDFEditor from './PDFEditor'
 import './SectionDocumentList.css'
 
 interface SectionDocumentListProps {
@@ -26,6 +27,7 @@ export default function SectionDocumentList({
   onUpdateSelectedPages,
 }: SectionDocumentListProps) {
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
+  const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
     (sum, section) => sum + section.documents.reduce((docSum, doc) => docSum + doc.pageCount, 0),
@@ -140,6 +142,13 @@ export default function SectionDocumentList({
                       </select>
                     )}
                     <button
+                      className="action-button edit-pdf-button"
+                      onClick={() => setEditingDocument({ sectionId: section.id, doc })}
+                      title="Edit PDF - Redact/Erase"
+                    >
+                      <Pen size={16} />
+                    </button>
+                    <button
                       className="action-button manage-pages-button"
                       onClick={() => setManagingDocument({ sectionId: section.id, doc })}
                       title="Manage Pages - Select/Remove pages"
@@ -190,6 +199,19 @@ export default function SectionDocumentList({
           onClose={() => setManagingDocument(null)}
           onSave={(selectedPages) => {
             onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, selectedPages)
+          }}
+        />
+      )}
+
+      {editingDocument && (
+        <PDFEditor
+          document={editingDocument.doc}
+          onClose={() => setEditingDocument(null)}
+          onSave={(rectangles) => {
+            // TODO: Burn rectangles into PDF and save
+            console.log('Rectangles to save:', rectangles)
+            alert(`Saved ${rectangles.length} redactions/erasures! (Burning into PDF coming next)`)
+            setEditingDocument(null)
           }}
         />
       )}

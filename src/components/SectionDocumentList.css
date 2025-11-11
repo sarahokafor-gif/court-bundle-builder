@@ -189,6 +189,16 @@
   white-space: nowrap;
 }
 
+.edit-pdf-button {
+  background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+  color: white;
+}
+
+.edit-pdf-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
+  transform: translateY(-2px);
+}
+
 .manage-pages-button {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   color: white;
