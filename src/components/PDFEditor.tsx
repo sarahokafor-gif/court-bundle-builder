@@ -30,6 +30,7 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   const [rectangles, setRectangles] = useState<Rectangle[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [hoveredRectIndex, setHoveredRectIndex] = useState<number | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -69,38 +70,92 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
       }).promise
 
       // Draw existing rectangles for this page
-      rectangles
-        .filter(rect => rect.page === currentPage)
-        .forEach(rect => {
-          context.fillStyle = rect.type === 'redact' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 1)'
-          context.fillRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
+      const pageRectangles = rectangles
+        .map((rect, index) => ({ rect, index }))
+        .filter(({ rect }) => rect.page === currentPage)
 
-          // Border for visibility
+      pageRectangles.forEach(({ rect, index }) => {
+        const isHovered = index === hoveredRectIndex
+
+        context.fillStyle = rect.type === 'redact' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 1)'
+        context.fillRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
+
+        // Border for visibility - brighter red if hovered
+        if (isHovered) {
+          context.strokeStyle = '#FF0000'
+          context.lineWidth = 4
+        } else {
           context.strokeStyle = rect.type === 'redact' ? '#000' : '#999'
           context.lineWidth = 2
-          context.strokeRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
-        })
+        }
+        context.strokeRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
+      })
     }
 
     renderPage()
-  }, [pdfDoc, currentPage, scale, rectangles])
+  }, [pdfDoc, currentPage, scale, rectangles, hoveredRectIndex])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return
     const rect = canvasRef.current.getBoundingClientRect()
+    const clickX = (e.clientX - rect.left) / scale
+    const clickY = (e.clientY - rect.top) / scale
+
+    // Check if user clicked on an existing rectangle to delete it
+    const clickedRectIndex = rectangles.findIndex(r => {
+      if (r.page !== currentPage) return false
+      return (
+        clickX >= r.x &&
+        clickX <= r.x + r.width &&
+        clickY >= r.y &&
+        clickY <= r.y + r.height
+      )
+    })
+
+    if (clickedRectIndex !== -1) {
+      // Delete the clicked rectangle
+      setRectangles(prev => prev.filter((_, index) => index !== clickedRectIndex))
+      return
+    }
+
+    // Start drawing a new rectangle
     setIsDrawing(true)
     setStartPos({
-      x: (e.clientX - rect.left) / scale,
-      y: (e.clientY - rect.top) / scale,
+      x: clickX,
+      y: clickY,
     })
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPos || !canvasRef.current || !pdfDoc) return
+    if (!canvasRef.current || !pdfDoc) return
 
     const rect = canvasRef.current.getBoundingClientRect()
     const currentX = (e.clientX - rect.left) / scale
     const currentY = (e.clientY - rect.top) / scale
+
+    // If not drawing, check for hover to highlight deletable rectangles
+    if (!isDrawing) {
+      const hoveredIndex = rectangles.findIndex(r => {
+        if (r.page !== currentPage) return false
+        return (
+          currentX >= r.x &&
+          currentX <= r.x + r.width &&
+          currentY >= r.y &&
+          currentY <= r.y + r.height
+        )
+      })
+
+      setHoveredRectIndex(hoveredIndex !== -1 ? hoveredIndex : null)
+
+      // Update cursor
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = hoveredIndex !== -1 ? 'pointer' : 'crosshair'
+      }
+      return
+    }
+
+    // Continue with drawing preview if we are drawing
+    if (!startPos) return
 
     // Re-render page to clear previous preview
     const renderPreview = async () => {
