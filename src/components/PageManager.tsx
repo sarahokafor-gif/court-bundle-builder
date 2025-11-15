@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
-import { X, Trash2, Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Trash2, Check, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
+import * as pdfjsLib from 'pdfjs-dist'
 import { Document } from '../types'
 import './PageManager.css'
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
 interface PageManagerProps {
   document: Document
@@ -10,41 +14,92 @@ interface PageManagerProps {
 }
 
 export default function PageManager({ document, onClose, onSave }: PageManagerProps) {
+  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [scale, setScale] = useState(1.5)
+  const [rotation, setRotation] = useState(0)
   const [selectedPages, setSelectedPages] = useState<number[]>(() => {
-    // If document has selectedPages, use that, otherwise all pages are selected
+    // If document has selectedPages, use that, otherwise all pages are selected (0-indexed)
     return document.selectedPages || Array.from({ length: document.pageCount }, (_, i) => i)
   })
-  const [selectAll, setSelectAll] = useState(true)
 
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Load PDF
   useEffect(() => {
-    setSelectAll(selectedPages.length === document.pageCount)
-  }, [selectedPages, document.pageCount])
-
-  const togglePage = (pageIndex: number) => {
-    setSelectedPages(prev => {
-      if (prev.includes(pageIndex)) {
-        return prev.filter(p => p !== pageIndex)
-      } else {
-        return [...prev, pageIndex].sort((a, b) => a - b)
+    const loadPdf = async () => {
+      try {
+        const arrayBuffer = await document.file.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        setPdfDoc(pdf)
+      } catch (error) {
+        console.error('Error loading PDF:', error)
+        alert('Failed to load PDF')
       }
-    })
+    }
+    loadPdf()
+  }, [document])
+
+  // Render current page
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current) return
+
+    const renderPage = async () => {
+      const page = await pdfDoc.getPage(currentPage)
+      const viewport = page.getViewport({ scale, rotation })
+      const canvas = canvasRef.current!
+      const context = canvas.getContext('2d')!
+
+      canvas.width = viewport.width
+      canvas.height = viewport.height
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise
+    }
+
+    renderPage()
+  }, [pdfDoc, currentPage, scale, rotation])
+
+  const isPageSelected = selectedPages.includes(currentPage - 1) // Convert to 0-indexed
+
+  const handleDeletePage = () => {
+    setSelectedPages(prev => prev.filter(p => p !== currentPage - 1))
   }
 
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedPages([])
-    } else {
-      setSelectedPages(Array.from({ length: document.pageCount }, (_, i) => i))
-    }
+  const handleKeepPage = () => {
+    setSelectedPages(prev => {
+      if (!prev.includes(currentPage - 1)) {
+        return [...prev, currentPage - 1].sort((a, b) => a - b)
+      }
+      return prev
+    })
   }
 
   const handleSave = () => {
     if (selectedPages.length === 0) {
-      alert('Please select at least one page.')
+      alert('Please keep at least one page.')
       return
     }
     onSave(selectedPages)
     onClose()
+  }
+
+  const goToNextPage = () => {
+    if (pdfDoc && currentPage < pdfDoc.numPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleRotate = () => {
+    setRotation((prev) => (prev + 90) % 360)
   }
 
   return (
@@ -52,56 +107,77 @@ export default function PageManager({ document, onClose, onSave }: PageManagerPr
       <div className="page-manager-modal" onClick={(e) => e.stopPropagation()}>
         <div className="page-manager-header">
           <div>
-            <h2>Manage Pages</h2>
+            <h2>Page Extraction Editor</h2>
             <p className="page-manager-subtitle">{document.name}</p>
+            <p className="page-manager-info">
+              {selectedPages.length} of {document.pageCount} pages will be included in bundle
+            </p>
           </div>
           <button className="close-button" onClick={onClose}>
             <X size={24} />
           </button>
         </div>
 
-        <div className="page-manager-controls">
-          <div className="page-selection-info">
-            <Check size={18} />
-            <span>{selectedPages.length} of {document.pageCount} pages selected</span>
+        <div className="page-viewer-toolbar">
+          <div className="toolbar-group">
+            <button className="toolbar-button" onClick={handleRotate} title="Rotate 90°">
+              <RotateCw size={20} />
+            </button>
+            <button className="toolbar-button" onClick={() => setScale(s => Math.min(s + 0.25, 3))} title="Zoom in">
+              <ZoomIn size={20} />
+            </button>
+            <span className="zoom-level">{Math.round(scale * 100)}%</span>
+            <button className="toolbar-button" onClick={() => setScale(s => Math.max(s - 0.25, 0.5))} title="Zoom out">
+              <ZoomOut size={20} />
+            </button>
           </div>
-          <button className="toggle-all-button" onClick={toggleSelectAll}>
-            {selectAll ? 'Deselect All' : 'Select All'}
-          </button>
+
+          <div className="page-navigation">
+            <button
+              className="nav-button"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+              title="Previous page"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <span className="page-counter">
+              Page {currentPage} of {pdfDoc?.numPages || 1}
+            </span>
+            <button
+              className="nav-button"
+              onClick={goToNextPage}
+              disabled={currentPage === (pdfDoc?.numPages || 1)}
+              title="Next page"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+
+          <div className="page-actions">
+            {isPageSelected ? (
+              <button className="delete-page-button" onClick={handleDeletePage}>
+                <Trash2 size={18} />
+                Delete This Page
+              </button>
+            ) : (
+              <button className="keep-page-button" onClick={handleKeepPage}>
+                <Check size={18} />
+                Keep This Page
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="page-grid">
-          {Array.from({ length: document.pageCount }, (_, i) => {
-            const isSelected = selectedPages.includes(i)
-            return (
-              <div
-                key={i}
-                className={`page-card ${isSelected ? 'selected' : 'deselected'}`}
-                onClick={() => togglePage(i)}
-              >
-                <div className="page-number-badge">
-                  Page {i + 1}
-                </div>
-                <div className="page-preview-placeholder">
-                  <div className="page-icon">📄</div>
-                  {!isSelected && (
-                    <div className="deselected-overlay">
-                      <Trash2 size={24} />
-                      <span>Excluded</span>
-                    </div>
-                  )}
-                </div>
-                <div className="page-selection-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => togglePage(i)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </div>
-            )
-          })}
+        <div className="page-viewer-content">
+          <div className="page-status-banner" style={{ backgroundColor: isPageSelected ? '#e8f5e9' : '#ffebee' }}>
+            {isPageSelected ? (
+              <span style={{ color: '#2e7d32' }}>✓ This page will be included in the bundle</span>
+            ) : (
+              <span style={{ color: '#c62828' }}>✗ This page will be excluded from the bundle</span>
+            )}
+          </div>
+          <canvas ref={canvasRef} className="page-canvas" />
         </div>
 
         <div className="page-manager-footer">
@@ -109,7 +185,7 @@ export default function PageManager({ document, onClose, onSave }: PageManagerPr
             Cancel
           </button>
           <button className="save-button" onClick={handleSave}>
-            Save Selection
+            Save Changes ({selectedPages.length} pages)
           </button>
         </div>
       </div>

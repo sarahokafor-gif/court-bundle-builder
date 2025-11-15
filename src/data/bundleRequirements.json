@@ -1,0 +1,286 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-15",
+  "bundle_types": {
+    "family_children": {
+      "name": "Family Court (Children Cases)",
+      "practice_direction": "PD 27A",
+      "source_url": "https://www.justice.gov.uk/courts/procedure-rules/family/practice_directions/pd_part_27a",
+      "last_reviewed": "2024-04-22",
+      "page_limit": 350,
+      "icon": "📂",
+      "sections": [
+        "Section A: Preliminary Documents",
+        "Section B: Applications and Orders",
+        "Section C: Statements and Affidavits",
+        "Section D: Care Plans",
+        "Section E: Experts' Reports and Other Reports",
+        "Section F: Other Documents"
+      ]
+    },
+    "financial_remedy": {
+      "name": "Financial Remedy Proceedings",
+      "practice_direction": "PD 27A + FRC Efficiency Statement 2022",
+      "source_url": "https://www.judiciary.uk/guidance-and-resources/notice-from-the-financial-remedies-court-4/",
+      "last_reviewed": "2025-01-11",
+      "page_limit": 350,
+      "icon": "💰",
+      "notes": "Page limit does not include position statements and composite documents",
+      "sections": [
+        "Section A: Preliminary Documents (ES1, Chronology, Position Statement)",
+        "Section B: Court Orders and Applications (Form A, Orders)",
+        "Section C: Financial Disclosure (Form E, Form H, Questionnaires)",
+        "Section D: Asset Schedule (Form ES2)",
+        "Section E: Property Documents (Valuations, Mortgage Reports)",
+        "Section F: Expert Reports (Pension, Business, Other)",
+        "Section G: Other Documents",
+        "Form A: Application for Financial Remedy",
+        "Form E: Financial Statement",
+        "Form ES1: Composite Case Summary",
+        "Form ES2: Composite Schedule of Assets & Income",
+        "Form H: Costs Estimate",
+        "Composite Chronology",
+        "Expert Reports - Business Valuation",
+        "Expert Reports - Pension Sharing",
+        "Expert Reports - Property Valuation",
+        "Mortgage Capacity Reports",
+        "Position Statement - FDA (First Directions Appointment)",
+        "Position Statement - FDR (Financial Dispute Resolution)",
+        "Position Statement - Final Hearing",
+        "Property Valuations and Particulars",
+        "Questionnaires and Responses",
+        "Authorities Bundle (Separate - Max 10)"
+      ]
+    },
+    "court_of_appeal": {
+      "name": "Court of Appeal (Civil)",
+      "practice_direction": "PD 52C",
+      "source_url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part52",
+      "last_reviewed": "2024-10-01",
+      "page_limit": null,
+      "icon": "⚖️",
+      "sections": [
+        "Core Bundle",
+        "Supplementary Bundle",
+        "Authorities Bundle",
+        "Appeal Notice and Grounds",
+        "Orders and Judgments",
+        "Skeleton Arguments"
+      ]
+    },
+    "civil_trial": {
+      "name": "Civil Court Trial Bundles",
+      "practice_direction": "PD 32",
+      "source_url": "https://www.justice.gov.uk/courts/procedure-rules/civil/rules/part32",
+      "last_reviewed": "2024-06-01",
+      "page_limit": null,
+      "icon": "📋",
+      "sections": [
+        "Preliminary Documents",
+        "Statements of Case",
+        "Court Orders",
+        "Witness Statements",
+        "Expert Reports",
+        "Correspondence"
+      ]
+    },
+    "court_of_protection": {
+      "name": "Court of Protection",
+      "practice_direction": "PD 14E",
+      "source_url": "https://www.justice.gov.uk/courts/procedure-rules/family/practice_directions/pd_part_14e",
+      "last_reviewed": "2024-03-15",
+      "page_limit": null,
+      "icon": "🏛️",
+      "sections": [
+        "Preliminary Documents",
+        "Case Management Documents",
+        "Time Estimate",
+        "Applications and Orders",
+        "Powers of Attorney",
+        "Authorisations",
+        "Statements and Affidavits",
+        "Care/Support Plans",
+        "Reports",
+        "Other Documents"
+      ]
+    },
+    "employment_tribunal": {
+      "name": "Employment Tribunal",
+      "practice_direction": "Presidential Practice Direction",
+      "source_url": "https://www.gov.uk/employment-tribunal/overview",
+      "last_reviewed": "2024-09-01",
+      "page_limit": null,
+      "icon": "👔",
+      "sections": [
+        "Section 1: Tribunal Documents (ACAS, ET1, ET3, Orders)",
+        "Section 2: Employment Documents (Contract, Policies)",
+        "Section 3: Correspondence (Emails, Letters)",
+        "Section 4: Meeting Records (Minutes, Notes)",
+        "Section 5: Witness Statements",
+        "Section 6: Expert Reports",
+        "Section 7: Schedule of Loss",
+        "Section 8: Other Documents"
+      ]
+    },
+    "immigration_asylum": {
+      "name": "Immigration & Asylum Tribunal",
+      "practice_direction": "Practice Directions 2014",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/first-tier-tribunal/immigration-and-asylum-chamber/",
+      "last_reviewed": "2024-11-01",
+      "page_limit": null,
+      "icon": "🛂",
+      "notes": "Expert reports max 20 pages, Country guidance material max 12 pages",
+      "sections": [
+        "Notice of Appeal",
+        "Home Office Decision",
+        "Appeal Skeleton Argument",
+        "Witness Statements",
+        "Expert Reports (Max 20 pages)",
+        "Country Guidance Material (Max 12 pages)",
+        "Identity Documents",
+        "Supporting Evidence"
+      ]
+    },
+    "mental_health_tribunal": {
+      "name": "Mental Health Tribunal",
+      "practice_direction": "Practice Direction 2013",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/first-tier-tribunal/mental-health/",
+      "last_reviewed": "2024-08-01",
+      "page_limit": null,
+      "icon": "🧠",
+      "sections": [
+        "Detention Papers (Section Papers)",
+        "Hospital Managers' Statement",
+        "Social Circumstances Report",
+        "Medical Reports (RMO)",
+        "Independent Medical Report",
+        "Application to Tribunal",
+        "Patient's Statement",
+        "Nearest Relative's Views",
+        "Care Plan",
+        "Risk Assessments"
+      ]
+    },
+    "social_security": {
+      "name": "Social Security Tribunal",
+      "practice_direction": "Practice Directions 2008",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/first-tier-tribunal/social-security-and-child-support/",
+      "last_reviewed": "2024-07-01",
+      "page_limit": null,
+      "icon": "💰",
+      "sections": [
+        "Appeal Form",
+        "Decision Notice Being Appealed",
+        "Mandatory Reconsideration Notice",
+        "DWP/HMRC Response",
+        "Medical Evidence",
+        "Financial Documents",
+        "Supporting Documents"
+      ]
+    },
+    "property_tribunal": {
+      "name": "Property Tribunal",
+      "practice_direction": "Practice Directions 2013",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/first-tier-tribunal/property-chamber/",
+      "last_reviewed": "2024-05-01",
+      "page_limit": null,
+      "icon": "🏠",
+      "sections": [
+        "Application Form",
+        "Decision/Notice Being Challenged",
+        "Lease Document",
+        "Title Deeds/Land Registry Documents",
+        "Expert Reports (Surveyors, Valuers)",
+        "Witness Statements",
+        "Photographs",
+        "Service Charge Accounts",
+        "Relevant Agreements"
+      ]
+    },
+    "planning_appeals": {
+      "name": "Planning Appeals (Planning Inspectorate)",
+      "practice_direction": "Procedural Guide 2024",
+      "source_url": "https://www.gov.uk/government/organisations/planning-inspectorate",
+      "last_reviewed": "2024-10-01",
+      "page_limit": null,
+      "icon": "🏗️",
+      "sections": [
+        "Appeal Form",
+        "Planning Application Documents",
+        "LPA Decision Notice",
+        "LPA's Reasons for Refusal",
+        "Plans and Drawings",
+        "Supporting Statements",
+        "Statement of Case (Hearings/Inquiries)",
+        "Proofs of Evidence (Inquiries)",
+        "Expert Witness Reports",
+        "Third Party Representations",
+        "Planning Policies",
+        "Technical Reports",
+        "Section 106 Agreements"
+      ]
+    },
+    "upper_tribunal": {
+      "name": "Upper Tribunal (Administrative Appeals)",
+      "practice_direction": "Practice Directions 2008",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/upper-tribunal-administrative-appeals-chamber/",
+      "last_reviewed": "2024-09-15",
+      "page_limit": null,
+      "icon": "📊",
+      "sections": [
+        "Application for Permission to Appeal",
+        "First-tier Tribunal Decision",
+        "First-tier Tribunal Reasons",
+        "Grounds of Appeal",
+        "Supporting Documents",
+        "Written Submissions/Skeleton Argument",
+        "Authorities Bundle (Separate)"
+      ]
+    },
+    "employment_appeal": {
+      "name": "Employment Appeal Tribunal",
+      "practice_direction": "Practice Direction 2018",
+      "source_url": "https://www.judiciary.uk/courts-and-tribunals/tribunals/employment-appeal-tribunal/",
+      "last_reviewed": "2024-12-01",
+      "page_limit": null,
+      "icon": "⚖️",
+      "sections": [
+        "Notice of Appeal",
+        "Employment Tribunal Judgment",
+        "Employment Tribunal Reasons",
+        "All ET Orders",
+        "Reconsideration Documents (if applicable)",
+        "Appellant's Skeleton Argument",
+        "Respondent's Skeleton Argument",
+        "Chronology",
+        "Relevant ET Bundle Documents"
+      ]
+    },
+    "general": {
+      "name": "General/Common Dividers",
+      "practice_direction": "General Use",
+      "source_url": null,
+      "last_reviewed": "2025-01-15",
+      "page_limit": null,
+      "icon": "📝",
+      "sections": [
+        "Chronology",
+        "Position Statements",
+        "Case Summary",
+        "Essential Reading List",
+        "Witness Statements",
+        "Expert Reports",
+        "Correspondence",
+        "Other Documents"
+      ]
+    }
+  },
+  "change_log": [
+    {
+      "date": "2025-01-15",
+      "bundle_type": "all",
+      "change": "Initial comprehensive bundle requirements implementation with 13 bundle type categories",
+      "version": "1.0.0"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Square, Eraser, Save, Trash2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Square, Eraser, Save, Trash2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize, Minimize, RotateCw } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { Document } from '../types'
 import './PDFEditor.css'
@@ -26,11 +26,13 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [scale, setScale] = useState(1.5)
+  const [rotation, setRotation] = useState(0) // 0, 90, 180, 270
   const [tool, setTool] = useState<'redact' | 'erase'>('erase')
   const [rectangles, setRectangles] = useState<Rectangle[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
   const [hoveredRectIndex, setHoveredRectIndex] = useState<number | null>(null)
+  const [pageViewport, setPageViewport] = useState<{ width: number; height: number } | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -42,6 +44,20 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
         const arrayBuffer = await document.file.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         setPdfDoc(pdf)
+
+        // Calculate optimal scale to fit window
+        if (containerRef.current) {
+          const page = await pdf.getPage(1)
+          const viewport = page.getViewport({ scale: 1, rotation: 0 })
+          const containerHeight = containerRef.current.clientHeight - 80 // Account for padding
+          const containerWidth = containerRef.current.clientWidth - 80
+
+          const scaleHeight = containerHeight / viewport.height
+          const scaleWidth = containerWidth / viewport.width
+          const optimalScale = Math.min(scaleHeight, scaleWidth, 3) // Max 3x zoom
+
+          setScale(Math.max(optimalScale, 0.5)) // Min 0.5x zoom
+        }
       } catch (error) {
         console.error('Error loading PDF:', error)
         alert('Failed to load PDF')
@@ -56,9 +72,13 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
 
     const renderPage = async () => {
       const page = await pdfDoc.getPage(currentPage)
-      const viewport = page.getViewport({ scale })
+      const viewport = page.getViewport({ scale, rotation })
       const canvas = canvasRef.current!
       const context = canvas.getContext('2d')!
+
+      // Store viewport dimensions at scale 1 for fit calculations
+      const baseViewport = page.getViewport({ scale: 1, rotation })
+      setPageViewport({ width: baseViewport.width, height: baseViewport.height })
 
       canvas.width = viewport.width
       canvas.height = viewport.height
@@ -80,20 +100,22 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
         context.fillStyle = rect.type === 'redact' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 1)'
         context.fillRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
 
-        // Border for visibility - brighter red if hovered
+        // Border for visibility - only show for hovered or redaction
         if (isHovered) {
           context.strokeStyle = '#FF0000'
           context.lineWidth = 4
-        } else {
-          context.strokeStyle = rect.type === 'redact' ? '#000' : '#999'
+          context.strokeRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
+        } else if (rect.type === 'redact') {
+          context.strokeStyle = '#000'
           context.lineWidth = 2
+          context.strokeRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
         }
-        context.strokeRect(rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale)
+        // No border for erase rectangles when not hovered - they blend with the page
       })
     }
 
     renderPage()
-  }, [pdfDoc, currentPage, scale, rectangles, hoveredRectIndex])
+  }, [pdfDoc, currentPage, scale, rotation, rectangles, hoveredRectIndex])
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return
@@ -160,7 +182,7 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
     // Re-render page to clear previous preview
     const renderPreview = async () => {
       const page = await pdfDoc.getPage(currentPage)
-      const viewport = page.getViewport({ scale })
+      const viewport = page.getViewport({ scale, rotation })
       const canvas = canvasRef.current!
       const context = canvas.getContext('2d')!
 
@@ -179,9 +201,12 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
         .forEach(r => {
           context.fillStyle = r.type === 'redact' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 1)'
           context.fillRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale)
-          context.strokeStyle = r.type === 'redact' ? '#000' : '#999'
-          context.lineWidth = 2
-          context.strokeRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale)
+          // Only draw border for redaction rectangles, not for erase
+          if (r.type === 'redact') {
+            context.strokeStyle = '#000'
+            context.lineWidth = 2
+            context.strokeRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale)
+          }
         })
 
       // Draw preview rectangle
@@ -282,6 +307,30 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
 
   const rectanglesOnPage = rectangles.filter(r => r.page === currentPage).length
 
+  // Rotate page 90 degrees clockwise
+  const handleRotate = () => {
+    setRotation((prev) => (prev + 90) % 360)
+  }
+
+  // Fit to width: scale so page width matches container width
+  const handleFitToWidth = () => {
+    if (!pageViewport || !containerRef.current) return
+    const containerWidth = containerRef.current.clientWidth - 80 // Account for padding
+    const newScale = containerWidth / pageViewport.width
+    setScale(Math.min(Math.max(newScale, 0.5), 3)) // Clamp between 0.5 and 3
+  }
+
+  // Fit to page: scale to fit entire page in view (whatever is smaller)
+  const handleFitToPage = () => {
+    if (!pageViewport || !containerRef.current) return
+    const containerWidth = containerRef.current.clientWidth - 80
+    const containerHeight = containerRef.current.clientHeight - 80
+    const scaleWidth = containerWidth / pageViewport.width
+    const scaleHeight = containerHeight / pageViewport.height
+    const newScale = Math.min(scaleWidth, scaleHeight)
+    setScale(Math.min(Math.max(newScale, 0.5), 3))
+  }
+
   return (
     <div className="pdf-editor-overlay" onClick={onClose}>
       <div className="pdf-editor-modal" onClick={(e) => e.stopPropagation()}>
@@ -316,12 +365,21 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
           </div>
 
           <div className="tool-group">
-            <button className="tool-button" onClick={() => setScale(s => Math.min(s + 0.25, 3))}>
+            <button className="tool-button" onClick={handleRotate} title="Rotate page 90° clockwise">
+              <RotateCw size={20} />
+            </button>
+            <button className="tool-button" onClick={() => setScale(s => Math.min(s + 0.25, 3))} title="Zoom in">
               <ZoomIn size={20} />
             </button>
             <span className="zoom-level">{Math.round(scale * 100)}%</span>
-            <button className="tool-button" onClick={() => setScale(s => Math.max(s - 0.25, 0.5))}>
+            <button className="tool-button" onClick={() => setScale(s => Math.max(s - 0.25, 0.5))} title="Zoom out">
               <ZoomOut size={20} />
+            </button>
+            <button className="tool-button" onClick={handleFitToWidth} title="Fit to width">
+              <Maximize size={18} style={{ transform: 'rotate(90deg)' }} />
+            </button>
+            <button className="tool-button" onClick={handleFitToPage} title="Fit whole page">
+              <Minimize size={18} />
             </button>
           </div>
 

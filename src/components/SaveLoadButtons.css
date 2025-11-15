@@ -1,42 +1,40 @@
 .save-load-buttons {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
   justify-content: center;
 }
 
 .action-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.2s;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
   cursor: pointer;
 }
 
 .save-button {
-  background: #2a5298;
+  background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
   color: white;
 }
 
 .save-button:hover:not(:disabled) {
-  background: #1e3c72;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(42, 82, 152, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .load-button {
-  background: #4caf50;
+  background: linear-gradient(135deg, var(--color-success) 0%, #1e8449 100%);
   color: white;
 }
 
 .load-button:hover:not(:disabled) {
-  background: #45a049;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .action-button:active:not(:disabled) {

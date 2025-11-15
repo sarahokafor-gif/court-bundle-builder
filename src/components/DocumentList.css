@@ -48,7 +48,7 @@
 
 .document-item:hover {
   background-color: #f5f5f5;
-  border-color: #2a5298;
+  border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -60,7 +60,7 @@
 }
 
 .document-icon {
-  color: #2a5298;
+  color: var(--color-primary);
 }
 
 .document-details {
@@ -97,7 +97,7 @@
 
 .action-button:hover:not(:disabled) {
   background-color: #f0f4f8;
-  border-color: #2a5298;
+  border-color: var(--color-primary);
 }
 
 .action-button:disabled {

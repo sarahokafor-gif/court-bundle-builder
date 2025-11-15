@@ -25,3 +25,14 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Deployment archives
+*.zip
+
+# NPM registry config
+.npmrc

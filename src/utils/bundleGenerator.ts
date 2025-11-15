@@ -1,7 +1,6 @@
 import { PDFDocument, rgb, StandardFonts, PDFName, PDFArray, PDFString, degrees } from 'pdf-lib'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
 import { loadPdfFromFile } from './pdfUtils'
-import { calculateVolumes, splitPdfIntoVolumes, createVolumeZip, downloadVolumesZip, formatVolumeInfo } from './volumeSplitter'
 
 interface IndexEntry {
   title: string
@@ -45,7 +44,7 @@ async function generateIndexPage(
     y: yPosition,
     size: 18,
     font: fontBold,
-    color: rgb(0.12, 0.24, 0.45),
+    color: rgb(0, 0, 0),
   })
 
   yPosition -= 40
@@ -63,29 +62,21 @@ async function generateIndexPage(
       x: 50,
       y: yPosition,
       size: 11,
-      font: font,
-      color: rgb(0.2, 0.2, 0.2),
+      font: fontBold,
+      color: rgb(0, 0, 0),
     })
     yPosition -= 20
   }
 
   yPosition -= 30
 
-  // Table header
-  page.drawRectangle({
-    x: 50,
-    y: yPosition - 5,
-    width: width - 100,
-    height: 25,
-    color: rgb(0.9, 0.93, 0.96),
-  })
-
+  // Table header (no background - professional black text only)
   page.drawText('Document', {
     x: 60,
     y: yPosition + 5,
     size: 11,
     font: fontBold,
-    color: rgb(0.12, 0.24, 0.45),
+    color: rgb(0, 0, 0),
   })
 
   page.drawText('Page(s)', {
@@ -93,7 +84,7 @@ async function generateIndexPage(
     y: yPosition + 5,
     size: 11,
     font: fontBold,
-    color: rgb(0.12, 0.24, 0.45),
+    color: rgb(0, 0, 0),
   })
 
   yPosition -= 30
@@ -107,7 +98,7 @@ async function generateIndexPage(
       yPosition = page.getSize().height - 80
     }
 
-    const entryFont = entry.isSection ? fontBold : font
+    const entryFont = fontBold // All entries use bold font for professional appearance
     const entrySize = entry.isSection ? 11 : 10
     const xOffset = entry.indent ? 80 : 60
 
@@ -148,7 +139,7 @@ async function generateIndexPage(
       y: yPosition,
       size: entrySize,
       font: entryFont,
-      color: entry.isSection ? rgb(0.12, 0.24, 0.45) : rgb(0.2, 0.2, 0.2),
+      color: rgb(0, 0, 0),
     })
 
     // Draw date if present (between title and page numbers)
@@ -157,8 +148,8 @@ async function generateIndexPage(
         x: dateX,
         y: yPosition,
         size: entrySize,
-        font: font,
-        color: rgb(0.4, 0.4, 0.4),
+        font: fontBold,
+        color: rgb(0, 0, 0),
       })
     }
 
@@ -171,7 +162,7 @@ async function generateIndexPage(
         y: yPosition,
         size: entrySize,
         font: entryFont,
-        color: rgb(0.2, 0.2, 0.2),
+        color: rgb(0, 0, 0),
       })
     }
 
@@ -218,6 +209,109 @@ async function generateIndexPage(
   })
 
   return indexPageCount
+}
+
+/**
+ * Adds clickable links to existing index pages after all pages have been added to PDF
+ */
+async function addLinksToIndex(
+  pdfDoc: PDFDocument,
+  indexEntries: IndexEntry[],
+  indexPageCount: number,
+  metadata: BundleMetadata
+): Promise<void> {
+  // Calculate the starting Y position to match where entries actually appear
+  // This must match the exact logic in generateIndexPage
+  const pageHeight = 842 // A4 height
+  let yPosition = pageHeight - 80 // Initial position
+
+  // Account for title
+  yPosition -= 40
+
+  // Calculate actual case info lines (matching generateIndexPage logic)
+  const caseInfo = [
+    `Case: ${metadata.caseName}`,
+    `Case Number: ${metadata.caseNumber}`,
+    metadata.court ? `Court: ${metadata.court}` : null,
+    `Date: ${new Date(metadata.date).toLocaleDateString()}`,
+  ].filter(Boolean)
+
+  // Account for case info lines
+  yPosition -= caseInfo.length * 20
+
+  // Account for spacing before table header
+  yPosition -= 30
+
+  // Account for table header
+  yPosition -= 30
+
+  // Now yPosition is at the first entry position
+  const yStart = yPosition
+  const lineHeight = 25
+  const sectionLineHeight = 30
+
+  let currentIndexPage = 0
+  yPosition = yStart
+
+  for (const entry of indexEntries) {
+    // Check if we need a new page
+    if (yPosition < 80) {
+      currentIndexPage++
+      yPosition = pageHeight - 80
+    }
+
+    if (currentIndexPage >= indexPageCount) break
+
+    const page = pdfDoc.getPage(currentIndexPage)
+    const { width } = page.getSize()
+    const entrySize = entry.isSection ? 11 : 10
+    const xOffset = entry.indent ? 80 : 60
+    const textHeight = entrySize
+
+    // Only add links for entries that have pages (not section headers without documents)
+    if (entry.startPage && entry.startPageIndex < pdfDoc.getPageCount()) {
+      const linkWidth = width - xOffset - 50
+      const linkHeight = textHeight + 4
+
+      // Get the target page
+      const targetPage = pdfDoc.getPage(entry.startPageIndex)
+
+      // Debug logging
+      console.log(`Creating link: "${entry.title}" -> page index ${entry.startPageIndex}, total pages: ${pdfDoc.getPageCount()}, yPos: ${yPosition}`)
+
+      // Try simpler approach - use pdf-lib's link annotation method
+      try {
+        // Create destination array (matching bookmarks exactly)
+        const dest = pdfDoc.context.obj([targetPage.ref, PDFName.of('Fit')])
+
+        // Create a link annotation using pdf-lib's annotation API
+        const linkAnnotDict = pdfDoc.context.obj({
+          Type: PDFName.of('Annot'),
+          Subtype: PDFName.of('Link'),
+          Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
+          Border: [0, 0, 0],
+          Dest: dest,
+          H: PDFName.of('I'), // Highlighting mode: Invert
+        })
+
+        const linkAnnotRef = pdfDoc.context.register(linkAnnotDict)
+
+        // Get or create Annots array on the page
+        const annots = page.node.get(PDFName.of('Annots'))
+        if (annots instanceof PDFArray) {
+          annots.push(linkAnnotRef)
+        } else {
+          page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotRef]))
+        }
+
+        console.log(`✓ Link created for "${entry.title}"`)
+      } catch (err) {
+        console.error(`Failed to create link for "${entry.title}":`, err)
+      }
+    }
+
+    yPosition -= entry.isSection ? sectionLineHeight : lineHeight
+  }
 }
 
 /**
@@ -490,12 +584,15 @@ export async function generateBundlePreview(
     // PHASE 4: Build the final PDF with index first, then documents
     const finalPdf = await PDFDocument.create()
 
-    // Generate index pages with correct page references and links
-    await generateIndexPage(finalPdf, metadata, indexEntries, true)
+    // Generate index pages (links disabled to avoid page access errors)
+    await generateIndexPage(finalPdf, metadata, indexEntries, false)
 
     // Copy all document pages from temp PDF
     const documentPages = await finalPdf.copyPages(tempPdf, tempPdf.getPageIndices())
     documentPages.forEach(page => finalPdf.addPage(page))
+
+    // Now that all pages exist, add clickable links to the index
+    await addLinksToIndex(finalPdf, indexEntries, indexPageCount, metadata)
 
     // Build complete page numbers array
     const allPageNumbers: string[] = []
@@ -731,12 +828,15 @@ export async function generateBundle(
     // PHASE 4: Build the final PDF with index first, then documents
     const finalPdf = await PDFDocument.create()
 
-    // Generate index pages with correct page references and links
-    await generateIndexPage(finalPdf, metadata, indexEntries, true)
+    // Generate index pages (links disabled to avoid page access errors)
+    await generateIndexPage(finalPdf, metadata, indexEntries, false)
 
     // Copy all document pages from temp PDF
     const documentPages = await finalPdf.copyPages(tempPdf, tempPdf.getPageIndices())
     documentPages.forEach(page => finalPdf.addPage(page))
+
+    // Now that all pages exist, add clickable links to the index
+    await addLinksToIndex(finalPdf, indexEntries, indexPageCount, metadata)
 
     // Build complete page numbers array (empty for index, then document page numbers)
     const allPageNumbers: string[] = []
@@ -761,46 +861,20 @@ export async function generateBundle(
     ]
     addBookmarks(finalPdf, allBookmarks)
 
-    // Check if bundle needs to be split into volumes (> 350 pages)
-    const totalPages = finalPdf.getPageCount()
-    const volumes = calculateVolumes(totalPages)
+    // Always generate as single PDF (no automatic volume splitting)
+    // Users can manually split if needed for court requirements
+    const pdfBytes = await finalPdf.save()
+    const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
 
-    if (volumes.length > 1) {
-      // Bundle exceeds 350 pages - split into volumes
-      console.log(`Bundle has ${totalPages} pages - splitting into ${volumes.length} volumes`)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
 
-      // Alert user about volume splitting
-      alert(`Your bundle has ${totalPages} pages and will be split into ${volumes.length} volumes (max 350 pages each) in accordance with Practice Direction requirements.\n\n${formatVolumeInfo(volumes)}\n\nDownloading as ZIP file...`)
-
-      // Split the PDF into volumes
-      const volumePdfs = await splitPdfIntoVolumes(finalPdf, volumes)
-
-      // Create ZIP file containing all volumes
-      const zipBlob = await createVolumeZip(volumePdfs, {
-        caseNumber: metadata.caseNumber,
-        caseName: metadata.caseName
-      })
-
-      // Download the ZIP
-      downloadVolumesZip(zipBlob, {
-        caseNumber: metadata.caseNumber,
-        caseName: metadata.caseName
-      })
-    } else {
-      // Single volume - download as single PDF
-      const pdfBytes = await finalPdf.save()
-      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      URL.revokeObjectURL(url)
-    }
+    URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Error generating bundle:', error)
     throw error

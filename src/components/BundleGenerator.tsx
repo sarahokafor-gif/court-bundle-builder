@@ -121,9 +121,10 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
 
       {/* Generate Index Only Button (Always Available) */}
       <button
-        className="index-only-button"
+        className="btn btn-info btn-block"
         onClick={handleGenerateIndexOnly}
         disabled={isGeneratingIndex}
+        aria-label="Generate index only as a free PDF"
       >
         <List size={20} />
         {isGeneratingIndex ? 'Generating Index...' : 'Generate Index Only (FREE)'}
@@ -137,9 +138,10 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
       {!previewUrl ? (
         <>
           <button
-            className="generate-button"
+            className="btn btn-primary btn-lg btn-block"
             onClick={handleGeneratePreview}
             disabled={isGenerating}
+            aria-label="Generate preview bundle with watermark"
           >
             <Eye size={20} />
             {isGenerating ? 'Generating Preview...' : 'Generate Preview (FREE)'}
@@ -156,7 +158,7 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
           <div className="preview-container">
             <div className="preview-header">
               <h3>Bundle Preview (Watermarked)</h3>
-              <button className="close-preview-button" onClick={handleClosePreview}>
+              <button className="btn btn-secondary btn-sm" onClick={handleClosePreview} aria-label="Close preview">
                 ✕ Close
               </button>
             </div>
@@ -176,9 +178,10 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
           {/* Payment/Download Button */}
           {needsPayment ? (
             <button
-              className="payment-button"
+              className="btn btn-warning btn-lg btn-block"
               onClick={handlePayAndDownload}
               disabled={isProcessingPayment}
+              aria-label={`Pay ${formatPrice(pricingTier.price)} and download clean bundle`}
             >
               <CreditCard size={20} />
               {isProcessingPayment
@@ -187,7 +190,7 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
             </button>
           ) : (
             <button
-              className="generate-button"
+              className="btn btn-success btn-lg btn-block"
               onClick={async () => {
                 try {
                   await generateBundle(metadata, sections, pageNumberSettings)
@@ -195,6 +198,7 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
                   alert('An error occurred while generating the bundle.')
                 }
               }}
+              aria-label="Download clean bundle for free"
             >
               <Download size={20} />
               Download Clean Version (FREE)

@@ -39,7 +39,7 @@
 
 .preview-title h3 {
   margin: 0;
-  color: #1e3c72;
+  color: var(--color-primary-dark);
   font-size: 1.25rem;
 }
 

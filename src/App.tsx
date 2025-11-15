@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Section, Document, BundleMetadata, PageNumberSettings, BundleType } from './types'
+import { useState, useEffect, useRef } from 'react'
+import { Section, Document, BundleMetadata, PageNumberSettings } from './types'
 import MetadataForm from './components/MetadataForm'
 import DocumentUploader from './components/DocumentUploader'
 import SectionManager from './components/SectionManager'
@@ -8,9 +8,17 @@ import BundleGenerator from './components/BundleGenerator'
 import DocumentPreview from './components/DocumentPreview'
 import PageNumberSettingsComponent from './components/PageNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
-import BundleTypeSelector from './components/BundleTypeSelector'
+import BundleRequirementsInfo from './components/BundleRequirementsInfo'
 import PricingDisplay from './components/PricingDisplay'
+import AutoSaveRecovery from './components/AutoSaveRecovery'
 import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
+import {
+  autoSaveToLocalStorage,
+  getAutoSaveData,
+  clearAutoSave,
+  hasAutoSave,
+  AUTO_SAVE_INTERVAL,
+} from './utils/autoSave'
 import './App.css'
 
 function App() {
@@ -37,6 +45,9 @@ function App() {
     bold: false,
   })
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
+  const autoSaveIntervalRef = useRef<number | null>(null)
+  const isInitialMount = useRef(true)
 
   const handleAddDocuments = (newDocs: Document[]) => {
     // Add to the first section
@@ -209,8 +220,67 @@ function App() {
     )
   }
 
-  const handleSave = async () => {
-    await saveBundle(metadata, sections, pageNumberSettings)
+  // Check for auto-save on mount
+  useEffect(() => {
+    if (hasAutoSave()) {
+      setShowRecoveryModal(true)
+    }
+  }, [])
+
+  // Auto-save interval (every 30 seconds)
+  useEffect(() => {
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current)
+    }
+
+    autoSaveIntervalRef.current = window.setInterval(() => {
+      autoSaveToLocalStorage(metadata, sections, pageNumberSettings)
+    }, AUTO_SAVE_INTERVAL)
+
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current)
+      }
+    }
+  }, [metadata, sections, pageNumberSettings])
+
+  // Auto-save on significant state changes (debounced)
+  useEffect(() => {
+    // Skip auto-save on initial mount
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Debounce: wait 2 seconds after last change before auto-saving
+    const timeoutId = setTimeout(() => {
+      autoSaveToLocalStorage(metadata, sections, pageNumberSettings)
+    }, 2000)
+
+    return () => clearTimeout(timeoutId)
+  }, [metadata, sections, pageNumberSettings])
+
+  const handleRestoreAutoSave = () => {
+    const autoSaveData = getAutoSaveData()
+    if (autoSaveData) {
+      setMetadata(autoSaveData.metadata)
+      setSections(autoSaveData.sections)
+      setPageNumberSettings(autoSaveData.pageNumberSettings)
+      setShowRecoveryModal(false)
+      console.log('Auto-save restored successfully')
+    }
+  }
+
+  const handleDismissAutoSave = () => {
+    clearAutoSave()
+    setShowRecoveryModal(false)
+    console.log('Auto-save dismissed')
+  }
+
+  const handleSave = async (filename?: string) => {
+    await saveBundle(metadata, sections, pageNumberSettings, filename)
+    // Clear auto-save after successful manual save
+    clearAutoSave()
   }
 
   const handleLoad = async (file: File) => {
@@ -220,46 +290,109 @@ function App() {
     setPageNumberSettings(savedBundle.pageNumberSettings)
   }
 
-  const handleBundleTypeChange = (bundleType: BundleType) => {
-    setMetadata(prev => ({ ...prev, bundleType }))
-  }
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
 
+  // Generate suggested filename from case info
+  const suggestedFilename = (() => {
+    const parts = []
+    if (metadata.caseNumber) parts.push(metadata.caseNumber)
+    if (metadata.caseName) parts.push(metadata.caseName.replace(/\s+/g, '_'))
+    return parts.length > 0 ? parts.join('_') : 'my_bundle_save'
+  })()
+
+  const autoSaveData = getAutoSaveData()
+
   return (
     <div className="app">
-      <header className="app-header">
+      {showRecoveryModal && autoSaveData && (
+        <AutoSaveRecovery
+          autoSaveData={autoSaveData}
+          onRestore={handleRestoreAutoSave}
+          onDismiss={handleDismissAutoSave}
+        />
+      )}
+
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+      <header className="app-header" role="banner">
         <h1>Court Bundle Builder</h1>
-        <p>Create professional court bundles with sections, dividers, and automatic indexing</p>
+        <p>Create professional, court-ready bundles in 5 simple steps</p>
+
+        <div className="workflow-progress">
+          <div className={`workflow-step ${metadata.caseName || metadata.caseNumber ? 'completed' : 'active'}`}>
+            <span className="step-number">1</span>
+            <span>Case Info</span>
+          </div>
+          <div className={`workflow-step ${metadata.caseName || metadata.caseNumber ? 'active' : ''}`}>
+            <span className="step-number">2</span>
+            <span>Page Numbers</span>
+          </div>
+          <div className={`workflow-step ${sections.length > 1 || sections[0].documents.length > 0 ? 'active' : ''}`}>
+            <span className="step-number">3</span>
+            <span>Sections</span>
+          </div>
+          <div className={`workflow-step ${totalDocs > 0 ? 'completed' : sections.length > 1 || sections[0].documents.length > 0 ? 'active' : ''}`}>
+            <span className="step-number">4</span>
+            <span>Documents</span>
+          </div>
+          <div className={`workflow-step ${totalDocs > 0 ? 'active' : ''}`}>
+            <span className="step-number">5</span>
+            <span>Generate</span>
+          </div>
+        </div>
       </header>
 
-      <main className="app-main">
-        <section className="section">
+      <main id="main-content" className="app-main" role="main" aria-label="Court Bundle Builder Workflow">
+        <section className="section" aria-labelledby="pricing-heading">
           <PricingDisplay />
         </section>
 
-        <section className="section">
+        <section className="section" aria-labelledby="bundle-info-heading">
           <div className="section-header-with-actions">
-            <h2>Bundle Information</h2>
-            <SaveLoadButtons onSave={handleSave} onLoad={handleLoad} />
+            <h2 id="bundle-info-heading">📋 Step 1: Bundle Information</h2>
+            <SaveLoadButtons
+              onSave={handleSave}
+              onLoad={handleLoad}
+              suggestedFilename={suggestedFilename}
+            />
           </div>
+          <div className="section-help">
+            <p>
+              <strong>Start here:</strong> Enter your case details below. This information will appear on the front page and index of your bundle.
+              You can save your work at any time using the <strong>Save Progress</strong> button above.
+            </p>
+          </div>
+
+          <BundleRequirementsInfo />
+
           <MetadataForm metadata={metadata} onChange={setMetadata} />
-          <BundleTypeSelector
-            selectedType={metadata.bundleType}
-            onTypeChange={handleBundleTypeChange}
-          />
         </section>
 
-        <section className="section">
-          <h2>Page Number Settings</h2>
+        <section className="section" aria-labelledby="page-settings-heading">
+          <h2 id="page-settings-heading">🔢 Step 2: Page Number Settings</h2>
+          <div className="section-help">
+            <p>
+              <strong>Configure page numbering:</strong> Choose where page numbers appear on each page (e.g., bottom center is standard for court bundles).
+              You can also adjust the font size and make numbers bold if needed.
+            </p>
+          </div>
           <PageNumberSettingsComponent
             settings={pageNumberSettings}
             onChange={setPageNumberSettings}
           />
         </section>
 
-        <section className="section">
-          <h2>Sections</h2>
+        <section className="section" aria-labelledby="sections-heading">
+          <h2 id="sections-heading">📑 Step 3: Organize Your Sections</h2>
+          <div className="section-help">
+            <p>
+              <strong>Create sections:</strong> Organize your documents into logical sections (e.g., "Witness Statements", "Evidence", "Correspondence").
+              Each section can have its own page numbering prefix (A, B, C, etc.) and optional divider pages.
+              The default "Main Documents" section is provided to get you started.
+            </p>
+          </div>
           <SectionManager
             sections={sections}
             onAddSection={handleAddSection}
@@ -270,8 +403,20 @@ function App() {
           />
         </section>
 
-        <section className="section">
-          <h2>Documents</h2>
+        <section className="section" aria-labelledby="documents-heading">
+          <h2 id="documents-heading">📄 Step 4: Upload and Manage Documents</h2>
+          <div className="section-help">
+            <p>
+              <strong>Add your PDF documents:</strong> Click the upload button below to add PDFs to your bundle. After uploading, you can:
+            </p>
+            <ul style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: 'var(--color-primary)' }}>
+              <li><strong>Reorder documents</strong> using the up/down arrow buttons</li>
+              <li><strong>Move documents</strong> between sections using the dropdown menu</li>
+              <li><strong>Edit PDFs</strong> to add annotations or redact information</li>
+              <li><strong>Remove pages</strong> you don't need from any document</li>
+              <li><strong>Add custom titles</strong> and dates for the index</li>
+            </ul>
+          </div>
           <DocumentUploader onDocumentsAdded={handleAddDocuments} />
           <SectionDocumentList
             sections={sections}
@@ -287,8 +432,23 @@ function App() {
         </section>
 
         {totalDocs > 0 && (
-          <section className="section">
-            <h2>Generate Bundle</h2>
+          <section className="section" aria-labelledby="generate-heading">
+            <h2 id="generate-heading">✅ Step 5: Generate Your Bundle</h2>
+            <div className="section-help">
+              <p>
+                <strong>You're ready to generate!</strong> Your bundle will include:
+              </p>
+              <ul style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: 'var(--color-primary)' }}>
+                <li>A <strong>professional front page</strong> with your case information</li>
+                <li>A <strong>clickable index</strong> linking to each document</li>
+                <li><strong>Section dividers</strong> (if you've enabled them)</li>
+                <li><strong>Sequential page numbering</strong> throughout the bundle</li>
+                <li><strong>Bookmarks</strong> for easy navigation in PDF readers</li>
+              </ul>
+              <p style={{ marginTop: 'var(--spacing-md)' }}>
+                Documents under 20 pages total are <strong>free</strong>. Larger bundles require a small fee.
+              </p>
+            </div>
             <BundleGenerator
               metadata={metadata}
               sections={sections}

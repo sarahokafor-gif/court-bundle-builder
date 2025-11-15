@@ -1,7 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Upload } from 'lucide-react'
 import { Document } from '../types'
 import { getPdfPageCount } from '../utils/pdfUtils'
+import { generatePDFThumbnail } from '../utils/pdfThumbnail'
 import './DocumentUploader.css'
 
 interface DocumentUploaderProps {
@@ -10,11 +11,13 @@ interface DocumentUploaderProps {
 
 export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
 
+    setIsProcessing(true)
     const newDocuments: Document[] = []
 
     for (let i = 0; i < files.length; i++) {
@@ -26,13 +29,19 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
       }
 
       try {
-        const pageCount = await getPdfPageCount(file)
+        // Get page count and generate thumbnail in parallel
+        const [pageCount, thumbnail] = await Promise.all([
+          getPdfPageCount(file),
+          generatePDFThumbnail(file),
+        ])
+
         newDocuments.push({
           id: `${Date.now()}-${i}`,
           file,
           name: file.name,
           pageCount,
           order: 0, // Will be set by parent
+          thumbnail,
         })
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error)
@@ -43,6 +52,8 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
     if (newDocuments.length > 0) {
       onDocumentsAdded(newDocuments)
     }
+
+    setIsProcessing(false)
 
     // Reset input
     if (fileInputRef.current) {
@@ -60,12 +71,22 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
         onChange={handleFileChange}
         style={{ display: 'none' }}
         id="file-upload"
+        aria-label="Upload PDF documents"
+        disabled={isProcessing}
       />
-      <label htmlFor="file-upload" className="upload-button">
+      <label
+        htmlFor="file-upload"
+        className={`btn btn-primary btn-lg ${isProcessing ? 'disabled' : ''}`}
+        style={{ cursor: isProcessing ? 'wait' : 'pointer', pointerEvents: isProcessing ? 'none' : 'auto' }}
+      >
         <Upload size={20} />
-        Upload PDF Documents
+        {isProcessing ? 'Processing PDFs...' : 'Upload PDF Documents'}
       </label>
-      <p className="upload-hint">Select one or more PDF files to add to your bundle</p>
+      <p className="upload-hint">
+        {isProcessing
+          ? 'Generating thumbnails, please wait...'
+          : 'Select one or more PDF files to add to your bundle'}
+      </p>
     </div>
   )
 }

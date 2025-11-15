@@ -94,7 +94,8 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
 export async function saveBundle(
   metadata: BundleMetadata,
   sections: Section[],
-  pageNumberSettings: PageNumberSettings
+  pageNumberSettings: PageNumberSettings,
+  customFilename?: string
 ): Promise<void> {
   const serializedSections = await serializeSections(sections)
 
@@ -109,9 +110,18 @@ export async function saveBundle(
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
 
+  // Use custom filename if provided, otherwise auto-generate
+  let filename = customFilename || `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}_save`
+
+  // Remove .json extension if user added it (we'll add it ourselves)
+  filename = filename.replace(/\.json$/i, '')
+
+  // Add .json extension
+  filename = `${filename}.json`
+
   const link = document.createElement('a')
   link.href = url
-  link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}_save.json`
+  link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

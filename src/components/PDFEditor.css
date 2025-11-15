@@ -95,11 +95,11 @@
 }
 
 .tool-button.danger {
-  background: #d32f2f;
+  background: var(--color-error);
 }
 
 .tool-button.danger:hover:not(:disabled) {
-  background: #f44336;
+  background: var(--color-error);
 }
 
 .zoom-level {
@@ -115,9 +115,9 @@
   overflow: auto;
   background: #0d0d0d;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1rem;
+  padding: 2rem;
   min-height: 0;
 }
 
@@ -125,6 +125,8 @@
   cursor: crosshair;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   background: white;
+  display: block;
+  margin: 0 auto;
 }
 
 .pdf-editor-footer {
@@ -198,7 +200,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, #388e3c 100%);
   border: none;
   color: white;
   border-radius: 6px;

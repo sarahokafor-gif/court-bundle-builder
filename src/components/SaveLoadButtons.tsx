@@ -3,19 +3,36 @@ import { Save, FolderOpen } from 'lucide-react'
 import './SaveLoadButtons.css'
 
 interface SaveLoadButtonsProps {
-  onSave: () => Promise<void>
+  onSave: (filename?: string) => Promise<void>
   onLoad: (file: File) => Promise<void>
+  suggestedFilename?: string
 }
 
-export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps) {
+export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: SaveLoadButtonsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSave = async () => {
+    // Prompt user for filename
+    const defaultName = suggestedFilename || 'my_bundle_save'
+    const userFilename = prompt(
+      'Enter a name for your saved bundle:\n(The .json extension will be added automatically)',
+      defaultName
+    )
+
+    // User cancelled the prompt
+    if (userFilename === null) return
+
+    // User entered a blank name
+    if (userFilename.trim() === '') {
+      alert('Please enter a valid filename')
+      return
+    }
+
     setIsSaving(true)
     try {
-      await onSave()
+      await onSave(userFilename.trim())
     } catch (error) {
       console.error('Error saving:', error)
       alert('Failed to save bundle. Please try again.')
@@ -54,13 +71,14 @@ export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps
   return (
     <div className="save-load-buttons">
       <button
-        className="action-button save-button"
+        className="btn btn-primary"
         onClick={handleSave}
         disabled={isSaving}
         title="Save your bundle progress as a .json file"
+        aria-label="Save work progress"
       >
         <Save size={18} />
-        {isSaving ? 'Saving...' : 'Save Work'}
+        {isSaving ? 'Saving...' : 'Save Progress'}
       </button>
 
       <input
@@ -69,16 +87,18 @@ export default function SaveLoadButtons({ onSave, onLoad }: SaveLoadButtonsProps
         accept=".json,application/json"
         onChange={handleFileChange}
         style={{ display: 'none' }}
+        aria-label="Load saved bundle file"
       />
 
       <button
-        className="action-button load-button"
+        className="btn btn-success"
         onClick={handleLoadClick}
         disabled={isLoading}
         title="Load a previously saved bundle (.json file)"
+        aria-label="Load saved bundle"
       >
         <FolderOpen size={18} />
-        {isLoading ? 'Loading...' : 'Load Saved Bundle'}
+        {isLoading ? 'Loading...' : 'Load Saved Work'}
       </button>
     </div>
   )

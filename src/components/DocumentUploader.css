@@ -1,36 +1,36 @@
 .document-uploader {
   text-align: center;
-  padding: 2rem;
-  border: 2px dashed #ddd;
-  border-radius: 8px;
-  background-color: #fafafa;
-  margin-bottom: 2rem;
-  transition: all 0.2s;
+  padding: var(--spacing-xl);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-secondary);
+  margin-bottom: var(--spacing-xl);
+  transition: all var(--transition-base);
 }
 
 .document-uploader:hover {
-  border-color: #2a5298;
-  background-color: #f0f4f8;
+  border-color: var(--color-accent);
+  background-color: var(--color-bg-tertiary);
 }
 
 .upload-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .upload-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(42, 82, 152, 0.3);
+  box-shadow: var(--shadow-lg);
 }
 
 .upload-button:active {
