@@ -63,7 +63,7 @@ export default function BundleRequirementsInfo() {
                     </div>
                   )}
 
-                  {bundleType.notes && (
+                  {'notes' in bundleType && bundleType.notes && (
                     <div className="detail-row notes">
                       <span className="detail-label">Note:</span>
                       <span className="detail-value">{bundleType.notes}</span>

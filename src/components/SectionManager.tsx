@@ -42,7 +42,7 @@ export default function SectionManager({
     const appealsTribunals = ['upper_tribunal', 'employment_appeal']
     const general = ['general']
 
-    const addCategory = (groupName: string, groupIcon: string, bundleKeys: string[]) => {
+    const addCategory = (bundleKeys: string[]) => {
       bundleKeys.forEach(key => {
         const bundleType = bundleRequirementsData.bundle_types[key as keyof typeof bundleRequirementsData.bundle_types]
         if (bundleType) {
@@ -56,19 +56,19 @@ export default function SectionManager({
     }
 
     // Add Court Bundles
-    addCategory('Court Bundles', '⚖️', courtBundles)
+    addCategory(courtBundles)
 
     // Add First-Tier Tribunals
-    addCategory('First-Tier Tribunals', '📋', tribunals)
+    addCategory(tribunals)
 
     // Add Planning & Appeals
-    addCategory('Planning & Land', '🏗️', planningAppeals)
+    addCategory(planningAppeals)
 
     // Add Appeals Tribunals
-    addCategory('Appeals Tribunals', '📊', appealsTribunals)
+    addCategory(appealsTribunals)
 
     // Add General
-    addCategory('General', '📝', general)
+    addCategory(general)
 
     setCategorizedOptions(categories)
   }, [])

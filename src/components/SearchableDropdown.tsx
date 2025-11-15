@@ -73,11 +73,6 @@ export default function SearchableDropdown({
     ? [...filteredOptions, customOptionLabel]
     : filteredOptions || []
 
-  // Total selectable options for keyboard navigation
-  const totalSelectableOptions = categorizedOptions
-    ? filteredFlatOptions.length + (onCustomSelected ? 1 : 0)
-    : displayOptions.length
-
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
