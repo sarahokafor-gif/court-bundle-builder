@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen } from 'lucide-react'
+import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -25,6 +25,8 @@ interface SortableDocumentItemProps {
   doc: Document
   section: Section
   sections: Section[]
+  isSelected: boolean
+  onToggleSelection: (docId: string) => void
   onRemoveDocument: (sectionId: string, docId: string) => void
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
   onPreview: (doc: Document) => void
@@ -38,6 +40,8 @@ function SortableDocumentItem({
   doc,
   section,
   sections,
+  isSelected,
+  onToggleSelection,
   onRemoveDocument,
   onMoveToSection,
   onPreview,
@@ -65,8 +69,17 @@ function SortableDocumentItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`document-item ${isDragging ? 'dragging' : ''}`}
+      className={`document-item ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
     >
+      <button
+        className="document-select-checkbox"
+        onClick={() => onToggleSelection(doc.id)}
+        aria-label={isSelected ? 'Deselect document' : 'Select document'}
+        title={isSelected ? 'Deselect document' : 'Select document'}
+      >
+        {isSelected ? <CheckSquare size={20} /> : <Square size={20} />}
+      </button>
+
       <div className="document-drag-handle" {...attributes} {...listeners}>
         <GripVertical size={18} />
       </div>
@@ -175,12 +188,70 @@ export default function SectionDocumentList({
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set())
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
     (sum, section) => sum + section.documents.reduce((docSum, doc) => docSum + doc.pageCount, 0),
     0
   )
+
+  // Get all document IDs
+  const allDocumentIds = sections.flatMap(section => section.documents.map(doc => doc.id))
+
+  // Batch operations handlers
+  const handleToggleSelection = (docId: string) => {
+    setSelectedDocuments(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(docId)) {
+        newSet.delete(docId)
+      } else {
+        newSet.add(docId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAll = () => {
+    setSelectedDocuments(new Set(allDocumentIds))
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedDocuments(new Set())
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedDocuments.size === 0) return
+
+    const confirmMessage = `Delete ${selectedDocuments.size} selected document${selectedDocuments.size !== 1 ? 's' : ''}?`
+    if (!confirm(confirmMessage)) return
+
+    // Delete each selected document
+    sections.forEach(section => {
+      section.documents.forEach(doc => {
+        if (selectedDocuments.has(doc.id)) {
+          onRemoveDocument(section.id, doc.id)
+        }
+      })
+    })
+
+    setSelectedDocuments(new Set())
+  }
+
+  const handleBulkMoveToSection = (targetSectionId: string) => {
+    if (selectedDocuments.size === 0) return
+
+    // Move each selected document to the target section
+    sections.forEach(section => {
+      section.documents.forEach(doc => {
+        if (selectedDocuments.has(doc.id) && section.id !== targetSectionId) {
+          onMoveToSection(doc.id, section.id, targetSectionId)
+        }
+      })
+    })
+
+    setSelectedDocuments(new Set())
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
@@ -264,6 +335,71 @@ export default function SectionDocumentList({
         <span>{totalPages} total page{totalPages !== 1 ? 's' : ''}</span>
       </div>
 
+      {/* Batch Operations Toolbar */}
+      {totalDocs > 0 && (
+        <div className="batch-operations-toolbar">
+          <div className="batch-selection-controls">
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleSelectAll}
+              disabled={selectedDocuments.size === allDocumentIds.length}
+              aria-label="Select all documents"
+            >
+              Select All ({allDocumentIds.length})
+            </button>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleDeselectAll}
+              disabled={selectedDocuments.size === 0}
+              aria-label="Deselect all documents"
+            >
+              Deselect All
+            </button>
+            {selectedDocuments.size > 0 && (
+              <span className="selected-count">
+                {selectedDocuments.size} selected
+              </span>
+            )}
+          </div>
+
+          {selectedDocuments.size > 0 && (
+            <div className="batch-actions">
+              {sections.length > 1 && (
+                <div className="batch-move-section">
+                  <label htmlFor="bulk-move-section">Move to:</label>
+                  <select
+                    id="bulk-move-section"
+                    className="section-selector"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkMoveToSection(e.target.value)
+                        e.target.value = '' // Reset dropdown
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Select section...</option>
+                    {sections.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={handleBulkDelete}
+                aria-label={`Delete ${selectedDocuments.size} selected document${selectedDocuments.size !== 1 ? 's' : ''}`}
+              >
+                <Trash2 size={16} />
+                Delete Selected ({selectedDocuments.size})
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <DndContext
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
@@ -313,6 +449,8 @@ export default function SectionDocumentList({
                       doc={doc}
                       section={section}
                       sections={sections}
+                      isSelected={selectedDocuments.has(doc.id)}
+                      onToggleSelection={handleToggleSelection}
                       onRemoveDocument={onRemoveDocument}
                       onMoveToSection={onMoveToSection}
                       onPreview={onPreview}

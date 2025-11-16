@@ -378,3 +378,133 @@
   border-color: #f44;
   color: #f44;
 }
+
+/* Batch Operations Toolbar */
+.batch-operations-toolbar {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.batch-selection-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.batch-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.batch-move-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.batch-move-section label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.selected-count {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  min-height: 36px;
+}
+
+/* Document Selection Checkbox */
+.document-select-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  margin-right: var(--spacing-xs);
+}
+
+.document-select-checkbox:hover {
+  color: var(--color-accent);
+  transform: scale(1.1);
+}
+
+.document-select-checkbox:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.document-item.selected {
+  background-color: #e3f2fd;
+  border-left: 4px solid var(--color-accent);
+}
+
+.document-item.selected:hover {
+  background-color: #bbdefb;
+}
+
+.document-item.selected .document-select-checkbox {
+  color: var(--color-accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .batch-operations-toolbar {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .batch-selection-controls,
+  .batch-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .batch-move-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-sm {
+    width: 100%;
+  }
+}

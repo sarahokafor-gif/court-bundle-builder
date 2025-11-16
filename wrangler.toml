@@ -1,0 +1,9 @@
+name = "court-bundle-builder"
+compatibility_date = "2024-11-15"
+pages_build_output_dir = "dist"
+
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "modules"

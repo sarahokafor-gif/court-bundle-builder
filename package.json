@@ -25,6 +25,8 @@
     "stripe": "^19.2.1"
   },
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.53.2",
+    "@types/pdfjs-dist": "^2.10.377",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
