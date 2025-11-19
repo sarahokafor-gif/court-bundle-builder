@@ -349,3 +349,12 @@
     width: 100%;
   }
 }
+
+/* Progress Indicator */
+.generation-progress {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+}

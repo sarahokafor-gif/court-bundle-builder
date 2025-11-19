@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Section, Document, BundleMetadata, PageNumberSettings } from './types'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Section, Document, BundleMetadata, PageNumberSettings, BatesNumberSettings, BundleType } from './types'
 import MetadataForm from './components/MetadataForm'
 import DocumentUploader from './components/DocumentUploader'
 import SectionManager from './components/SectionManager'
@@ -7,10 +7,16 @@ import SectionDocumentList from './components/SectionDocumentList'
 import BundleGenerator from './components/BundleGenerator'
 import DocumentPreview from './components/DocumentPreview'
 import PageNumberSettingsComponent from './components/PageNumberSettings'
+import BatesNumberSettingsComponent from './components/BatesNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
 import BundleRequirementsInfo from './components/BundleRequirementsInfo'
 import PricingDisplay from './components/PricingDisplay'
 import AutoSaveRecovery from './components/AutoSaveRecovery'
+import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
+import SearchFilter, { SearchFilterRef } from './components/SearchFilter'
+import BundleValidation from './components/BundleValidation'
+import TemplateSelector from './components/TemplateSelector'
+import { useToast } from './components/Toast'
 import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
 import {
   autoSaveToLocalStorage,
@@ -19,6 +25,7 @@ import {
   hasAutoSave,
   AUTO_SAVE_INTERVAL,
 } from './utils/autoSave'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import './App.css'
 
 function App() {
@@ -44,12 +51,26 @@ function App() {
     fontSize: 10,
     bold: false,
   })
+  const [batesNumberSettings, setBatesNumberSettings] = useState<BatesNumberSettings>({
+    enabled: false,
+    prefix: 'DOC',
+    startNumber: 1,
+    digits: 3,
+    position: 'top-right',
+    fontSize: 10,
+  })
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const autoSaveIntervalRef = useRef<number | null>(null)
   const isInitialMount = useRef(true)
+  const generateButtonRef = useRef<HTMLButtonElement | null>(null)
+  const generateIndexButtonRef = useRef<HTMLButtonElement | null>(null)
+  const searchFilterRef = useRef<SearchFilterRef | null>(null)
+  const { showToast } = useToast()
 
-  const handleAddDocuments = (newDocs: Document[]) => {
+  const handleAddDocuments = useCallback((newDocs: Document[]) => {
     // Add to the first section
     setSections(prev => {
       const updated = [...prev]
@@ -59,9 +80,10 @@ function App() {
       }
       return updated
     })
-  }
+    showToast('success', `Added ${newDocs.length} document${newDocs.length !== 1 ? 's' : ''}`)
+  }, [showToast])
 
-  const handleAddSection = (name: string, pagePrefix: string) => {
+  const handleAddSection = useCallback((name: string, pagePrefix: string) => {
     const newSection: Section = {
       id: `section-${Date.now()}`,
       name,
@@ -72,37 +94,37 @@ function App() {
       startPage: 1,
     }
     setSections(prev => [...prev, newSection])
-  }
+  }, [sections.length])
 
-  const handleUpdatePagination = (id: string, pagePrefix: string, startPage: number) => {
+  const handleUpdatePagination = useCallback((id: string, pagePrefix: string, startPage: number) => {
     setSections(prev =>
       prev.map(section =>
         section.id === id ? { ...section, pagePrefix, startPage } : section
       )
     )
-  }
+  }, [])
 
-  const handleRemoveSection = (id: string) => {
+  const handleRemoveSection = useCallback((id: string) => {
     setSections(prev => prev.filter(section => section.id !== id))
-  }
+  }, [])
 
-  const handleRenameSection = (id: string, name: string) => {
+  const handleRenameSection = useCallback((id: string, name: string) => {
     setSections(prev =>
       prev.map(section =>
         section.id === id ? { ...section, name } : section
       )
     )
-  }
+  }, [])
 
-  const handleToggleDivider = (id: string) => {
+  const handleToggleDivider = useCallback((id: string) => {
     setSections(prev =>
       prev.map(section =>
         section.id === id ? { ...section, addDivider: !section.addDivider } : section
       )
     )
-  }
+  }, [])
 
-  const handleRemoveDocument = (sectionId: string, docId: string) => {
+  const handleRemoveDocument = useCallback((sectionId: string, docId: string) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -110,9 +132,9 @@ function App() {
           : section
       )
     )
-  }
+  }, [])
 
-  const handleReorderDocument = (sectionId: string, docIndex: number, newIndex: number) => {
+  const handleReorderDocument = useCallback((sectionId: string, docIndex: number, newIndex: number) => {
     if (newIndex < 0) return
 
     setSections(prev =>
@@ -131,9 +153,9 @@ function App() {
         }
       })
     )
-  }
+  }, [])
 
-  const handleMoveToSection = (docId: string, fromSectionId: string, toSectionId: string) => {
+  const handleMoveToSection = useCallback((docId: string, fromSectionId: string, toSectionId: string) => {
     if (fromSectionId === toSectionId) return
 
     setSections(prev => {
@@ -158,9 +180,9 @@ function App() {
         return section
       })
     })
-  }
+  }, [])
 
-  const handleUpdateDocumentDate = (sectionId: string, docId: string, date: string) => {
+  const handleUpdateDocumentDate = useCallback((sectionId: string, docId: string, date: string) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -173,9 +195,9 @@ function App() {
           : section
       )
     )
-  }
+  }, [])
 
-  const handleUpdateDocumentTitle = (sectionId: string, docId: string, title: string) => {
+  const handleUpdateDocumentTitle = useCallback((sectionId: string, docId: string, title: string) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -188,9 +210,9 @@ function App() {
           : section
       )
     )
-  }
+  }, [])
 
-  const handleUpdateSelectedPages = (sectionId: string, docId: string, selectedPages: number[]) => {
+  const handleUpdateSelectedPages = useCallback((sectionId: string, docId: string, selectedPages: number[]) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -203,9 +225,9 @@ function App() {
           : section
       )
     )
-  }
+  }, [])
 
-  const handleUpdateDocumentFile = (sectionId: string, docId: string, modifiedFile: File) => {
+  const handleUpdateDocumentFile = useCallback((sectionId: string, docId: string, modifiedFile: File) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -218,6 +240,12 @@ function App() {
           : section
       )
     )
+  }, [])
+
+  const handleSelectTemplate = (newSections: Section[], bundleType: BundleType) => {
+    setSections(newSections)
+    setMetadata(prev => ({ ...prev, bundleType }))
+    showToast('info', `Template applied: ${newSections.length} sections created`)
   }
 
   // Check for auto-save on mount
@@ -234,7 +262,7 @@ function App() {
     }
 
     autoSaveIntervalRef.current = window.setInterval(() => {
-      autoSaveToLocalStorage(metadata, sections, pageNumberSettings)
+      autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
     }, AUTO_SAVE_INTERVAL)
 
     return () => {
@@ -242,7 +270,7 @@ function App() {
         clearInterval(autoSaveIntervalRef.current)
       }
     }
-  }, [metadata, sections, pageNumberSettings])
+  }, [metadata, sections, pageNumberSettings, batesNumberSettings])
 
   // Auto-save on significant state changes (debounced)
   useEffect(() => {
@@ -254,11 +282,11 @@ function App() {
 
     // Debounce: wait 2 seconds after last change before auto-saving
     const timeoutId = setTimeout(() => {
-      autoSaveToLocalStorage(metadata, sections, pageNumberSettings)
+      autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
     }, 2000)
 
     return () => clearTimeout(timeoutId)
-  }, [metadata, sections, pageNumberSettings])
+  }, [metadata, sections, pageNumberSettings, batesNumberSettings])
 
   const handleRestoreAutoSave = () => {
     const autoSaveData = getAutoSaveData()
@@ -266,8 +294,11 @@ function App() {
       setMetadata(autoSaveData.metadata)
       setSections(autoSaveData.sections)
       setPageNumberSettings(autoSaveData.pageNumberSettings)
+      if (autoSaveData.batesNumberSettings) {
+        setBatesNumberSettings(autoSaveData.batesNumberSettings)
+      }
       setShowRecoveryModal(false)
-      console.log('Auto-save restored successfully')
+      showToast('success', 'Previous work restored successfully')
     }
   }
 
@@ -278,30 +309,97 @@ function App() {
   }
 
   const handleSave = async (filename?: string) => {
-    await saveBundle(metadata, sections, pageNumberSettings, filename)
-    // Clear auto-save after successful manual save
-    clearAutoSave()
+    try {
+      await saveBundle(metadata, sections, pageNumberSettings, batesNumberSettings, filename)
+      // Clear auto-save after successful manual save
+      clearAutoSave()
+      showToast('success', 'Bundle saved successfully')
+    } catch (error) {
+      console.error('Save failed:', error)
+      showToast('error', 'Failed to save bundle. Please try again.')
+    }
   }
 
   const handleLoad = async (file: File) => {
-    const savedBundle = await loadBundle(file)
-    setMetadata(savedBundle.metadata)
-    setSections(deserializeSections(savedBundle.sections))
-    setPageNumberSettings(savedBundle.pageNumberSettings)
+    try {
+      const savedBundle = await loadBundle(file)
+      setMetadata(savedBundle.metadata)
+      setSections(deserializeSections(savedBundle.sections))
+      setPageNumberSettings(savedBundle.pageNumberSettings)
+      if (savedBundle.batesNumberSettings) {
+        setBatesNumberSettings(savedBundle.batesNumberSettings)
+      }
+      showToast('success', `Loaded "${file.name}" successfully`)
+    } catch (error) {
+      console.error('Load failed:', error)
+      showToast('error', 'Failed to load bundle. The file may be corrupted.')
+    }
   }
 
 
-  const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
+  const totalDocs = useMemo(() =>
+    sections.reduce((sum, section) => sum + section.documents.length, 0),
+    [sections]
+  )
 
   // Generate suggested filename from case info
-  const suggestedFilename = (() => {
+  const suggestedFilename = useMemo(() => {
     const parts = []
     if (metadata.caseNumber) parts.push(metadata.caseNumber)
     if (metadata.caseName) parts.push(metadata.caseName.replace(/\s+/g, '_'))
     return parts.length > 0 ? parts.join('_') : 'my_bundle_save'
-  })()
+  }, [metadata.caseNumber, metadata.caseName])
 
   const autoSaveData = getAutoSaveData()
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    shortcuts: [
+      {
+        key: 's',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Save bundle progress',
+        action: () => handleSave(),
+      },
+      {
+        key: 'g',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Generate bundle PDF',
+        action: () => generateButtonRef.current?.click(),
+      },
+      {
+        key: 'i',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Generate index only',
+        action: () => generateIndexButtonRef.current?.click(),
+      },
+      {
+        key: 'f',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Focus search filter',
+        action: () => searchFilterRef.current?.focus(),
+      },
+      {
+        key: '?',
+        description: 'Show keyboard shortcuts',
+        action: () => setShowKeyboardShortcuts(true),
+        preventDefault: false,
+      },
+      {
+        key: 'Escape',
+        description: 'Close modals',
+        action: () => {
+          setShowKeyboardShortcuts(false)
+          setPreviewDoc(null)
+        },
+        preventDefault: false,
+      },
+    ],
+  })
 
   return (
     <div className="app">
@@ -312,6 +410,11 @@ function App() {
           onDismiss={handleDismissAutoSave}
         />
       )}
+
+      <KeyboardShortcutsHelp
+        isOpen={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
 
       <a href="#main-content" className="skip-to-content">
         Skip to main content
@@ -371,17 +474,54 @@ function App() {
         </section>
 
         <section className="section" aria-labelledby="page-settings-heading">
-          <h2 id="page-settings-heading">🔢 Step 2: Page Number Settings</h2>
+          <h2 id="page-settings-heading">🔢 Step 2: Page Numbering</h2>
           <div className="section-help">
             <p>
-              <strong>Configure page numbering:</strong> Choose where page numbers appear on each page (e.g., bottom center is standard for court bundles).
-              You can also adjust the font size and make numbers bold if needed.
+              <strong>Auto-configured:</strong> Pages will be numbered automatically using section prefixes (A-1, A-2, B-1, etc.)
+              with numbers at the bottom center of each page. This follows standard court bundle formatting.
             </p>
           </div>
-          <PageNumberSettingsComponent
-            settings={pageNumberSettings}
-            onChange={setPageNumberSettings}
-          />
+
+          <div className="auto-settings-summary">
+            <div className="auto-setting-item">
+              <span className="setting-label">Position:</span>
+              <span className="setting-value">Bottom Center</span>
+            </div>
+            <div className="auto-setting-item">
+              <span className="setting-label">Format:</span>
+              <span className="setting-value">Section Prefix + Number (A-1, B-1, etc.)</span>
+            </div>
+          </div>
+
+          {/* Customize Settings - Collapsible */}
+          <div className="advanced-options-wrapper">
+            <button
+              className="advanced-options-toggle"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              aria-expanded={showAdvancedOptions}
+              aria-controls="advanced-options-content"
+            >
+              <span>{showAdvancedOptions ? '▼' : '▶'} Customize Settings</span>
+              <span className="advanced-hint">Change defaults if needed</span>
+            </button>
+
+            {showAdvancedOptions && (
+              <div id="advanced-options-content" className="advanced-options-content">
+                <PageNumberSettingsComponent
+                  settings={pageNumberSettings}
+                  onChange={setPageNumberSettings}
+                />
+
+                <div style={{ marginTop: 'var(--spacing-xl)' }}>
+                  <BatesNumberSettingsComponent
+                    settings={batesNumberSettings}
+                    onChange={setBatesNumberSettings}
+                    pageNumberPosition={pageNumberSettings.position}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="section" aria-labelledby="sections-heading">
@@ -393,6 +533,13 @@ function App() {
               The default "Main Documents" section is provided to get you started.
             </p>
           </div>
+
+          <TemplateSelector
+            onSelectTemplate={handleSelectTemplate}
+            currentSectionCount={sections.length}
+            currentDocCount={totalDocs}
+          />
+
           <SectionManager
             sections={sections}
             onAddSection={handleAddSection}
@@ -417,6 +564,21 @@ function App() {
               <li><strong>Add custom titles</strong> and dates for the index</li>
             </ul>
           </div>
+
+          {/* Search and Filter */}
+          <SearchFilter
+            ref={searchFilterRef}
+            sections={sections}
+            onDocumentClick={(sectionId, docId) => {
+              // Find the document and preview it
+              const section = sections.find(s => s.id === sectionId)
+              const doc = section?.documents.find(d => d.id === docId)
+              if (doc) {
+                setPreviewDoc(doc)
+              }
+            }}
+          />
+
           <DocumentUploader onDocumentsAdded={handleAddDocuments} />
           <SectionDocumentList
             sections={sections}
@@ -449,16 +611,31 @@ function App() {
                 Documents under 20 pages total are <strong>free</strong>. Larger bundles require a small fee.
               </p>
             </div>
+
+            <BundleValidation metadata={metadata} sections={sections} />
+
             <BundleGenerator
               metadata={metadata}
               sections={sections}
               pageNumberSettings={pageNumberSettings}
+              generateButtonRef={generateButtonRef}
+              generateIndexButtonRef={generateIndexButtonRef}
             />
           </section>
         )}
       </main>
 
       <DocumentPreview document={previewDoc} onClose={() => setPreviewDoc(null)} />
+
+      {/* Floating Keyboard Shortcuts Help Button */}
+      <button
+        className="keyboard-shortcuts-fab"
+        onClick={() => setShowKeyboardShortcuts(true)}
+        aria-label="Show keyboard shortcuts"
+        title="Keyboard Shortcuts (Press ?)"
+      >
+        ?
+      </button>
     </div>
   )
 }

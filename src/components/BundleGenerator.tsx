@@ -3,19 +3,29 @@ import { Download, FileText, List, Eye, CreditCard } from 'lucide-react'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
 import { generateBundle, generateIndexOnly, generateBundlePreview } from '../utils/bundleGenerator'
 import { getPricingTier, formatPrice, isPaymentRequired } from '../utils/pricing'
+import ProgressIndicator from './ProgressIndicator'
 import './BundleGenerator.css'
 
 interface BundleGeneratorProps {
   metadata: BundleMetadata
   sections: Section[]
   pageNumberSettings: PageNumberSettings
+  generateButtonRef?: React.RefObject<HTMLButtonElement>
+  generateIndexButtonRef?: React.RefObject<HTMLButtonElement>
 }
 
-export default function BundleGenerator({ metadata, sections, pageNumberSettings }: BundleGeneratorProps) {
+export default function BundleGenerator({
+  metadata,
+  sections,
+  pageNumberSettings,
+  generateButtonRef,
+  generateIndexButtonRef
+}: BundleGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingIndex, setIsGeneratingIndex] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [generationStep, setGenerationStep] = useState<string>('')
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
@@ -33,14 +43,19 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
     }
 
     setIsGeneratingIndex(true)
+    setGenerationStep('Generating index...')
 
     try {
       await generateIndexOnly(metadata, sections)
+      setGenerationStep('Index generated successfully!')
     } catch (error) {
       console.error('Error generating index:', error)
       alert('An error occurred while generating the index. Please try again.')
     } finally {
-      setIsGeneratingIndex(false)
+      setTimeout(() => {
+        setIsGeneratingIndex(false)
+        setGenerationStep('')
+      }, 1000)
     }
   }
 
@@ -51,15 +66,25 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
     }
 
     setIsGenerating(true)
+    setGenerationStep('Preparing bundle...')
 
     try {
+      setTimeout(() => setGenerationStep('Merging documents...'), 500)
+      setTimeout(() => setGenerationStep('Adding page numbers...'), 1500)
+      setTimeout(() => setGenerationStep('Creating index...'), 2500)
+      setTimeout(() => setGenerationStep('Adding watermark...'), 3500)
+
       const url = await generateBundlePreview(metadata, sections, pageNumberSettings)
       setPreviewUrl(url)
+      setGenerationStep('Preview ready!')
     } catch (error) {
       console.error('Error generating preview:', error)
       alert('An error occurred while generating the preview. Please try again.')
     } finally {
-      setIsGenerating(false)
+      setTimeout(() => {
+        setIsGenerating(false)
+        setGenerationStep('')
+      }, 1000)
     }
   }
 
@@ -121,6 +146,7 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
 
       {/* Generate Index Only Button (Always Available) */}
       <button
+        ref={generateIndexButtonRef}
         className="btn btn-info btn-block"
         onClick={handleGenerateIndexOnly}
         disabled={isGeneratingIndex}
@@ -130,14 +156,28 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
         {isGeneratingIndex ? 'Generating Index...' : 'Generate Index Only (FREE)'}
       </button>
 
-      <p className="index-hint">
-        Generate a draft index PDF to share with other parties for review and approval before creating the full bundle.
-      </p>
+      {isGeneratingIndex && generationStep && (
+        <div className="generation-progress">
+          <ProgressIndicator
+            status="loading"
+            message={generationStep}
+            variant="circular"
+            size="medium"
+          />
+        </div>
+      )}
+
+      {!isGeneratingIndex && (
+        <p className="index-hint">
+          Generate a draft index PDF to share with other parties for review and approval before creating the full bundle.
+        </p>
+      )}
 
       {/* Preview or Generate Button */}
       {!previewUrl ? (
         <>
           <button
+            ref={generateButtonRef}
             className="btn btn-primary btn-lg btn-block"
             onClick={handleGeneratePreview}
             disabled={isGenerating}
@@ -147,10 +187,23 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
             {isGenerating ? 'Generating Preview...' : 'Generate Preview (FREE)'}
           </button>
 
-          <p className="generate-hint">
-            Generate a watermarked preview to review before{' '}
-            {needsPayment ? `paying ${formatPrice(pricingTier.price)} for` : 'downloading'} the final bundle.
-          </p>
+          {isGenerating && generationStep && (
+            <div className="generation-progress">
+              <ProgressIndicator
+                status="loading"
+                message={generationStep}
+                variant="circular"
+                size="medium"
+              />
+            </div>
+          )}
+
+          {!isGenerating && (
+            <p className="generate-hint">
+              Generate a watermarked preview to review before{' '}
+              {needsPayment ? `paying ${formatPrice(pricingTier.price)} for` : 'downloading'} the final bundle.
+            </p>
+          )}
         </>
       ) : (
         <>

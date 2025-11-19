@@ -7,6 +7,7 @@ import { Section, Document } from '../types'
 import PageManager from './PageManager'
 import PDFEditor from './PDFEditor'
 import { burnRectanglesIntoPDF } from '../utils/pdfEditing'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import './SectionDocumentList.css'
 
 interface SectionDocumentListProps {
@@ -70,6 +71,7 @@ function SortableDocumentItem({
       ref={setNodeRef}
       style={style}
       className={`document-item ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
+      data-document-id={doc.id}
     >
       <button
         className="document-select-checkbox"
@@ -252,6 +254,45 @@ export default function SectionDocumentList({
 
     setSelectedDocuments(new Set())
   }
+
+  // Keyboard shortcuts for document management
+  useKeyboardShortcuts({
+    enabled: totalDocs > 0,
+    shortcuts: [
+      {
+        key: 'a',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Select all documents',
+        action: handleSelectAll,
+      },
+      {
+        key: 'd',
+        ctrlKey: true,
+        metaKey: true,
+        description: 'Deselect all documents',
+        action: handleDeselectAll,
+      },
+      {
+        key: 'Delete',
+        description: 'Delete selected documents',
+        action: handleBulkDelete,
+        preventDefault: false,
+      },
+      {
+        key: 'Backspace',
+        description: 'Delete selected documents',
+        action: handleBulkDelete,
+        preventDefault: false,
+      },
+      {
+        key: 'Escape',
+        description: 'Deselect all documents',
+        action: handleDeselectAll,
+        preventDefault: false,
+      },
+    ],
+  })
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)

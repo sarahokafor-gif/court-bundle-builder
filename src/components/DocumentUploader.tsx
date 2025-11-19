@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react'
 import { Document } from '../types'
 import { getPdfPageCount } from '../utils/pdfUtils'
 import { generatePDFThumbnail } from '../utils/pdfThumbnail'
+import ProgressIndicator from './ProgressIndicator'
 import './DocumentUploader.css'
 
 interface DocumentUploaderProps {
@@ -12,19 +13,26 @@ interface DocumentUploaderProps {
 export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingProgress, setProcessingProgress] = useState(0)
+  const [currentFile, setCurrentFile] = useState<string>('')
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files || files.length === 0) return
 
     setIsProcessing(true)
+    setProcessingProgress(0)
     const newDocuments: Document[] = []
+    const totalFiles = files.length
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      setCurrentFile(file.name)
 
       if (file.type !== 'application/pdf') {
         alert(`${file.name} is not a PDF file and will be skipped.`)
+        // Update progress even for skipped files
+        setProcessingProgress(((i + 1) / totalFiles) * 100)
         continue
       }
 
@@ -43,9 +51,13 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
           order: 0, // Will be set by parent
           thumbnail,
         })
+
+        // Update progress after successfully processing each file
+        setProcessingProgress(((i + 1) / totalFiles) * 100)
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error)
         alert(`Error processing ${file.name}. It may be corrupted.`)
+        setProcessingProgress(((i + 1) / totalFiles) * 100)
       }
     }
 
@@ -54,6 +66,8 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
     }
 
     setIsProcessing(false)
+    setProcessingProgress(0)
+    setCurrentFile('')
 
     // Reset input
     if (fileInputRef.current) {
@@ -82,11 +96,23 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
         <Upload size={20} />
         {isProcessing ? 'Processing PDFs...' : 'Upload PDF Documents'}
       </label>
-      <p className="upload-hint">
-        {isProcessing
-          ? 'Generating thumbnails, please wait...'
-          : 'Select one or more PDF files to add to your bundle'}
-      </p>
+
+      {isProcessing && (
+        <div className="upload-progress">
+          <ProgressIndicator
+            status="loading"
+            progress={processingProgress}
+            message={`Processing: ${currentFile}`}
+            showPercentage={true}
+          />
+        </div>
+      )}
+
+      {!isProcessing && (
+        <p className="upload-hint">
+          Select one or more PDF files to add to your bundle
+        </p>
+      )}
     </div>
   )
 }

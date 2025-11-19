@@ -1,4 +1,4 @@
-import { Section, BundleMetadata, PageNumberSettings, SavedBundle, SerializedSection, SerializedDocument } from '../types'
+import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings, SavedBundle, SerializedSection, SerializedDocument } from '../types'
 
 /**
  * Converts a File to base64 string
@@ -95,6 +95,7 @@ export async function saveBundle(
   metadata: BundleMetadata,
   sections: Section[],
   pageNumberSettings: PageNumberSettings,
+  batesNumberSettings: BatesNumberSettings,
   customFilename?: string
 ): Promise<void> {
   const serializedSections = await serializeSections(sections)
@@ -103,6 +104,7 @@ export async function saveBundle(
     metadata,
     sections: serializedSections,
     pageNumberSettings,
+    batesNumberSettings,
     savedAt: new Date().toISOString(),
   }
 

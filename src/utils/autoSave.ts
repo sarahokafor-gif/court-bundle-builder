@@ -1,4 +1,4 @@
-import { Section, BundleMetadata, PageNumberSettings } from '../types'
+import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings } from '../types'
 
 const AUTO_SAVE_KEY = 'court-bundle-autosave'
 const AUTO_SAVE_INTERVAL = 30000 // 30 seconds
@@ -7,6 +7,7 @@ export interface AutoSaveData {
   metadata: BundleMetadata
   sections: Section[]
   pageNumberSettings: PageNumberSettings
+  batesNumberSettings: BatesNumberSettings
   timestamp: number
   version: string
 }
@@ -17,13 +18,15 @@ export interface AutoSaveData {
 export function autoSaveToLocalStorage(
   metadata: BundleMetadata,
   sections: Section[],
-  pageNumberSettings: PageNumberSettings
+  pageNumberSettings: PageNumberSettings,
+  batesNumberSettings: BatesNumberSettings
 ): void {
   try {
     const autoSaveData: AutoSaveData = {
       metadata,
       sections,
       pageNumberSettings,
+      batesNumberSettings,
       timestamp: Date.now(),
       version: '1.0',
     }

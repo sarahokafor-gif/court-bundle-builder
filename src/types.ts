@@ -29,6 +29,15 @@ export interface PageNumberSettings {
   bold: boolean;
 }
 
+export interface BatesNumberSettings {
+  enabled: boolean;
+  prefix: string; // e.g., "CASE", "SMITH", "DOC"
+  startNumber: number; // Starting number, default 1
+  digits: number; // Number of digits with zero padding, e.g., 3 for "001", 4 for "0001"
+  position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  fontSize: number; // 8-14
+}
+
 export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'court-of-protection' | 'general';
 
 export interface BundleMetadata {
@@ -43,12 +52,14 @@ export interface Bundle {
   metadata: BundleMetadata;
   sections: Section[];
   pageNumberSettings: PageNumberSettings;
+  batesNumberSettings: BatesNumberSettings;
 }
 
 export interface SavedBundle {
   metadata: BundleMetadata;
   sections: SerializedSection[];
   pageNumberSettings: PageNumberSettings;
+  batesNumberSettings: BatesNumberSettings;
   savedAt: string;
 }
 
