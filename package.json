@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "type-check": "tsc --noEmit",
-    "deploy": "npm run build && npx wrangler pages deploy dist --project-name=court-bundle-builder"
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name=court-bundle-builder-2vf"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
