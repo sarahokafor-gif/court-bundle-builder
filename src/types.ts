@@ -41,11 +41,17 @@ export interface BatesNumberSettings {
 export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'court-of-protection' | 'general';
 
 export interface BundleMetadata {
-  caseName: string;
+  bundleTitle: string;
   caseNumber: string;
   court: string;
+  applicantName: string;
+  respondentName: string;
+  preparerName: string;
+  preparerRole: string;
   date: string;
   bundleType?: BundleType;
+  // Legacy field for backward compatibility
+  caseName?: string;
 }
 
 export interface Bundle {

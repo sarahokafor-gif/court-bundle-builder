@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Download, FileText, List, Eye, CreditCard } from 'lucide-react'
+import { Download, FileText, Eye, CreditCard } from 'lucide-react'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
-import { generateBundle, generateIndexOnly, generateBundlePreview } from '../utils/bundleGenerator'
+import { generateBundle, generateIndexOnly, generateBundlePreview, generateIndexPreview } from '../utils/bundleGenerator'
 import { getPricingTier, formatPrice, isPaymentRequired } from '../utils/pricing'
 import ProgressIndicator from './ProgressIndicator'
 import './BundleGenerator.css'
@@ -24,6 +24,7 @@ export default function BundleGenerator({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingIndex, setIsGeneratingIndex] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [indexPreviewUrl, setIndexPreviewUrl] = useState<string | null>(null)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [generationStep, setGenerationStep] = useState<string>('')
 
@@ -36,9 +37,33 @@ export default function BundleGenerator({
   const pricingTier = getPricingTier(totalDocs)
   const needsPayment = isPaymentRequired(totalDocs)
 
+  const handleGenerateIndexPreview = async () => {
+    if (!metadata.bundleTitle && !metadata.caseName) {
+      alert('Please fill in at least the bundle title before generating the index.')
+      return
+    }
+
+    setIsGeneratingIndex(true)
+    setGenerationStep('Generating index preview...')
+
+    try {
+      const url = await generateIndexPreview(metadata, sections)
+      setIndexPreviewUrl(url)
+      setGenerationStep('Index preview ready!')
+    } catch (error) {
+      console.error('Error generating index preview:', error)
+      alert('An error occurred while generating the index preview. Please try again.')
+    } finally {
+      setTimeout(() => {
+        setIsGeneratingIndex(false)
+        setGenerationStep('')
+      }, 1000)
+    }
+  }
+
   const handleGenerateIndexOnly = async () => {
-    if (!metadata.caseName || !metadata.caseNumber) {
-      alert('Please fill in at least the case name and case number before generating the index.')
+    if (!metadata.bundleTitle && !metadata.caseName) {
+      alert('Please fill in at least the bundle title before generating the index.')
       return
     }
 
@@ -56,6 +81,13 @@ export default function BundleGenerator({
         setIsGeneratingIndex(false)
         setGenerationStep('')
       }, 1000)
+    }
+  }
+
+  const handleCloseIndexPreview = () => {
+    if (indexPreviewUrl) {
+      URL.revokeObjectURL(indexPreviewUrl)
+      setIndexPreviewUrl(null)
     }
   }
 
@@ -144,34 +176,70 @@ export default function BundleGenerator({
         </div>
       </div>
 
-      {/* Generate Index Only Button (Always Available) */}
-      <button
-        ref={generateIndexButtonRef}
-        className="btn btn-info btn-block"
-        onClick={handleGenerateIndexOnly}
-        disabled={isGeneratingIndex}
-        aria-label="Generate index only as a free PDF"
-      >
-        <List size={20} />
-        {isGeneratingIndex ? 'Generating Index...' : 'Generate Index Only (FREE)'}
-      </button>
+      {/* Index Generation Section */}
+      <div className="index-generation-section">
+        <div className="button-group">
+          <button
+            className="btn btn-info"
+            onClick={handleGenerateIndexPreview}
+            disabled={isGeneratingIndex}
+            aria-label="Preview index before downloading"
+            style={{ flex: 1 }}
+          >
+            <Eye size={20} />
+            Preview Index
+          </button>
 
-      {isGeneratingIndex && generationStep && (
-        <div className="generation-progress">
-          <ProgressIndicator
-            status="loading"
-            message={generationStep}
-            variant="circular"
-            size="medium"
-          />
+          <button
+            ref={generateIndexButtonRef}
+            className="btn btn-success"
+            onClick={handleGenerateIndexOnly}
+            disabled={isGeneratingIndex}
+            aria-label="Download index as PDF"
+            style={{ flex: 1 }}
+          >
+            <Download size={20} />
+            Download Index
+          </button>
         </div>
-      )}
 
-      {!isGeneratingIndex && (
-        <p className="index-hint">
-          Generate a draft index PDF to share with other parties for review and approval before creating the full bundle.
-        </p>
-      )}
+        {isGeneratingIndex && generationStep && (
+          <div className="generation-progress">
+            <ProgressIndicator
+              status="loading"
+              message={generationStep}
+              variant="circular"
+              size="medium"
+            />
+          </div>
+        )}
+
+        {!isGeneratingIndex && (
+          <p className="index-hint">
+            Preview the index to verify formatting, or download directly. Both options are FREE.
+          </p>
+        )}
+
+        {/* Index Preview Display */}
+        {indexPreviewUrl && (
+          <div className="preview-container">
+            <div className="preview-header">
+              <h3>Index Preview (Draft)</h3>
+              <button className="btn btn-secondary btn-sm" onClick={handleCloseIndexPreview} aria-label="Close index preview">
+                ✕ Close
+              </button>
+            </div>
+            <iframe
+              src={indexPreviewUrl}
+              className="pdf-preview"
+              title="Index Preview"
+            />
+            <div className="preview-notice">
+              <strong>ℹ️ Draft Preview:</strong> This index is marked as "DRAFT FOR REVIEW". Use the Download button above to get the final version.
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Preview or Generate Button */}
       {!previewUrl ? (

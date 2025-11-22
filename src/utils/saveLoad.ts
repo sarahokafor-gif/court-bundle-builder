@@ -113,7 +113,7 @@ export async function saveBundle(
   const url = URL.createObjectURL(blob)
 
   // Use custom filename if provided, otherwise auto-generate
-  let filename = customFilename || `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}_save`
+  let filename = customFilename || `${metadata.caseNumber || 'bundle'}_${(metadata.bundleTitle || metadata.caseName || 'bundle').replace(/\s+/g, '_')}_save`
 
   // Remove .json extension if user added it (we'll add it ourselves)
   filename = filename.replace(/\.json$/i, '')
@@ -141,6 +141,42 @@ export async function loadBundle(file: File): Promise<SavedBundle> {
       try {
         const json = e.target?.result as string
         const savedBundle: SavedBundle = JSON.parse(json)
+
+        // Backward compatibility: Add default values for new fields if they don't exist
+        const metadata = savedBundle.metadata
+
+        // If bundleTitle doesn't exist but caseName does, use caseName as bundleTitle
+        if (!metadata.bundleTitle && metadata.caseName) {
+          metadata.bundleTitle = metadata.caseName
+        } else if (!metadata.bundleTitle) {
+          metadata.bundleTitle = ''
+        }
+
+        // Add defaults for other new fields if they don't exist
+        if (metadata.applicantName === undefined) {
+          metadata.applicantName = ''
+        }
+        if (metadata.respondentName === undefined) {
+          metadata.respondentName = ''
+        }
+        if (metadata.preparerName === undefined) {
+          metadata.preparerName = ''
+        }
+        if (metadata.preparerRole === undefined) {
+          metadata.preparerRole = ''
+        }
+
+        // Ensure caseNumber, court, and date have defaults
+        if (!metadata.caseNumber) {
+          metadata.caseNumber = ''
+        }
+        if (!metadata.court) {
+          metadata.court = ''
+        }
+        if (!metadata.date) {
+          metadata.date = new Date().toISOString().split('T')[0]
+        }
+
         resolve(savedBundle)
       } catch (error) {
         reject(new Error('Invalid bundle file format'))

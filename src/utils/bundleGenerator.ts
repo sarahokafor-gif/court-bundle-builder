@@ -34,178 +34,344 @@ async function generateIndexPage(
   const { width, height } = page.getSize()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique)
 
   let indexPageCount = 1
-  let yPosition = height - 80
+  let yPosition = height - 60
 
-  // Title
-  page.drawText('COURT BUNDLE INDEX', {
-    x: 50,
-    y: yPosition,
-    size: 18,
-    font: fontBold,
-    color: rgb(0, 0, 0),
-  })
-
-  yPosition -= 40
-
-  // Case information
-  const caseInfo = [
-    `Case: ${metadata.caseName}`,
-    `Case Number: ${metadata.caseNumber}`,
-    metadata.court ? `Court: ${metadata.court}` : null,
-    `Date: ${new Date(metadata.date).toLocaleDateString()}`,
-  ].filter(Boolean)
-
-  for (const info of caseInfo) {
-    page.drawText(info!, {
-      x: 50,
-      y: yPosition,
-      size: 11,
-      font: fontBold,
+  // Helper function to center text
+  const centerText = (text: string, y: number, size: number, textFont: any) => {
+    const textWidth = textFont.widthOfTextAtSize(text, size)
+    const x = (width - textWidth) / 2
+    page.drawText(text, {
+      x,
+      y,
+      size,
+      font: textFont,
       color: rgb(0, 0, 0),
     })
-    yPosition -= 20
   }
 
+  // 1. COURT HEADER - Centered, Bold, 12pt
+  const courtHeader = `IN THE ${(metadata.court || 'FAMILY').toUpperCase()} COURT`
+  centerText(courtHeader, yPosition, 12, fontBold)
   yPosition -= 30
 
-  // Table header (no background - professional black text only)
+  // 2. CASE NUMBER - Centered, 11pt
+  const caseNumberText = `Case No: ${metadata.caseNumber || '[CASE NUMBER]'}`
+  centerText(caseNumberText, yPosition, 11, font)
+  yPosition -= 30
+
+  // 3. "BETWEEN:" - Centered, Bold, 11pt
+  centerText('BETWEEN:', yPosition, 11, fontBold)
+  yPosition -= 25
+
+  // 4. APPLICANT - Left aligned name, Right aligned label (italic)
+  const applicantName = metadata.applicantName || '[APPLICANT NAME]'
+  page.drawText(applicantName, {
+    x: 50,
+    y: yPosition,
+    size: 11,
+    font: font,
+    color: rgb(0, 0, 0),
+  })
+  const applicantLabel = 'Applicant'
+  const applicantLabelWidth = fontItalic.widthOfTextAtSize(applicantLabel, 10)
+  page.drawText(applicantLabel, {
+    x: width - applicantLabelWidth - 50,
+    y: yPosition,
+    size: 10,
+    font: fontItalic,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 25
+
+  // 5. "-and-" - Centered, 11pt
+  centerText('-and-', yPosition, 11, font)
+  yPosition -= 25
+
+  // 6. RESPONDENT - Left aligned name, Right aligned label (italic)
+  const respondentName = metadata.respondentName || '[RESPONDENT NAME]'
+  page.drawText(respondentName, {
+    x: 50,
+    y: yPosition,
+    size: 11,
+    font: font,
+    color: rgb(0, 0, 0),
+  })
+  const respondentLabel = 'Respondent'
+  const respondentLabelWidth = fontItalic.widthOfTextAtSize(respondentLabel, 10)
+  page.drawText(respondentLabel, {
+    x: width - respondentLabelWidth - 50,
+    y: yPosition,
+    size: 10,
+    font: fontItalic,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 35
+
+  // 7. PRACTICE DIRECTION COMPLIANCE - Centered, Bold, 12pt
+  const pdText = metadata.bundleType
+    ? `PRACTICE DIRECTION ${metadata.bundleType.toUpperCase().replace(/-/g, ' ')} COMPLIANT BUNDLE INDEX`
+    : 'PRACTICE DIRECTION COMPLIANT BUNDLE INDEX'
+  centerText(pdText, yPosition, 12, fontBold)
+  yPosition -= 30
+
+  // 8. BUNDLE TITLE - Centered, 11pt
+  const bundleTitle = metadata.bundleTitle || metadata.caseName || '[Bundle Title]'
+  centerText(bundleTitle, yPosition, 11, font)
+  yPosition -= 30
+
+  // 9. PREPARED BY - Left aligned, Bold, 10pt
+  const preparedByText = `Prepared by: ${metadata.preparerName || '[Preparer Name]'} (${metadata.preparerRole || '[Role]'})`
+  page.drawText(preparedByText, {
+    x: 50,
+    y: yPosition,
+    size: 10,
+    font: fontBold,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 20
+
+  // 10. DATE - Left aligned, Bold, 10pt
+  const formattedDate = new Date(metadata.date).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
+  const dateText = `Date: ${formattedDate}`
+  page.drawText(dateText, {
+    x: 50,
+    y: yPosition,
+    size: 10,
+    font: fontBold,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 35
+
+  // 11. TABLE HEADER - Bold, with borders
   page.drawText('Document', {
-    x: 60,
-    y: yPosition + 5,
-    size: 11,
+    x: 65,
+    y: yPosition,
+    size: 10,
+    font: fontBold,
+    color: rgb(0, 0, 0),
+  })
+  page.drawText('Page No.', {
+    x: width - 100,
+    y: yPosition,
+    size: 10,
     font: fontBold,
     color: rgb(0, 0, 0),
   })
 
-  page.drawText('Page(s)', {
-    x: width - 120,
-    y: yPosition + 5,
-    size: 11,
-    font: fontBold,
+  // Draw table header border
+  page.drawLine({
+    start: { x: 50, y: yPosition - 5 },
+    end: { x: width - 50, y: yPosition - 5 },
+    thickness: 1,
     color: rgb(0, 0, 0),
   })
 
-  yPosition -= 30
+  yPosition -= 20
+
+  // Track current section for numbering
+  let currentSection = ''
+  let documentCounter = 0
+  let lastWasSection = false
 
   // Table entries
   for (const entry of indexEntries) {
-    if (yPosition < 80) {
-      // Add new page if running out of space
+    if (yPosition < 150) {
+      // Add new page if running out of space (reserve space for footer)
       page = pdfDoc.addPage([595, 842])
       indexPageCount++
       yPosition = page.getSize().height - 80
-    }
 
-    const entryFont = fontBold // All entries use bold font for professional appearance
-    const entrySize = entry.isSection ? 11 : 10
-    const xOffset = entry.indent ? 80 : 60
-
-    // Calculate page range and date widths first
-    let pageRange = ''
-    let pageRangeWidth = 0
-    if (entry.startPage) {
-      pageRange = entry.startPage === entry.endPage
-        ? entry.startPage
-        : `${entry.startPage}-${entry.endPage}`
-      pageRangeWidth = entryFont.widthOfTextAtSize(pageRange, entrySize)
-    }
-
-    const dateText = entry.documentDate || ''
-    const dateWidth = dateText ? entryFont.widthOfTextAtSize(dateText, entrySize) : 0
-
-    // Calculate available width for title
-    const pageNumberX = width - 100 // Fixed position for page numbers
-    const spacing = 15 // Space between elements
-    const dateX = pageNumberX - pageRangeWidth - spacing - dateWidth
-    const maxTitleWidth = dateText ? dateX - xOffset - spacing : pageNumberX - xOffset - pageRangeWidth - spacing
-
-    let displayTitle = entry.title
-    const titleWidth = entryFont.widthOfTextAtSize(displayTitle, entrySize)
-
-    if (titleWidth > maxTitleWidth) {
-      while (entryFont.widthOfTextAtSize(displayTitle + '...', entrySize) > maxTitleWidth && displayTitle.length > 0) {
-        displayTitle = displayTitle.slice(0, -1)
-      }
-      displayTitle += '...'
-    }
-
-    const textHeight = entrySize
-
-    // Draw title
-    page.drawText(displayTitle, {
-      x: xOffset,
-      y: yPosition,
-      size: entrySize,
-      font: entryFont,
-      color: rgb(0, 0, 0),
-    })
-
-    // Draw date if present (between title and page numbers)
-    if (dateText) {
-      page.drawText(dateText, {
-        x: dateX,
+      // Redraw table header on new page
+      page.drawText('Document', {
+        x: 65,
         y: yPosition,
-        size: entrySize,
+        size: 10,
         font: fontBold,
         color: rgb(0, 0, 0),
       })
-    }
-
-    // Page range (skip for section headers without pages)
-    if (entry.startPage) {
-      // Right-align the page numbers
-      const pageX = pageNumberX - pageRangeWidth
-      page.drawText(pageRange, {
-        x: pageX,
+      page.drawText('Page No.', {
+        x: width - 100,
         y: yPosition,
-        size: entrySize,
-        font: entryFont,
+        size: 10,
+        font: fontBold,
         color: rgb(0, 0, 0),
       })
+      page.drawLine({
+        start: { x: 50, y: yPosition - 5 },
+        end: { x: width - 50, y: yPosition - 5 },
+        thickness: 1,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 20
+      lastWasSection = false
     }
 
-    // Add clickable link annotation for the entire row (only if addLinks is true)
-    if (addLinks) {
-      const linkWidth = width - xOffset - 50
-      const linkHeight = textHeight + 4
+    if (entry.isSection) {
+      // SECTION HEADER - Bold, Uppercase, 11pt
+      if (!lastWasSection) {
+        yPosition -= 10 // Extra space before section
+      }
 
-      // Create link annotation to jump to the target page
-      const targetPage = pdfDoc.getPage(entry.startPageIndex)
-
-      // Create destination array using context.obj for proper PDF structure
-      const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
-
-      // Create link annotation
-      const linkAnnotation = pdfDoc.context.obj({
-        Type: 'Annot',
-        Subtype: 'Link',
-        Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
-        Border: [0, 0, 0],
-        Dest: dest,
+      const sectionText = entry.title.toUpperCase()
+      page.drawText(sectionText, {
+        x: 50,
+        y: yPosition,
+        size: 11,
+        font: fontBold,
+        color: rgb(0, 0, 0),
       })
 
-      const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
+      currentSection = entry.title.split(':')[0].trim() // Extract section letter (e.g., "SECTION A")
+      documentCounter = 0
+      yPosition -= 25
+      lastWasSection = true
+    } else {
+      // DOCUMENT ENTRY with numbering (e.g., A1, A2, B1, B2)
+      documentCounter++
+      const sectionLetter = currentSection.replace('SECTION ', '').trim() || 'A'
+      const docNumber = `${sectionLetter}${documentCounter}.`
 
-      const annots = page.node.get(PDFName.of('Annots'))
-      if (annots instanceof PDFArray) {
-        annots.push(linkAnnotationRef)
-      } else {
-        page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotationRef]))
+      // Calculate page range
+      let pageRange = '[  ]'
+      if (entry.startPage) {
+        pageRange = entry.startPage === entry.endPage
+          ? `[${entry.startPage}]`
+          : `[${entry.startPage}-${entry.endPage}]`
       }
-    }
 
-    yPosition -= entry.isSection ? 30 : 25
+      // Build document description with date if present
+      let docDescription = entry.title
+      if (entry.documentDate) {
+        docDescription = `${entry.title} (${entry.documentDate})`
+      }
+
+      // Calculate available width for description
+      const maxTitleWidth = width - 220
+      let displayTitle = docDescription
+      const titleWidth = font.widthOfTextAtSize(displayTitle, 10)
+
+      if (titleWidth > maxTitleWidth) {
+        while (font.widthOfTextAtSize(displayTitle + '...', 10) > maxTitleWidth && displayTitle.length > 0) {
+          displayTitle = displayTitle.slice(0, -1)
+        }
+        displayTitle += '...'
+      }
+
+      // Draw document number and description
+      page.drawText(docNumber, {
+        x: 60,
+        y: yPosition,
+        size: 10,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+
+      page.drawText(displayTitle, {
+        x: 85,
+        y: yPosition,
+        size: 10,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+
+      // Draw page number (right-aligned)
+      const pageRangeWidth = font.widthOfTextAtSize(pageRange, 10)
+      page.drawText(pageRange, {
+        x: width - 50 - pageRangeWidth,
+        y: yPosition,
+        size: 10,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+
+      // Add clickable link annotation for the entire row (only if addLinks is true)
+      if (addLinks && entry.startPageIndex >= 0) {
+        const linkWidth = width - 110
+        const linkHeight = 14
+
+        // Create link annotation to jump to the target page
+        const targetPage = pdfDoc.getPage(entry.startPageIndex)
+
+        // Create destination array using context.obj for proper PDF structure
+        const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
+
+        // Create link annotation
+        const linkAnnotation = pdfDoc.context.obj({
+          Type: 'Annot',
+          Subtype: 'Link',
+          Rect: [60, yPosition - 2, 60 + linkWidth, yPosition + linkHeight],
+          Border: [0, 0, 0],
+          Dest: dest,
+        })
+
+        const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
+
+        const annots = page.node.get(PDFName.of('Annots'))
+        if (annots instanceof PDFArray) {
+          annots.push(linkAnnotationRef)
+        } else {
+          page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotationRef]))
+        }
+      }
+
+      yPosition -= 20
+      lastWasSection = false
+    }
   }
 
-  // Footer
-  page.drawText('Generated with Court Bundle Builder', {
+  // Footer section at the bottom of the last page
+  yPosition = 120 // Fixed position for footer notes
+
+  page.drawText('NOTES:', {
     x: 50,
-    y: 30,
-    size: 8,
+    y: yPosition,
+    size: 9,
+    font: fontBold,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 15
+
+  const notes = [
+    `1. This bundle index complies with Practice Direction ${metadata.bundleType || '[XX]'}.`,
+    '2. Page numbers will be completed once the bundle is fully assembled.',
+    '3. All documents are in chronological order within each section.',
+  ]
+
+  for (const note of notes) {
+    page.drawText(note, {
+      x: 50,
+      y: yPosition,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    })
+    yPosition -= 14
+  }
+
+  yPosition -= 10
+
+  page.drawText(`Prepared by: ${metadata.preparerName || '[Preparer Name]'} (${metadata.preparerRole || '[Role]'})`, {
+    x: 50,
+    y: yPosition,
+    size: 9,
     font: font,
-    color: rgb(0.5, 0.5, 0.5),
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 14
+
+  page.drawText(`Date: ${formattedDate}`, {
+    x: 50,
+    y: yPosition,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
   })
 
   return indexPageCount
@@ -217,100 +383,128 @@ async function generateIndexPage(
 async function addLinksToIndex(
   pdfDoc: PDFDocument,
   indexEntries: IndexEntry[],
-  indexPageCount: number,
-  metadata: BundleMetadata
+  indexPageCount: number
 ): Promise<void> {
-  // Calculate the starting Y position to match where entries actually appear
-  // This must match the exact logic in generateIndexPage
+  // Calculate the starting Y position to match the NEW professional format in generateIndexPage
+  // This must match EXACTLY the spacing in generateIndexPage
   const pageHeight = 842 // A4 height
-  let yPosition = pageHeight - 80 // Initial position
+  let yPosition = pageHeight - 60 // Initial position (matches generateIndexPage)
 
-  // Account for title
-  yPosition -= 40
-
-  // Calculate actual case info lines (matching generateIndexPage logic)
-  const caseInfo = [
-    `Case: ${metadata.caseName}`,
-    `Case Number: ${metadata.caseNumber}`,
-    metadata.court ? `Court: ${metadata.court}` : null,
-    `Date: ${new Date(metadata.date).toLocaleDateString()}`,
-  ].filter(Boolean)
-
-  // Account for case info lines
-  yPosition -= caseInfo.length * 20
-
-  // Account for spacing before table header
+  // 1. Court Header - 12pt, centered
   yPosition -= 30
 
-  // Account for table header
+  // 2. Case Number - 11pt, centered
   yPosition -= 30
+
+  // 3. "BETWEEN:" - 11pt, centered, bold
+  yPosition -= 25
+
+  // 4. Applicant - 11pt, left/right aligned
+  yPosition -= 25
+
+  // 5. "-and-" - 11pt, centered
+  yPosition -= 25
+
+  // 6. Respondent - 11pt, left/right aligned
+  yPosition -= 35
+
+  // 7. Practice Direction - 12pt, centered, bold
+  yPosition -= 30
+
+  // 8. Bundle Title - 11pt, centered
+  yPosition -= 30
+
+  // 9. Prepared By - 10pt, left aligned, bold
+  yPosition -= 20
+
+  // 10. Date - 10pt, left aligned, bold
+  yPosition -= 35
+
+  // 11. Table header and border
+  yPosition -= 20
 
   // Now yPosition is at the first entry position
   const yStart = yPosition
-  const lineHeight = 25
-  const sectionLineHeight = 30
+  const lineHeight = 20 // Document entry spacing
+  const sectionLineHeight = 25 // Section header spacing (+ 10px extra space before)
 
   let currentIndexPage = 0
   yPosition = yStart
+  let lastWasSection = false
+  let documentCounter = 0
 
   for (const entry of indexEntries) {
     // Check if we need a new page
-    if (yPosition < 80) {
+    if (yPosition < 150) {
       currentIndexPage++
       yPosition = pageHeight - 80
+      lastWasSection = false
+      // Note: Table header is redrawn on new pages in generateIndexPage, so account for it
+      yPosition -= 20
     }
 
     if (currentIndexPage >= indexPageCount) break
 
     const page = pdfDoc.getPage(currentIndexPage)
     const { width } = page.getSize()
-    const entrySize = entry.isSection ? 11 : 10
-    const xOffset = entry.indent ? 80 : 60
-    const textHeight = entrySize
 
-    // Only add links for entries that have pages (not section headers without documents)
-    if (entry.startPage && entry.startPageIndex < pdfDoc.getPageCount()) {
-      const linkWidth = width - xOffset - 50
-      const linkHeight = textHeight + 4
-
-      // Get the target page
-      const targetPage = pdfDoc.getPage(entry.startPageIndex)
-
-      // Debug logging
-      console.log(`Creating link: "${entry.title}" -> page index ${entry.startPageIndex}, total pages: ${pdfDoc.getPageCount()}, yPos: ${yPosition}`)
-
-      // Try simpler approach - use pdf-lib's link annotation method
-      try {
-        // Create destination array (matching bookmarks exactly)
-        const dest = pdfDoc.context.obj([targetPage.ref, PDFName.of('Fit')])
-
-        // Create a link annotation using pdf-lib's annotation API
-        const linkAnnotDict = pdfDoc.context.obj({
-          Type: PDFName.of('Annot'),
-          Subtype: PDFName.of('Link'),
-          Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
-          Border: [0, 0, 0],
-          Dest: dest,
-          H: PDFName.of('I'), // Highlighting mode: Invert
-        })
-
-        const linkAnnotRef = pdfDoc.context.register(linkAnnotDict)
-
-        // Get or create Annots array on the page
-        const annots = page.node.get(PDFName.of('Annots'))
-        if (annots instanceof PDFArray) {
-          annots.push(linkAnnotRef)
-        } else {
-          page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotRef]))
-        }
-
-        console.log(`✓ Link created for "${entry.title}"`)
-      } catch (err) {
-        console.error(`Failed to create link for "${entry.title}":`, err)
+    if (entry.isSection) {
+      // Section header - add extra space before if not first or after another section
+      if (!lastWasSection) {
+        yPosition -= 10
       }
-    }
+      yPosition -= sectionLineHeight
+      lastWasSection = true
+      documentCounter = 0
+    } else {
+      // Document entry
+      documentCounter++
 
-    yPosition -= entry.isSection ? sectionLineHeight : lineHeight
+      // Only add links for document entries (not section headers)
+      if (entry.startPageIndex >= 0 && entry.startPageIndex < pdfDoc.getPageCount()) {
+        const linkWidth = width - 110
+        const linkHeight = 14
+
+        // Get the target page
+        const targetPage = pdfDoc.getPage(entry.startPageIndex)
+
+        // Debug logging
+        console.log(`Creating link: "${entry.title}" -> page index ${entry.startPageIndex}, total pages: ${pdfDoc.getPageCount()}, yPos: ${yPosition}`)
+
+        // Create link annotation
+        try {
+          // Create destination array
+          const dest = pdfDoc.context.obj([targetPage.ref, PDFName.of('Fit')])
+
+          // Create a link annotation
+          const linkAnnotDict = pdfDoc.context.obj({
+            Type: PDFName.of('Annot'),
+            Subtype: PDFName.of('Link'),
+            Rect: [60, yPosition - 2, 60 + linkWidth, yPosition + linkHeight],
+            Border: [0, 0, 0],
+            Dest: dest,
+            H: PDFName.of('I'), // Highlighting mode: Invert
+          })
+
+          const linkAnnotRef = pdfDoc.context.register(linkAnnotDict)
+
+          // Get or create Annots array on the page
+          const annots = page.node.get(PDFName.of('Annots'))
+          if (annots instanceof PDFArray) {
+            annots.push(linkAnnotRef)
+          } else {
+            page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotRef]))
+          }
+
+          console.log(`✓ Link created for "${entry.title}"`)
+        } catch (err) {
+          console.error(`Failed to create link for "${entry.title}":`, err)
+        }
+      }
+
+      yPosition -= lineHeight
+      lastWasSection = false
+    }
   }
 }
 
@@ -592,7 +786,7 @@ export async function generateBundlePreview(
     documentPages.forEach(page => finalPdf.addPage(page))
 
     // Now that all pages exist, add clickable links to the index
-    await addLinksToIndex(finalPdf, indexEntries, indexPageCount, metadata)
+    await addLinksToIndex(finalPdf, indexEntries, indexPageCount)
 
     // Build complete page numbers array
     const allPageNumbers: string[] = []
@@ -728,7 +922,7 @@ export async function generateIndexOnly(
 
     const link = document.createElement('a')
     link.href = url
-    link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}_INDEX_DRAFT.pdf`
+    link.download = `${metadata.caseNumber || 'bundle'}_${(metadata.bundleTitle || metadata.caseName || 'bundle').replace(/\s+/g, '_')}_INDEX_DRAFT.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -736,6 +930,107 @@ export async function generateIndexOnly(
     URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Error generating index:', error)
+    throw error
+  }
+}
+
+/**
+ * Generates index preview as a blob URL for display
+ */
+export async function generateIndexPreview(
+  metadata: BundleMetadata,
+  sections: Section[]
+): Promise<string> {
+  try {
+    // Build index entries without actually processing the documents
+    const indexEntries: IndexEntry[] = []
+    let currentPageIndex = 0
+
+    for (const section of sections) {
+      if (section.documents.length === 0) continue
+
+      let sectionPageNum = section.startPage
+      let dividerPageIndex = -1
+
+      // Account for divider page
+      if (section.addDivider) {
+        const dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        dividerPageIndex = currentPageIndex
+        currentPageIndex++
+        sectionPageNum++
+
+        // Add section header with divider page
+        indexEntries.push({
+          title: section.name.toUpperCase(),
+          startPage: dividerPageNumber,
+          endPage: dividerPageNumber,
+          startPageIndex: dividerPageIndex,
+          isSection: true,
+        })
+      } else {
+        // Add section header without page reference
+        indexEntries.push({
+          title: section.name.toUpperCase(),
+          startPage: '',
+          endPage: '',
+          startPageIndex: currentPageIndex,
+          isSection: true,
+        })
+      }
+
+      // Add document entries
+      for (const doc of section.documents) {
+        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageIndex = currentPageIndex
+
+        // Calculate the actual number of pages (selected pages or all pages)
+        const actualPageCount = doc.selectedPages !== undefined && doc.selectedPages.length > 0
+          ? doc.selectedPages.length
+          : doc.pageCount
+
+        // Calculate end page based on actual page count
+        sectionPageNum += actualPageCount
+        currentPageIndex += actualPageCount
+
+        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+
+        indexEntries.push({
+          title: doc.customTitle || doc.name.replace('.pdf', ''),
+          startPage: docStartPageNumber,
+          endPage: docEndPageNumber,
+          startPageIndex: docStartPageIndex,
+          indent: true,
+          documentDate: doc.documentDate,
+        })
+      }
+    }
+
+    // Create PDF with just the index (no links since target pages don't exist)
+    const indexPdf = await PDFDocument.create()
+    await generateIndexPage(indexPdf, metadata, indexEntries, false)
+
+    // Add watermark/notice to each page
+    const font = await indexPdf.embedFont(StandardFonts.HelveticaBold)
+    const pages = indexPdf.getPages()
+    pages.forEach(page => {
+      const { height } = page.getSize()
+      page.drawText('DRAFT INDEX FOR REVIEW - NOT FINAL BUNDLE', {
+        x: 50,
+        y: height - 20,
+        size: 10,
+        font: font,
+        color: rgb(0.7, 0, 0),
+      })
+    })
+
+    // Save PDF and return blob URL (instead of downloading)
+    const pdfBytes = await indexPdf.save()
+    const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+
+    return url
+  } catch (error) {
+    console.error('Error generating index preview:', error)
     throw error
   }
 }
@@ -836,7 +1131,7 @@ export async function generateBundle(
     documentPages.forEach(page => finalPdf.addPage(page))
 
     // Now that all pages exist, add clickable links to the index
-    await addLinksToIndex(finalPdf, indexEntries, indexPageCount, metadata)
+    await addLinksToIndex(finalPdf, indexEntries, indexPageCount)
 
     // Build complete page numbers array (empty for index, then document page numbers)
     const allPageNumbers: string[] = []
@@ -869,7 +1164,7 @@ export async function generateBundle(
 
     const link = document.createElement('a')
     link.href = url
-    link.download = `${metadata.caseNumber || 'bundle'}_${metadata.caseName.replace(/\s+/g, '_')}.pdf`
+    link.download = `${metadata.caseNumber || 'bundle'}_${(metadata.bundleTitle || metadata.caseName || 'bundle').replace(/\s+/g, '_')}.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

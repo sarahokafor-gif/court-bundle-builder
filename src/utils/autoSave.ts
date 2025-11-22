@@ -53,6 +53,41 @@ export function getAutoSaveData(): AutoSaveData | null {
       return null
     }
 
+    // Backward compatibility: Add default values for new fields if they don't exist
+    const metadata = parsed.metadata
+
+    // If bundleTitle doesn't exist but caseName does, use caseName as bundleTitle
+    if (!metadata.bundleTitle && metadata.caseName) {
+      metadata.bundleTitle = metadata.caseName
+    } else if (!metadata.bundleTitle) {
+      metadata.bundleTitle = ''
+    }
+
+    // Add defaults for other new fields if they don't exist
+    if (metadata.applicantName === undefined) {
+      metadata.applicantName = ''
+    }
+    if (metadata.respondentName === undefined) {
+      metadata.respondentName = ''
+    }
+    if (metadata.preparerName === undefined) {
+      metadata.preparerName = ''
+    }
+    if (metadata.preparerRole === undefined) {
+      metadata.preparerRole = ''
+    }
+
+    // Ensure caseNumber, court, and date have defaults
+    if (!metadata.caseNumber) {
+      metadata.caseNumber = ''
+    }
+    if (!metadata.court) {
+      metadata.court = ''
+    }
+    if (!metadata.date) {
+      metadata.date = new Date().toISOString().split('T')[0]
+    }
+
     return parsed
   } catch (error) {
     console.error('Failed to retrieve auto-save:', error)
@@ -68,7 +103,7 @@ export function hasAutoSave(): boolean {
   if (!data) return false
 
   // Check if there's meaningful data (at least some metadata or documents)
-  const hasMetadata = !!(data.metadata.caseName || data.metadata.caseNumber || data.metadata.court)
+  const hasMetadata = !!(data.metadata.bundleTitle || data.metadata.caseName || data.metadata.caseNumber || data.metadata.court)
   const hasDocuments = data.sections.some(section => section.documents.length > 0)
 
   return hasMetadata || hasDocuments

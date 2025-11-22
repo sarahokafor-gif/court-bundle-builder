@@ -76,11 +76,11 @@ export default function BundleValidation({ metadata, sections }: BundleValidatio
     )
 
     // Required metadata checks
-    if (!metadata.caseName.trim()) {
+    if (!metadata.bundleTitle.trim()) {
       issues.push({
         type: 'error',
-        message: 'Case name is required',
-        details: 'Enter the case name for the bundle front page',
+        message: 'Bundle title is required',
+        details: 'Enter the bundle title for the bundle front page',
       })
     }
 

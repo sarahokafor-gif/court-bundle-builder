@@ -30,9 +30,13 @@ import './App.css'
 
 function App() {
   const [metadata, setMetadata] = useState<BundleMetadata>({
-    caseName: '',
+    bundleTitle: '',
     caseNumber: '',
     court: '',
+    applicantName: '',
+    respondentName: '',
+    preparerName: '',
+    preparerRole: '',
     date: new Date().toISOString().split('T')[0],
   })
   const [sections, setSections] = useState<Section[]>([
@@ -346,9 +350,9 @@ function App() {
   const suggestedFilename = useMemo(() => {
     const parts = []
     if (metadata.caseNumber) parts.push(metadata.caseNumber)
-    if (metadata.caseName) parts.push(metadata.caseName.replace(/\s+/g, '_'))
+    if (metadata.bundleTitle) parts.push(metadata.bundleTitle.replace(/\s+/g, '_'))
     return parts.length > 0 ? parts.join('_') : 'my_bundle_save'
-  }, [metadata.caseNumber, metadata.caseName])
+  }, [metadata.caseNumber, metadata.bundleTitle])
 
   const autoSaveData = getAutoSaveData()
 
@@ -424,11 +428,11 @@ function App() {
         <p>Create professional, court-ready bundles in 5 simple steps</p>
 
         <div className="workflow-progress">
-          <div className={`workflow-step ${metadata.caseName || metadata.caseNumber ? 'completed' : 'active'}`}>
+          <div className={`workflow-step ${metadata.bundleTitle || metadata.caseNumber ? 'completed' : 'active'}`}>
             <span className="step-number">1</span>
             <span>Case Info</span>
           </div>
-          <div className={`workflow-step ${metadata.caseName || metadata.caseNumber ? 'active' : ''}`}>
+          <div className={`workflow-step ${metadata.bundleTitle || metadata.caseNumber ? 'active' : ''}`}>
             <span className="step-number">2</span>
             <span>Page Numbers</span>
           </div>
