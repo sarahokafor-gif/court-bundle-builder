@@ -73,3 +73,138 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+.form-group select {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background: var(--color-bg-primary);
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+/* Parties Section */
+.parties-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+}
+
+.parties-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.parties-header label {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.parties-hint {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  margin: 0;
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.parties-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.party-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: box-shadow var(--transition-fast);
+}
+
+.party-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.party-number {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  padding-top: var(--spacing-md);
+  min-width: 24px;
+}
+
+.party-fields {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-md);
+  flex: 1;
+}
+
+.party-fields .form-group {
+  margin: 0;
+}
+
+.party-fields .form-group label {
+  display: none; /* Hide labels for party fields since they're self-explanatory */
+}
+
+.party-remove-btn {
+  flex-shrink: 0;
+  padding: var(--spacing-sm);
+  min-width: 32px;
+  height: 32px;
+  margin-top: var(--spacing-xs);
+}
+
+/* When custom role field appears, adjust grid to 3 columns */
+.party-fields:has(> :nth-child(3)) {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+
+/* Mobile responsiveness for parties */
+@media (max-width: 768px) {
+  .parties-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .party-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .party-fields:has(> :nth-child(3)) {
+    grid-template-columns: 1fr;
+  }
+
+  .party-item {
+    flex-direction: column;
+  }
+
+  .party-number {
+    padding-top: 0;
+  }
+
+  .party-remove-btn {
+    align-self: flex-end;
+    margin-top: 0;
+  }
+}

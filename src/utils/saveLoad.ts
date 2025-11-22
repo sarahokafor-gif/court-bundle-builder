@@ -152,6 +152,31 @@ export async function loadBundle(file: File): Promise<SavedBundle> {
           metadata.bundleTitle = ''
         }
 
+        // Migrate old party fields to new parties array
+        if (!metadata.parties || metadata.parties.length === 0) {
+          metadata.parties = []
+
+          // Convert applicantName to party if it exists
+          if (metadata.applicantName) {
+            metadata.parties.push({
+              id: `party-${Date.now()}-applicant`,
+              name: metadata.applicantName,
+              role: 'applicant',
+              order: 0,
+            })
+          }
+
+          // Convert respondentName to party if it exists
+          if (metadata.respondentName) {
+            metadata.parties.push({
+              id: `party-${Date.now()}-respondent`,
+              name: metadata.respondentName,
+              role: 'respondent',
+              order: 1,
+            })
+          }
+        }
+
         // Add defaults for other new fields if they don't exist
         if (metadata.applicantName === undefined) {
           metadata.applicantName = ''

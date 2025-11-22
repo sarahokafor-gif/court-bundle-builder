@@ -1,4 +1,5 @@
-import { BundleMetadata } from '../types'
+import { BundleMetadata, Party, PartyRole } from '../types'
+import { Plus, X } from 'lucide-react'
 import './MetadataForm.css'
 
 interface MetadataFormProps {
@@ -11,6 +12,35 @@ export default function MetadataForm({ metadata, onChange }: MetadataFormProps) 
     onChange({
       ...metadata,
       [field]: value,
+    })
+  }
+
+  const handleAddParty = () => {
+    const newParty: Party = {
+      id: `party-${Date.now()}`,
+      name: '',
+      role: 'applicant',
+      order: metadata.parties.length,
+    }
+    onChange({
+      ...metadata,
+      parties: [...metadata.parties, newParty],
+    })
+  }
+
+  const handleRemoveParty = (partyId: string) => {
+    onChange({
+      ...metadata,
+      parties: metadata.parties.filter(p => p.id !== partyId),
+    })
+  }
+
+  const handlePartyChange = (partyId: string, field: keyof Party, value: string | PartyRole) => {
+    onChange({
+      ...metadata,
+      parties: metadata.parties.map(p =>
+        p.id === partyId ? { ...p, [field]: value } : p
+      ),
     })
   }
 
@@ -52,28 +82,82 @@ export default function MetadataForm({ metadata, onChange }: MetadataFormProps) 
         </div>
       </div>
 
-      {/* Second row: 2 columns */}
-      <div className="form-row form-row-2">
-        <div className="form-group">
-          <label htmlFor="applicantName">Applicant Name</label>
-          <input
-            id="applicantName"
-            type="text"
-            value={metadata.applicantName}
-            onChange={(e) => handleChange('applicantName', e.target.value)}
-            placeholder="e.g., John Smith"
-          />
+      {/* Parties Section */}
+      <div className="parties-section">
+        <div className="parties-header">
+          <label>Parties</label>
+          <button
+            type="button"
+            className="btn btn-sm btn-success"
+            onClick={handleAddParty}
+            aria-label="Add party"
+          >
+            <Plus size={16} />
+            Add Party
+          </button>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="respondentName">Respondent Name</label>
-          <input
-            id="respondentName"
-            type="text"
-            value={metadata.respondentName}
-            onChange={(e) => handleChange('respondentName', e.target.value)}
-            placeholder="e.g., Jane Jones"
-          />
+        {metadata.parties.length === 0 && (
+          <p className="parties-hint">
+            Click "Add Party" to add applicants, respondents, or other parties to the case.
+          </p>
+        )}
+
+        <div className="parties-list">
+          {metadata.parties.map((party, index) => (
+            <div key={party.id} className="party-item">
+              <div className="party-number">{index + 1}.</div>
+
+              <div className="party-fields">
+                <div className="form-group">
+                  <input
+                    type="text"
+                    value={party.name}
+                    onChange={(e) => handlePartyChange(party.id, 'name', e.target.value)}
+                    placeholder="Party name"
+                    aria-label={`Party ${index + 1} name`}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <select
+                    value={party.role}
+                    onChange={(e) => handlePartyChange(party.id, 'role', e.target.value as PartyRole)}
+                    aria-label={`Party ${index + 1} role`}
+                  >
+                    <option value="applicant">Applicant</option>
+                    <option value="respondent">Respondent</option>
+                    <option value="claimant">Claimant</option>
+                    <option value="defendant">Defendant</option>
+                    <option value="appellant">Appellant</option>
+                    <option value="interested-person">Interested Person</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {party.role === 'other' && (
+                  <div className="form-group">
+                    <input
+                      type="text"
+                      value={party.customRole || ''}
+                      onChange={(e) => handlePartyChange(party.id, 'customRole', e.target.value)}
+                      placeholder="Specify role"
+                      aria-label={`Party ${index + 1} custom role`}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-sm btn-danger party-remove-btn"
+                onClick={() => handleRemoveParty(party.id)}
+                aria-label={`Remove party ${index + 1}`}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

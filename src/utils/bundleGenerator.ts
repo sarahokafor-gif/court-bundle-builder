@@ -66,49 +66,91 @@ async function generateIndexPage(
   centerText('BETWEEN:', yPosition, 11, fontBold)
   yPosition -= 25
 
-  // 4. APPLICANT - Left aligned name, Right aligned label (italic)
-  const applicantName = metadata.applicantName || '[APPLICANT NAME]'
-  page.drawText(applicantName, {
-    x: 50,
-    y: yPosition,
-    size: 11,
-    font: font,
-    color: rgb(0, 0, 0),
-  })
-  const applicantLabel = 'Applicant'
-  const applicantLabelWidth = fontItalic.widthOfTextAtSize(applicantLabel, 10)
-  page.drawText(applicantLabel, {
-    x: width - applicantLabelWidth - 50,
-    y: yPosition,
-    size: 10,
-    font: fontItalic,
-    color: rgb(0, 0, 0),
-  })
-  yPosition -= 25
+  // 4-6. PARTIES - Dynamic rendering based on parties array
+  // Group parties by role for display
+  const getRoleLabel = (role: string, customRole: string | undefined, count: number): string => {
+    if (role === 'other' && customRole) {
+      return count > 1 ? `${customRole}s` : customRole
+    }
+    const labels: Record<string, string> = {
+      'applicant': count > 1 ? 'Applicants' : 'Applicant',
+      'respondent': count > 1 ? 'Respondents' : 'Respondent',
+      'claimant': count > 1 ? 'Claimants' : 'Claimant',
+      'defendant': count > 1 ? 'Defendants' : 'Defendant',
+      'appellant': count > 1 ? 'Appellants' : 'Appellant',
+      'interested-person': count > 1 ? 'Interested Persons' : 'Interested Person',
+    }
+    return labels[role] || role
+  }
 
-  // 5. "-and-" - Centered, 11pt
-  centerText('-and-', yPosition, 11, font)
-  yPosition -= 25
+  // Group parties by role
+  const partiesByRole = new Map<string, Array<{ name: string; customRole?: string }>>()
 
-  // 6. RESPONDENT - Left aligned name, Right aligned label (italic)
-  const respondentName = metadata.respondentName || '[RESPONDENT NAME]'
-  page.drawText(respondentName, {
-    x: 50,
-    y: yPosition,
-    size: 11,
-    font: font,
-    color: rgb(0, 0, 0),
+  if (metadata.parties && metadata.parties.length > 0) {
+    metadata.parties.forEach(party => {
+      const key = party.role === 'other' ? `other-${party.customRole}` : party.role
+      if (!partiesByRole.has(key)) {
+        partiesByRole.set(key, [])
+      }
+      partiesByRole.get(key)!.push({ name: party.name, customRole: party.customRole })
+    })
+  } else {
+    // Backward compatibility: use old fields if parties array is empty
+    if (metadata.applicantName) {
+      partiesByRole.set('applicant', [{ name: metadata.applicantName }])
+    }
+    if (metadata.respondentName) {
+      partiesByRole.set('respondent', [{ name: metadata.respondentName }])
+    }
+    // If still no parties, show placeholder
+    if (partiesByRole.size === 0) {
+      partiesByRole.set('applicant', [{ name: '[APPLICANT NAME]' }])
+      partiesByRole.set('respondent', [{ name: '[RESPONDENT NAME]' }])
+    }
+  }
+
+  // Render each role group
+  const roleGroups = Array.from(partiesByRole.entries())
+  roleGroups.forEach(([roleKey, parties], groupIndex) => {
+    const role = roleKey.startsWith('other-') ? 'other' : roleKey
+    const customRole = roleKey.startsWith('other-') ? roleKey.substring(6) : undefined
+    const roleLabel = getRoleLabel(role, customRole, parties.length)
+
+    // Render each party name
+    parties.forEach((party, partyIndex) => {
+      const partyName = party.name || '[PARTY NAME]'
+      page.drawText(partyName, {
+        x: 50,
+        y: yPosition,
+        size: 11,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+
+      // Only show role label on the last name of this group (aligned right)
+      if (partyIndex === parties.length - 1) {
+        const labelWidth = fontItalic.widthOfTextAtSize(roleLabel, 10)
+        page.drawText(roleLabel, {
+          x: width - labelWidth - 50,
+          y: yPosition,
+          size: 10,
+          font: fontItalic,
+          color: rgb(0, 0, 0),
+        })
+      }
+
+      yPosition -= 20
+    })
+
+    // Add "-and-" between role groups (but not after the last group)
+    if (groupIndex < roleGroups.length - 1) {
+      yPosition += 5 // Adjust spacing
+      centerText('-and-', yPosition, 11, font)
+      yPosition -= 25
+    }
   })
-  const respondentLabel = 'Respondent'
-  const respondentLabelWidth = fontItalic.widthOfTextAtSize(respondentLabel, 10)
-  page.drawText(respondentLabel, {
-    x: width - respondentLabelWidth - 50,
-    y: yPosition,
-    size: 10,
-    font: fontItalic,
-    color: rgb(0, 0, 0),
-  })
-  yPosition -= 35
+
+  yPosition -= 15 // Extra space after parties section
 
   // 7. PRACTICE DIRECTION COMPLIANCE - Centered, Bold, 12pt
   const pdText = metadata.bundleType
@@ -382,6 +424,7 @@ async function generateIndexPage(
  */
 async function addLinksToIndex(
   pdfDoc: PDFDocument,
+  metadata: BundleMetadata,
   indexEntries: IndexEntry[],
   indexPageCount: number
 ): Promise<void> {
@@ -399,14 +442,45 @@ async function addLinksToIndex(
   // 3. "BETWEEN:" - 11pt, centered, bold
   yPosition -= 25
 
-  // 4. Applicant - 11pt, left/right aligned
-  yPosition -= 25
+  // 4-6. PARTIES - Dynamic spacing based on actual parties
+  // Count total party lines and role groups
+  const partiesByRole = new Map<string, number>()
 
-  // 5. "-and-" - 11pt, centered
-  yPosition -= 25
+  if (metadata.parties && metadata.parties.length > 0) {
+    metadata.parties.forEach(party => {
+      const key = party.role === 'other' ? `other-${party.customRole}` : party.role
+      partiesByRole.set(key, (partiesByRole.get(key) || 0) + 1)
+    })
+  } else {
+    // Backward compatibility
+    if (metadata.applicantName) partiesByRole.set('applicant', 1)
+    if (metadata.respondentName) partiesByRole.set('respondent', 1)
+    if (partiesByRole.size === 0) {
+      partiesByRole.set('applicant', 1)
+      partiesByRole.set('respondent', 1)
+    }
+  }
 
-  // 6. Respondent - 11pt, left/right aligned
-  yPosition -= 35
+  // Calculate spacing for party section
+  const roleGroupCount = partiesByRole.size
+  let totalPartyLines = 0
+
+  partiesByRole.forEach((count) => {
+    totalPartyLines += count // Each party takes one line (20px)
+  })
+
+  // Each party line is 20px
+  yPosition -= totalPartyLines * 20
+
+  // Add "-and-" spacing between role groups (25px per separator)
+  // Number of separators = roleGroupCount - 1
+  if (roleGroupCount > 1) {
+    yPosition -= (roleGroupCount - 1) * 25
+    yPosition += 5 * (roleGroupCount - 1) // Adjust spacing (same as generateIndexPage line 147)
+  }
+
+  // Extra space after parties section
+  yPosition -= 15
 
   // 7. Practice Direction - 12pt, centered, bold
   yPosition -= 30
@@ -786,7 +860,7 @@ export async function generateBundlePreview(
     documentPages.forEach(page => finalPdf.addPage(page))
 
     // Now that all pages exist, add clickable links to the index
-    await addLinksToIndex(finalPdf, indexEntries, indexPageCount)
+    await addLinksToIndex(finalPdf, metadata, indexEntries, indexPageCount)
 
     // Build complete page numbers array
     const allPageNumbers: string[] = []
@@ -1131,7 +1205,7 @@ export async function generateBundle(
     documentPages.forEach(page => finalPdf.addPage(page))
 
     // Now that all pages exist, add clickable links to the index
-    await addLinksToIndex(finalPdf, indexEntries, indexPageCount)
+    await addLinksToIndex(finalPdf, metadata, indexEntries, indexPageCount)
 
     // Build complete page numbers array (empty for index, then document page numbers)
     const allPageNumbers: string[] = []

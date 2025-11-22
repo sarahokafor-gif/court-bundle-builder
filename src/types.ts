@@ -40,18 +40,36 @@ export interface BatesNumberSettings {
 
 export type BundleType = 'family' | 'civil' | 'employment' | 'inquest' | 'tribunal' | 'court-of-protection' | 'general';
 
+export type PartyRole =
+  | 'applicant'
+  | 'respondent'
+  | 'claimant'
+  | 'defendant'
+  | 'appellant'
+  | 'interested-person'
+  | 'other';
+
+export interface Party {
+  id: string;
+  name: string;
+  role: PartyRole;
+  customRole?: string; // Used when role is 'other'
+  order: number;
+}
+
 export interface BundleMetadata {
   bundleTitle: string;
   caseNumber: string;
   court: string;
-  applicantName: string;
-  respondentName: string;
+  parties: Party[]; // New: dynamic party list
   preparerName: string;
   preparerRole: string;
   date: string;
   bundleType?: BundleType;
-  // Legacy field for backward compatibility
+  // Legacy fields for backward compatibility
   caseName?: string;
+  applicantName?: string;
+  respondentName?: string;
 }
 
 export interface Bundle {

@@ -33,8 +33,7 @@ function App() {
     bundleTitle: '',
     caseNumber: '',
     court: '',
-    applicantName: '',
-    respondentName: '',
+    parties: [], // New: dynamic party list
     preparerName: '',
     preparerRole: '',
     date: new Date().toISOString().split('T')[0],
