@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Section, Document, BundleMetadata, PageNumberSettings, BatesNumberSettings, BundleType } from './types'
+import { Section, Document, BundleMetadata, PageNumberSettings, BatesNumberSettings, BundleType, DatePrecision } from './types'
 import MetadataForm from './components/MetadataForm'
 import DocumentUploader from './components/DocumentUploader'
 import SectionManager from './components/SectionManager'
@@ -185,18 +185,112 @@ function App() {
     })
   }, [])
 
-  const handleUpdateDocumentDate = useCallback((sectionId: string, docId: string, date: string) => {
+  const handleUpdateDocumentDate = useCallback((sectionId: string, docId: string, date: string, precision?: DatePrecision) => {
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
           ? {
               ...section,
               documents: section.documents.map(doc =>
-                doc.id === docId ? { ...doc, documentDate: date } : doc
+                doc.id === docId
+                  ? {
+                      ...doc,
+                      documentDate: date,
+                      // Use provided precision if given (from auto-extraction),
+                      // otherwise use day precision for manual date picker,
+                      // or none when clearing
+                      datePrecision: precision || (date ? 'day' : 'none'),
+                    }
+                  : doc
               ),
             }
           : section
       )
+    )
+  }, [])
+
+  /**
+   * Sorts documents chronologically within each section with precision awareness
+   * Sort order: none → year → month → day (oldest to newest within each precision level)
+   */
+  const handleSortDocumentsChronologically = useCallback(() => {
+    setSections(prev =>
+      prev.map(section => {
+        // Group documents by precision level
+        const docsByPrecision: {
+          none: typeof section.documents
+          year: typeof section.documents
+          month: typeof section.documents
+          day: typeof section.documents
+        } = {
+          none: [],
+          year: [],
+          month: [],
+          day: [],
+        }
+
+        section.documents.forEach(doc => {
+          const precision = doc.datePrecision || 'none'
+          docsByPrecision[precision].push(doc)
+        })
+
+        // Helper function to parse dates based on precision
+        const parseDate = (dateStr: string, precision: string): Date => {
+          const parts = dateStr.split('-').map(Number)
+
+          if (precision === 'day') {
+            // DD-MM-YYYY format
+            const [day, month, year] = parts
+            return new Date(year, month - 1, day)
+          } else if (precision === 'month') {
+            // MM-YYYY format
+            const [month, year] = parts
+            return new Date(year, month - 1, 1)
+          } else if (precision === 'year') {
+            // YYYY format
+            const year = parseInt(dateStr)
+            return new Date(year, 0, 1)
+          }
+
+          return new Date(0) // Fallback
+        }
+
+        // Sort each precision group chronologically (oldest to newest)
+        const sortByDate = (docs: typeof section.documents, precision: string) => {
+          return docs.sort((a, b) => {
+            if (!a.documentDate || !b.documentDate) return 0
+
+            const dateA = parseDate(a.documentDate, precision)
+            const dateB = parseDate(b.documentDate, precision)
+
+            return dateA.getTime() - dateB.getTime()
+          })
+        }
+
+        // Sort each group
+        const sortedNone = docsByPrecision.none
+        const sortedYear = sortByDate(docsByPrecision.year, 'year')
+        const sortedMonth = sortByDate(docsByPrecision.month, 'month')
+        const sortedDay = sortByDate(docsByPrecision.day, 'day')
+
+        // Combine in precision order: none → year → month → day
+        const sortedDocuments = [
+          ...sortedNone,
+          ...sortedYear,
+          ...sortedMonth,
+          ...sortedDay,
+        ]
+
+        // Update order property
+        sortedDocuments.forEach((doc, index) => {
+          doc.order = index
+        })
+
+        return {
+          ...section,
+          documents: sortedDocuments,
+        }
+      })
     )
   }, [])
 
@@ -560,12 +654,48 @@ function App() {
               <strong>Add your PDF documents:</strong> Click the upload button below to add PDFs to your bundle. After uploading, you can:
             </p>
             <ul style={{ marginLeft: '1.5rem', lineHeight: '1.8', color: 'var(--color-primary)' }}>
-              <li><strong>Reorder documents</strong> using the up/down arrow buttons</li>
+              <li><strong>Reorder documents</strong> using the up/down arrow buttons or drag-and-drop</li>
               <li><strong>Move documents</strong> between sections using the dropdown menu</li>
               <li><strong>Edit PDFs</strong> to add annotations or redact information</li>
               <li><strong>Remove pages</strong> you don't need from any document</li>
               <li><strong>Add custom titles</strong> and dates for the index</li>
             </ul>
+
+            <div style={{
+              marginTop: 'var(--spacing-lg)',
+              padding: 'var(--spacing-md) var(--spacing-lg)',
+              backgroundColor: '#e3f2fd',
+              border: '2px solid #2196F3',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--font-size-sm)',
+            }}>
+              <p style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontWeight: 'var(--font-weight-semibold)', color: '#1976D2' }}>
+                📅 Smart Date Detection & Chronological Sorting
+              </p>
+              <ul style={{ margin: 0, paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+                <li>
+                  <strong>Auto-detection:</strong> Dates are automatically extracted from filenames when you upload documents.
+                  <br />
+                  <span style={{ fontSize: '0.85em', color: '#555', fontStyle: 'italic' }}>
+                    Supported formats: DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, YYYYMMDD, DD.MM.YYYY
+                  </span>
+                  <br />
+                  <span style={{ fontSize: '0.85em', color: '#555', fontStyle: 'italic' }}>
+                    Example: "Witness_Statement_15-01-2024.pdf" → Date: 15/01/2024 (auto-detected ✓)
+                  </span>
+                </li>
+                <li>
+                  <strong>Manual entry:</strong> Click any document's date field to add or change dates manually using the calendar picker
+                </li>
+                <li>
+                  <strong>Visual indicators:</strong> Green badge = auto-detected date | Yellow badge = no date set
+                </li>
+                <li>
+                  <strong>Sort chronologically:</strong> Click the "📅 Sort by Date" button to arrange all documents by date.
+                  Documents without dates appear first, then dated documents from oldest to newest.
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Search and Filter */}
@@ -583,6 +713,50 @@ function App() {
           />
 
           <DocumentUploader onDocumentsAdded={handleAddDocuments} />
+
+          {/* Sort by Date Button */}
+          {totalDocs > 0 && (
+            <div style={{
+              marginTop: 'var(--spacing-lg)',
+              marginBottom: 'var(--spacing-md)',
+              padding: 'var(--spacing-md)',
+              backgroundColor: '#f5f5f5',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid #ddd',
+            }}>
+              <button
+                className="btn btn-secondary"
+                onClick={handleSortDocumentsChronologically}
+                title="Sort all documents chronologically within each section"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-sm)',
+                  fontSize: 'var(--font-size-base)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                }}
+              >
+                📅 Sort All Documents by Date
+              </button>
+              <div style={{
+                marginTop: 'var(--spacing-sm)',
+                fontSize: 'var(--font-size-sm)',
+                color: '#666',
+                lineHeight: '1.6',
+              }}>
+                <p style={{ margin: 0, marginBottom: 'var(--spacing-xs)' }}>
+                  <strong>How it works:</strong>
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                  <li>Sorts documents <strong>within each section</strong> independently</li>
+                  <li>Documents <strong>without dates</strong> appear at the <strong>top</strong> of each section</li>
+                  <li>Documents <strong>with dates</strong> are arranged <strong>oldest to newest</strong></li>
+                  <li>You can still manually reorder documents after sorting if needed</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           <SectionDocumentList
             sections={sections}
             onRemoveDocument={handleRemoveDocument}

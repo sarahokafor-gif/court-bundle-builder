@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, Calendar, AlertCircle, BookTemplate } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Section, Document } from '../types'
+import { Section, Document, DatePrecision } from '../types'
+import { formatDateForInput, formatDateFromInput, extractDateWithPrecision } from '../utils/dateExtraction'
+import { searchTemplates, getFirstPlaceholderRange } from '../utils/documentTemplates'
 import PageManager from './PageManager'
 import PDFEditor from './PDFEditor'
 import { burnRectanglesIntoPDF } from '../utils/pdfEditing'
@@ -16,7 +18,7 @@ interface SectionDocumentListProps {
   onReorderDocument: (sectionId: string, docIndex: number, newIndex: number) => void
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
   onPreview: (doc: Document) => void
-  onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
+  onUpdateDocumentDate: (sectionId: string, docId: string, date: string, precision?: DatePrecision) => void
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
   onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File) => void
@@ -31,7 +33,7 @@ interface SortableDocumentItemProps {
   onRemoveDocument: (sectionId: string, docId: string) => void
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
   onPreview: (doc: Document) => void
-  onUpdateDocumentDate: (sectionId: string, docId: string, date: string) => void
+  onUpdateDocumentDate: (sectionId: string, docId: string, date: string, precision?: DatePrecision) => void
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   setManagingDocument: (value: { sectionId: string; doc: Document } | null) => void
   setEditingDocument: (value: { sectionId: string; doc: Document } | null) => void
@@ -64,6 +66,76 @@ function SortableDocumentItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  }
+
+  // Template and autocomplete state
+  const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [titleInputValue, setTitleInputValue] = useState(doc.customTitle || '')
+  const titleInputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<HTMLDivElement>(null)
+
+  // Update local state when doc.customTitle changes
+  useEffect(() => {
+    setTitleInputValue(doc.customTitle || '')
+  }, [doc.customTitle])
+
+  // Get autocomplete suggestions based on current input
+  const suggestions = showAutocomplete && titleInputValue.trim()
+    ? searchTemplates(titleInputValue, 8)
+    : []
+
+  // Handle clicking outside to close autocomplete
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        autocompleteRef.current &&
+        !autocompleteRef.current.contains(event.target as Node) &&
+        titleInputRef.current &&
+        !titleInputRef.current.contains(event.target as Node)
+      ) {
+        setShowAutocomplete(false)
+      }
+    }
+
+    if (showAutocomplete) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showAutocomplete])
+
+  const handleTitleChange = (value: string) => {
+    setTitleInputValue(value)
+    setShowAutocomplete(value.trim().length > 0)
+  }
+
+  const handleTitleBlur = () => {
+    // Save the title when input loses focus
+    if (titleInputValue !== doc.customTitle) {
+      onUpdateDocumentTitle(section.id, doc.id, titleInputValue)
+
+      // Auto-extract date with precision when title is saved
+      const extractionResult = extractDateWithPrecision(titleInputValue)
+      if (extractionResult.date && extractionResult.precision !== 'none') {
+        onUpdateDocumentDate(section.id, doc.id, extractionResult.date, extractionResult.precision)
+      }
+    }
+  }
+
+  const handleSelectTemplate = (templateName: string) => {
+    setTitleInputValue(templateName)
+    onUpdateDocumentTitle(section.id, doc.id, templateName)
+    setShowAutocomplete(false)
+
+    // Auto-select first placeholder
+    setTimeout(() => {
+      if (titleInputRef.current) {
+        const range = getFirstPlaceholderRange(templateName)
+        if (range) {
+          titleInputRef.current.focus()
+          titleInputRef.current.setSelectionRange(range.start, range.end)
+        }
+      }
+    }, 0)
   }
 
   return (
@@ -102,29 +174,178 @@ function SortableDocumentItem({
               </span>
             )}
           </div>
-          <input
-            type="text"
-            className="document-title-input"
-            value={doc.customTitle || ''}
-            onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
-            placeholder="Custom title for index (optional)"
-            title="Custom title to display in the bundle index"
-          />
-          <input
-            type="date"
-            className="document-date-input"
-            value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
-            onChange={(e) => {
-              if (e.target.value) {
-                const [year, month, day] = e.target.value.split('-')
-                onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
+          <div className="document-title-wrapper" style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <input
+                ref={titleInputRef}
+                type="text"
+                className="document-title-input"
+                value={titleInputValue}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                onBlur={handleTitleBlur}
+                onFocus={() => {
+                  if (titleInputValue.trim().length > 0) {
+                    setShowAutocomplete(true)
+                  }
+                }}
+                placeholder="Custom title for index (optional) - start typing for templates"
+                title="Custom title to display in the bundle index. Start typing to see suggested templates with placeholders."
+                aria-label="Document custom title with template suggestions"
+              />
+              <button
+                type="button"
+                className="template-button"
+                onClick={() => {
+                  setShowAutocomplete(!showAutocomplete)
+                  titleInputRef.current?.focus()
+                }}
+                title="Show document templates"
+                aria-label="Show document name templates"
+                style={{
+                  padding: '4px 8px',
+                  backgroundColor: '#f0f0f0',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <BookTemplate size={14} />
+                Templates
+              </button>
+            </div>
+
+            {/* Autocomplete dropdown */}
+            {showAutocomplete && suggestions.length > 0 && (
+              <div
+                ref={autocompleteRef}
+                className="autocomplete-dropdown"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  marginTop: '2px',
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  zIndex: 1000,
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                }}
+              >
+                {suggestions.map((template, index) => (
+                  <div
+                    key={index}
+                    className="autocomplete-item"
+                    onClick={() => handleSelectTemplate(template.name)}
+                    style={{
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      borderBottom: index < suggestions.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      fontSize: '13px',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f0f7ff'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'white'
+                    }}
+                  >
+                    <div style={{ fontWeight: 500 }}>{template.name}</div>
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                      {template.category === 'full-date' && '📅 Full date (day precision)'}
+                      {template.category === 'month-year' && '📅 Month + year precision'}
+                      {template.category === 'year-only' && '📅 Year only'}
+                      {template.category === 'no-date' && 'No date'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="document-date-field">
+            <input
+              type="date"
+              className="document-date-input"
+              value={doc.documentDate ? formatDateForInput(doc.documentDate) : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  onUpdateDocumentDate(section.id, doc.id, formatDateFromInput(e.target.value))
+                } else {
+                  onUpdateDocumentDate(section.id, doc.id, '')
+                }
+              }}
+              placeholder="DD/MM/YYYY"
+              title="Click to set document date. Used for chronological sorting. Dates are auto-detected from filenames when available."
+              aria-label={`Document date for ${doc.name}${doc.documentDate ? ` (currently set to ${doc.documentDate})` : ' (not set)'}`}
+            />
+            {(() => {
+              const precision = doc.datePrecision || 'none'
+
+              if (precision === 'day' && doc.documentDate) {
+                return (
+                  <span
+                    className="date-badge auto-detected"
+                    title="📅 Full date detected (day precision). Most precise - appears last in chronological sort."
+                    style={{
+                      backgroundColor: '#e8f5e9',
+                      color: '#2e7d32',
+                      border: '1px solid #a5d6a7',
+                    }}
+                  >
+                    <Calendar size={12} />
+                    Full Date ✅
+                  </span>
+                )
+              } else if (precision === 'month' && doc.documentDate) {
+                return (
+                  <span
+                    className="date-badge manually-set"
+                    title="📅 Month + year detected (month precision). Appears after year-only dates in chronological sort."
+                    style={{
+                      backgroundColor: '#fff3e0',
+                      color: '#e65100',
+                      border: '1px solid #ffcc80',
+                    }}
+                  >
+                    <Calendar size={12} />
+                    Month+Year ~
+                  </span>
+                )
+              } else if (precision === 'year' && doc.documentDate) {
+                return (
+                  <span
+                    className="date-badge manually-set"
+                    title="📅 Year only detected (year precision). Appears after undated documents in chronological sort."
+                    style={{
+                      backgroundColor: '#e3f2fd',
+                      color: '#1565c0',
+                      border: '1px solid #90caf9',
+                    }}
+                  >
+                    <Calendar size={12} />
+                    Year Only
+                  </span>
+                )
               } else {
-                onUpdateDocumentDate(section.id, doc.id, '')
+                return (
+                  <span
+                    className="date-badge no-date"
+                    title="⚠️ No date detected. Documents without dates appear first when using chronological sort."
+                  >
+                    <AlertCircle size={12} />
+                    No date
+                  </span>
+                )
               }
-            }}
-            placeholder="Document date (optional)"
-            title="Document date (optional)"
-          />
+            })()}
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react'
 import { Document } from '../types'
 import { getPdfPageCount } from '../utils/pdfUtils'
 import { generatePDFThumbnail } from '../utils/pdfThumbnail'
+import { extractDateWithPrecision } from '../utils/dateExtraction'
 import ProgressIndicator from './ProgressIndicator'
 import './DocumentUploader.css'
 
@@ -43,6 +44,9 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
           generatePDFThumbnail(file),
         ])
 
+        // Try to extract date with precision from filename automatically
+        const extractionResult = extractDateWithPrecision(file.name)
+
         newDocuments.push({
           id: `${Date.now()}-${i}`,
           file,
@@ -50,6 +54,8 @@ export default function DocumentUploader({ onDocumentsAdded }: DocumentUploaderP
           pageCount,
           order: 0, // Will be set by parent
           thumbnail,
+          documentDate: extractionResult.date || undefined, // Auto-detected date or undefined
+          datePrecision: extractionResult.precision, // Date precision level
         })
 
         // Update progress after successfully processing each file

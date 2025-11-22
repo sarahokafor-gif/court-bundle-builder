@@ -326,6 +326,43 @@
   opacity: 1;
 }
 
+/* Date field container with badge */
+.document-date-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.document-date-field .document-date-input {
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+/* Date status badges */
+.date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.date-badge.auto-detected {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.date-badge.no-date {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
 .document-actions {
   display: flex;
   gap: 0.5rem;

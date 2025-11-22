@@ -1,3 +1,5 @@
+export type DatePrecision = 'none' | 'year' | 'month' | 'day';
+
 export interface Document {
   id: string;
   file: File;
@@ -5,6 +7,7 @@ export interface Document {
   pageCount: number;
   order: number;
   documentDate?: string; // Optional date in DD-MM-YYYY format
+  datePrecision?: DatePrecision; // Precision level of the date (none, year, month, day)
   customTitle?: string; // Optional custom title for display in index
   selectedPages?: number[]; // Array of selected page indices (0-based). If undefined, all pages are selected
   modifiedFile?: File; // Modified/redacted version of the file (if edited)
