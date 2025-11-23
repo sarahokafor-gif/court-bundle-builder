@@ -1,4 +1,4 @@
-import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings, SavedBundle, SerializedSection, SerializedDocument } from '../types'
+import { Section, Document, BundleMetadata, PageNumberSettings, BatesNumberSettings, SavedBundle, SerializedSection, SerializedDocument } from '../types'
 
 /**
  * Converts a File to base64 string
@@ -339,4 +339,120 @@ export async function loadBundle(file: File): Promise<SavedBundle> {
     reader.onerror = () => reject(new Error('Failed to read file'))
     reader.readAsText(file)
   })
+}
+
+/**
+ * Progressive loading for large bundles - loads documents in batches to prevent memory exhaustion
+ * Reports progress via callback function
+ */
+export async function loadBundleProgressively(
+  file: File,
+  onProgress: (current: number, total: number, message: string) => void
+): Promise<SavedBundle & { deserializedSections: Section[] }> {
+  // First, load and parse the JSON (metadata + serialized sections)
+  onProgress(0, 100, 'Reading file...')
+  const savedBundle = await loadBundle(file)
+
+  // Count total documents
+  const totalDocs = savedBundle.sections.reduce((sum, section) => sum + section.documents.length, 0)
+
+  if (totalDocs === 0) {
+    return {
+      ...savedBundle,
+      deserializedSections: savedBundle.sections.map(section => ({
+        ...section,
+        documents: []
+      }))
+    }
+  }
+
+  onProgress(5, 100, `Preparing to load ${totalDocs} documents...`)
+
+  // Deserialize sections progressively
+  const deserializedSections: Section[] = []
+  let processedDocs = 0
+
+  // Process each section
+  for (let sectionIndex = 0; sectionIndex < savedBundle.sections.length; sectionIndex++) {
+    const serializedSection = savedBundle.sections[sectionIndex]
+    const deserializedDocs: Document[] = []
+
+    // Process documents in this section one at a time
+    for (let docIndex = 0; docIndex < serializedSection.documents.length; docIndex++) {
+      const serializedDoc = serializedSection.documents[docIndex]
+
+      try {
+        // Infer date precision for backward compatibility
+        let precision = serializedDoc.datePrecision
+        if (!precision && serializedDoc.documentDate) {
+          precision = inferDatePrecision(serializedDoc.documentDate)
+        } else if (!precision) {
+          precision = 'none'
+        }
+
+        // Restore main file from base64
+        const restoredFile = base64ToFile(serializedDoc.fileData, serializedDoc.name)
+
+        // Validate the file
+        const isValidFile = restoredFile && restoredFile instanceof Blob
+        if (!isValidFile) {
+          throw new Error(`Failed to create valid File object for "${serializedDoc.name}"`)
+        }
+
+        // Restore modifiedFile if it was saved
+        let restoredModifiedFile: File | undefined = undefined
+        if (serializedDoc.modifiedFileData) {
+          restoredModifiedFile = base64ToFile(serializedDoc.modifiedFileData, serializedDoc.name)
+          if (restoredModifiedFile && !(restoredModifiedFile instanceof Blob)) {
+            console.error(`Invalid modifiedFile object created for "${serializedDoc.name}"`)
+            restoredModifiedFile = undefined
+          }
+        }
+
+        deserializedDocs.push({
+          id: serializedDoc.id,
+          file: restoredFile,
+          name: serializedDoc.name,
+          pageCount: serializedDoc.pageCount,
+          order: serializedDoc.order,
+          documentDate: serializedDoc.documentDate,
+          datePrecision: precision,
+          customTitle: serializedDoc.customTitle,
+          selectedPages: serializedDoc.selectedPages,
+          modifiedFile: restoredModifiedFile,
+        })
+
+        processedDocs++
+        const progressPercent = Math.floor((processedDocs / totalDocs) * 90) + 5 // 5-95%
+        onProgress(progressPercent, 100, `Loading document ${processedDocs}/${totalDocs}: ${serializedDoc.name}`)
+
+        // Yield to browser to prevent UI freezing
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+      } catch (error) {
+        console.error(`Failed to deserialize document "${serializedDoc.name}":`, error)
+        throw new Error(`Failed to restore document "${serializedDoc.name}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    // Add completed section
+    deserializedSections.push({
+      id: serializedSection.id,
+      name: serializedSection.name,
+      documents: deserializedDocs,
+      addDivider: serializedSection.addDivider,
+      order: serializedSection.order,
+      pagePrefix: serializedSection.pagePrefix,
+      startPage: serializedSection.startPage,
+    })
+
+    onProgress(Math.floor((processedDocs / totalDocs) * 90) + 5, 100, `Completed section: ${serializedSection.name}`)
+  }
+
+  onProgress(100, 100, 'Loading complete!')
+
+  return {
+    ...savedBundle,
+    deserializedSections,
+  }
 }

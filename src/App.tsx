@@ -16,7 +16,7 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import BundleValidation from './components/BundleValidation'
 import TemplateSelector from './components/TemplateSelector'
 import { useToast } from './components/Toast'
-import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
+import { saveBundle, loadBundle, deserializeSections, loadBundleProgressively } from './utils/saveLoad'
 import {
   autoSaveToLocalStorage,
   getAutoSaveData,
@@ -26,6 +26,7 @@ import {
 } from './utils/autoSave'
 import { getPdfPageCount } from './utils/pdfUtils'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import LoadingProgress from './components/LoadingProgress'
 import './App.css'
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number; message: string } | null>(null)
   const autoSaveIntervalRef = useRef<number | null>(null)
   const isInitialMount = useRef(true)
   const generateButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -453,17 +455,43 @@ function App() {
 
   const handleLoad = async (file: File) => {
     try {
-      const savedBundle = await loadBundle(file)
-      setMetadata(savedBundle.metadata)
-      setSections(deserializeSections(savedBundle.sections))
-      setPageNumberSettings(savedBundle.pageNumberSettings)
-      if (savedBundle.batesNumberSettings) {
-        setBatesNumberSettings(savedBundle.batesNumberSettings)
+      // Check file size - if > 50MB, use progressive loading
+      const fileSizeMB = file.size / (1024 * 1024)
+      const useProgressiveLoading = fileSizeMB > 50
+
+      if (useProgressiveLoading) {
+        // Progressive loading for large files
+        const result = await loadBundleProgressively(file, (current, total, message) => {
+          setLoadingProgress({ current, total, message })
+        })
+
+        setMetadata(result.metadata)
+        setSections(result.deserializedSections)
+        setPageNumberSettings(result.pageNumberSettings)
+        if (result.batesNumberSettings) {
+          setBatesNumberSettings(result.batesNumberSettings)
+        }
+
+        // Clear loading progress after brief delay to show 100%
+        setTimeout(() => setLoadingProgress(null), 500)
+
+        showToast('success', `Loaded "${file.name}" successfully`)
+      } else {
+        // Fast loading for small files (original method)
+        const savedBundle = await loadBundle(file)
+        setMetadata(savedBundle.metadata)
+        setSections(deserializeSections(savedBundle.sections))
+        setPageNumberSettings(savedBundle.pageNumberSettings)
+        if (savedBundle.batesNumberSettings) {
+          setBatesNumberSettings(savedBundle.batesNumberSettings)
+        }
+        showToast('success', `Loaded "${file.name}" successfully`)
       }
-      showToast('success', `Loaded "${file.name}" successfully`)
     } catch (error) {
       console.error('Load failed:', error)
-      showToast('error', 'Failed to load bundle. The file may be corrupted.')
+      setLoadingProgress(null) // Clear loading on error
+      const errorMessage = error instanceof Error ? error.message : 'The file may be corrupted.'
+      showToast('error', `Failed to load bundle: ${errorMessage}`)
     }
   }
 
@@ -817,6 +845,15 @@ function App() {
       </main>
 
       <DocumentPreview document={previewDoc} onClose={() => setPreviewDoc(null)} />
+
+      {/* Loading Progress Modal */}
+      {loadingProgress && (
+        <LoadingProgress
+          progress={loadingProgress.current}
+          total={loadingProgress.total}
+          message={loadingProgress.message}
+        />
+      )}
 
       {/* Floating Keyboard Shortcuts Help Button */}
       <button
