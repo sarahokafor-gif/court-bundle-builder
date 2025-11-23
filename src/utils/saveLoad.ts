@@ -30,6 +30,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 /**
  * Converts base64 string back to File
+ * Creates a proper File object that works with URL.createObjectURL
  */
 function base64ToFile(base64: string, filename: string): File {
   try {
@@ -37,18 +38,28 @@ function base64ToFile(base64: string, filename: string): File {
       throw new Error('Empty base64 data')
     }
 
+    // Decode base64 to binary
     const byteCharacters = atob(base64)
     const byteNumbers = new Array(byteCharacters.length)
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i)
     }
     const byteArray = new Uint8Array(byteNumbers)
-    const blob = new Blob([byteArray], { type: 'application/pdf' })
-    const file = new File([blob], filename, { type: 'application/pdf' })
+
+    // Create File directly from Uint8Array (more reliable than Blob wrapper)
+    const file = new File([byteArray], filename, {
+      type: 'application/pdf',
+      lastModified: Date.now()
+    })
 
     // Validate the file was created properly
     if (!file || file.size === 0) {
       throw new Error('Created file is empty or invalid')
+    }
+
+    // Ensure it's a proper Blob (File extends Blob)
+    if (!(file instanceof Blob)) {
+      throw new Error('Created object is not a valid Blob/File')
     }
 
     return file
