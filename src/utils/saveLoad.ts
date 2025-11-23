@@ -33,7 +33,7 @@ async function fileToBase64(file: File): Promise<string> {
  * Converts base64 string back to File
  * Creates a proper File object that works with URL.createObjectURL
  */
-function base64ToFile(base64: string, filename: string): File {
+export function base64ToFile(base64: string, filename: string): File {
   try {
     if (!base64) {
       throw new Error('Empty base64 data')
@@ -129,7 +129,7 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
 /**
  * Infers date precision from date format for backward compatibility
  */
-function inferDatePrecision(dateStr: string): 'day' | 'month' | 'year' | 'none' {
+export function inferDatePrecision(dateStr: string): 'day' | 'month' | 'year' | 'none' {
   if (!dateStr) return 'none'
 
   const parts = dateStr.split('-')

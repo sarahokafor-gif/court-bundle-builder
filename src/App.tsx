@@ -20,6 +20,7 @@ import { saveBundle, loadBundle, deserializeSections, loadBundleProgressively, s
 import {
   autoSaveToLocalStorage,
   getAutoSaveData,
+  restoreAutoSaveProgressively,
   clearAutoSave,
   hasAutoSave,
   AUTO_SAVE_INTERVAL,
@@ -402,12 +403,23 @@ function App() {
     return () => clearTimeout(timeoutId)
   }, [metadata, sections, pageNumberSettings, batesNumberSettings])
 
-  const handleRestoreAutoSave = () => {
-    const autoSaveData = getAutoSaveData()
-    if (autoSaveData) {
+  const handleRestoreAutoSave = async () => {
+    try {
+      setShowRecoveryModal(false)
+
+      // Use progressive restoration to prevent memory crashes
+      const result = await restoreAutoSaveProgressively((current, total, message) => {
+        setLoadingProgress({ current, total, message })
+      })
+
+      if (!result) {
+        showToast('error', 'Failed to restore auto-save data')
+        return
+      }
+
       // Debug: Verify File objects are valid immediately after deserialization
       console.log('=== RESTORE AUTO-SAVE DEBUG ===')
-      autoSaveData.deserializedSections.forEach((section, sIdx) => {
+      result.deserializedSections.forEach((section, sIdx) => {
         section.documents.forEach((doc, dIdx) => {
           const fileCheck = {
             section: section.name,
@@ -425,15 +437,22 @@ function App() {
       })
       console.log('=== END RESTORE DEBUG ===')
 
-      setMetadata(autoSaveData.metadata)
-      setSections(autoSaveData.deserializedSections) // Use deserialized sections with File objects
-      setPageNumberSettings(autoSaveData.pageNumberSettings)
-      if (autoSaveData.batesNumberSettings) {
-        setBatesNumberSettings(autoSaveData.batesNumberSettings)
+      setMetadata(result.metadata)
+      setSections(result.deserializedSections)
+      setPageNumberSettings(result.pageNumberSettings)
+      if (result.batesNumberSettings) {
+        setBatesNumberSettings(result.batesNumberSettings)
       }
-      setShowRecoveryModal(false)
+
+      // Clear loading progress after brief delay to show 100%
+      setTimeout(() => setLoadingProgress(null), 500)
+
       showToast('success', 'Previous work restored successfully')
       clearAutoSave() // Clear auto-save after successful restore
+    } catch (error) {
+      console.error('Failed to restore auto-save:', error)
+      setLoadingProgress(null)
+      showToast('error', 'Failed to restore auto-save data')
     }
   }
 

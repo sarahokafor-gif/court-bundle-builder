@@ -1,5 +1,5 @@
 import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings, SerializedSection } from '../types'
-import { serializeSections, deserializeSections } from './saveLoad'
+import { serializeSections, base64ToFile, inferDatePrecision } from './saveLoad'
 
 const AUTO_SAVE_KEY = 'court-bundle-autosave'
 const AUTO_SAVE_INTERVAL = 30000 // 30 seconds
@@ -44,9 +44,9 @@ export async function autoSaveToLocalStorage(
 }
 
 /**
- * Retrieve auto-save data from localStorage and deserialize PDF files
+ * Retrieve auto-save data from localStorage WITHOUT deserializing (faster check)
  */
-export function getAutoSaveData(): (AutoSaveData & { deserializedSections: Section[] }) | null {
+export function getAutoSaveData(): AutoSaveData | null {
   try {
     const data = localStorage.getItem(AUTO_SAVE_KEY)
     if (!data) return null
@@ -67,15 +67,109 @@ export function getAutoSaveData(): (AutoSaveData & { deserializedSections: Secti
       return null
     }
 
-    // Deserialize sections (convert base64 back to Files)
-    let deserializedSections: Section[]
-    try {
-      deserializedSections = deserializeSections(parsed.sections)
-    } catch (error) {
-      console.error('Failed to deserialize auto-save sections:', error)
-      clearAutoSave()
-      return null
+    return parsed
+  } catch (error) {
+    console.error('Failed to retrieve auto-save:', error)
+    return null
+  }
+}
+
+/**
+ * Restore auto-save data progressively to prevent memory crashes
+ */
+export async function restoreAutoSaveProgressively(
+  onProgress: (current: number, total: number, message: string) => void
+): Promise<(AutoSaveData & { deserializedSections: Section[] }) | null> {
+  try {
+    const parsed = getAutoSaveData()
+    if (!parsed) return null
+
+    onProgress(0, 100, 'Reading auto-save data...')
+
+    // Count total documents
+    const totalDocs = parsed.sections.reduce((sum, section) => sum + section.documents.length, 0)
+
+    if (totalDocs === 0) {
+      return {
+        ...parsed,
+        deserializedSections: parsed.sections.map(section => ({
+          ...section,
+          documents: []
+        }))
+      }
     }
+
+    onProgress(5, 100, `Restoring ${totalDocs} documents...`)
+
+    // Use the same progressive deserialization as loadBundleProgressively
+    // This code is duplicated to avoid circular dependencies
+    const deserializedSections: Section[] = []
+    let processedDocs = 0
+
+    for (const serializedSection of parsed.sections) {
+      const deserializedDocs: any[] = []
+
+      for (const serializedDoc of serializedSection.documents) {
+        try {
+          // Restore files from base64
+          let precision = serializedDoc.datePrecision
+          if (!precision && serializedDoc.documentDate) {
+            precision = inferDatePrecision(serializedDoc.documentDate)
+          } else if (!precision) {
+            precision = 'none'
+          }
+
+          const restoredFile = base64ToFile(serializedDoc.fileData, serializedDoc.name)
+
+          let restoredModifiedFile: File | undefined = undefined
+          if (serializedDoc.modifiedFileData) {
+            restoredModifiedFile = base64ToFile(serializedDoc.modifiedFileData, serializedDoc.name)
+          }
+
+          deserializedDocs.push({
+            id: serializedDoc.id,
+            file: restoredFile,
+            name: serializedDoc.name,
+            pageCount: serializedDoc.pageCount,
+            order: serializedDoc.order,
+            documentDate: serializedDoc.documentDate,
+            datePrecision: precision,
+            customTitle: serializedDoc.customTitle,
+            selectedPages: serializedDoc.selectedPages,
+            modifiedFile: restoredModifiedFile,
+          })
+
+          processedDocs++
+          const progressPercent = Math.floor((processedDocs / totalDocs) * 90) + 5 // 5-95%
+
+          if (processedDocs % 5 === 0) {
+            onProgress(progressPercent, 100, `Restoring... (${processedDocs}/${totalDocs} documents)`)
+          } else {
+            onProgress(progressPercent, 100, `Restoring document ${processedDocs}/${totalDocs}`)
+          }
+
+          // Yield to browser
+          const delay = processedDocs % 5 === 0 ? 200 : 50
+          await new Promise(resolve => setTimeout(resolve, delay))
+
+        } catch (error) {
+          console.error(`Failed to restore document "${serializedDoc.name}":`, error)
+          throw new Error(`Failed to restore document "${serializedDoc.name}"`)
+        }
+      }
+
+      deserializedSections.push({
+        id: serializedSection.id,
+        name: serializedSection.name,
+        documents: deserializedDocs,
+        addDivider: serializedSection.addDivider,
+        order: serializedSection.order,
+        pagePrefix: serializedSection.pagePrefix,
+        startPage: serializedSection.startPage,
+      })
+    }
+
+    onProgress(100, 100, 'Restoration complete!')
 
     // Backward compatibility: Add default values for new fields if they don't exist
     const metadata = parsed.metadata
