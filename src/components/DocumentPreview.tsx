@@ -10,17 +10,36 @@ interface DocumentPreviewProps {
 
 export default function DocumentPreview({ document, onClose }: DocumentPreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (document) {
-      const url = URL.createObjectURL(document.file)
-      setPreviewUrl(url)
+      try {
+        // Use modifiedFile if it exists (edited/redacted version), otherwise use original file
+        const fileToPreview = document.modifiedFile || document.file
 
-      return () => {
-        URL.revokeObjectURL(url)
+        // Validate that we have a valid File object
+        if (!fileToPreview || !(fileToPreview instanceof File)) {
+          setError('Invalid file format. Cannot preview this document.')
+          setPreviewUrl(null)
+          return
+        }
+
+        const url = URL.createObjectURL(fileToPreview)
+        setPreviewUrl(url)
+        setError(null)
+
+        return () => {
+          URL.revokeObjectURL(url)
+        }
+      } catch (err) {
+        console.error('Error creating preview URL:', err)
+        setError('Failed to load preview. The file may be corrupted.')
+        setPreviewUrl(null)
       }
     } else {
       setPreviewUrl(null)
+      setError(null)
     }
   }, [document])
 
@@ -39,12 +58,23 @@ export default function DocumentPreview({ document, onClose }: DocumentPreviewPr
           </button>
         </div>
         <div className="preview-content">
-          {previewUrl && (
+          {error ? (
+            <div className="preview-error">
+              <p>{error}</p>
+              <p style={{ fontSize: '0.9em', marginTop: '0.5rem', color: '#666' }}>
+                Try uploading the document again or contact support if the problem persists.
+              </p>
+            </div>
+          ) : previewUrl ? (
             <iframe
               src={previewUrl}
               title={document.name}
               className="preview-iframe"
             />
+          ) : (
+            <div className="preview-loading">
+              <p>Loading preview...</p>
+            </div>
           )}
         </div>
       </div>

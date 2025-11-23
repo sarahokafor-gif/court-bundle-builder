@@ -73,3 +73,29 @@
   height: 100%;
   border: none;
 }
+
+.preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+  color: #d32f2f;
+}
+
+.preview-error p:first-child {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 1.1rem;
+}
