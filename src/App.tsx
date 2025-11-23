@@ -13,7 +13,6 @@ import BundleRequirementsInfo from './components/BundleRequirementsInfo'
 import PricingDisplay from './components/PricingDisplay'
 import AutoSaveRecovery from './components/AutoSaveRecovery'
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
-import SearchFilter, { SearchFilterRef } from './components/SearchFilter'
 import BundleValidation from './components/BundleValidation'
 import TemplateSelector from './components/TemplateSelector'
 import { useToast } from './components/Toast'
@@ -70,7 +69,6 @@ function App() {
   const isInitialMount = useRef(true)
   const generateButtonRef = useRef<HTMLButtonElement | null>(null)
   const generateIndexButtonRef = useRef<HTMLButtonElement | null>(null)
-  const searchFilterRef = useRef<SearchFilterRef | null>(null)
   const { showToast } = useToast()
 
   const handleAddDocuments = useCallback((newDocs: Document[]) => {
@@ -474,13 +472,6 @@ function App() {
         action: () => generateIndexButtonRef.current?.click(),
       },
       {
-        key: 'f',
-        ctrlKey: true,
-        metaKey: true,
-        description: 'Focus search filter',
-        action: () => searchFilterRef.current?.focus(),
-      },
-      {
         key: '?',
         description: 'Show keyboard shortcuts',
         action: () => setShowKeyboardShortcuts(true),
@@ -697,20 +688,6 @@ function App() {
               </ul>
             </div>
           </div>
-
-          {/* Search and Filter */}
-          <SearchFilter
-            ref={searchFilterRef}
-            sections={sections}
-            onDocumentClick={(sectionId, docId) => {
-              // Find the document and preview it
-              const section = sections.find(s => s.id === sectionId)
-              const doc = section?.documents.find(d => d.id === docId)
-              if (doc) {
-                setPreviewDoc(doc)
-              }
-            }}
-          />
 
           <DocumentUploader onDocumentsAdded={handleAddDocuments} />
 
