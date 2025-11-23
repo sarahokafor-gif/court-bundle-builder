@@ -736,6 +736,7 @@ function App() {
 
           <SectionDocumentList
             sections={sections}
+            bundleType={metadata.bundleType}
             onRemoveDocument={handleRemoveDocument}
             onReorderDocument={handleReorderDocument}
             onMoveToSection={handleMoveToSection}

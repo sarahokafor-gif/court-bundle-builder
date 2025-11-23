@@ -3,7 +3,7 @@ import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, S
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Section, Document, DatePrecision } from '../types'
+import { Section, Document, DatePrecision, BundleType } from '../types'
 import { formatDateForInput, formatDateFromInput, extractDateWithPrecision } from '../utils/dateExtraction'
 import { searchTemplates, getFirstPlaceholderRange } from '../utils/documentTemplates'
 import PageManager from './PageManager'
@@ -14,6 +14,7 @@ import './SectionDocumentList.css'
 
 interface SectionDocumentListProps {
   sections: Section[]
+  bundleType?: BundleType
   onRemoveDocument: (sectionId: string, docId: string) => void
   onReorderDocument: (sectionId: string, docIndex: number, newIndex: number) => void
   onMoveToSection: (docId: string, fromSectionId: string, toSectionId: string) => void
@@ -28,6 +29,7 @@ interface SortableDocumentItemProps {
   doc: Document
   section: Section
   sections: Section[]
+  bundleType?: BundleType
   isSelected: boolean
   onToggleSelection: (docId: string) => void
   onRemoveDocument: (sectionId: string, docId: string) => void
@@ -43,6 +45,7 @@ function SortableDocumentItem({
   doc,
   section,
   sections,
+  bundleType,
   isSelected,
   onToggleSelection,
   onRemoveDocument,
@@ -80,8 +83,9 @@ function SortableDocumentItem({
   }, [doc.customTitle])
 
   // Get autocomplete suggestions based on current input
+  // Pass bundleType for context-aware suggestions
   const suggestions = showAutocomplete && titleInputValue.trim()
-    ? searchTemplates(titleInputValue, 8)
+    ? searchTemplates(titleInputValue, 8, bundleType)
     : []
 
   // Handle clicking outside to close autocomplete
@@ -399,6 +403,7 @@ function SortableDocumentItem({
 
 export default function SectionDocumentList({
   sections,
+  bundleType,
   onRemoveDocument,
   onReorderDocument,
   onMoveToSection,
@@ -711,6 +716,7 @@ export default function SectionDocumentList({
                       doc={doc}
                       section={section}
                       sections={sections}
+                      bundleType={bundleType}
                       isSelected={selectedDocuments.has(doc.id)}
                       onToggleSelection={handleToggleSelection}
                       onRemoveDocument={onRemoveDocument}
