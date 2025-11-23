@@ -1,6 +1,6 @@
 /**
  * Context-aware document name templates for UK legal proceedings
- * Organized by case type with comprehensive coverage of document types
+ * Comprehensive database with intelligent fuzzy matching
  */
 
 import { BundleType } from '../types';
@@ -9,167 +9,333 @@ export interface DocumentTemplate {
   name: string;
   category: 'full-date' | 'month-year' | 'year-only' | 'no-date';
   precision: 'day' | 'month' | 'year' | 'none';
-  caseTypes: BundleType[]; // Which case types this template is relevant for
-  priority: number; // Higher priority templates appear first for matching case types
+  caseTypes: BundleType[];
+  priority: number;
+  aliases?: string[]; // Alternative names/codes for better matching
 }
 
 /**
- * Comprehensive template library organized by case type
+ * Comprehensive template library with ALL major UK court forms
  */
 export const documentTemplates: DocumentTemplate[] = [
   // ==========================================
-  // FAMILY LAW TEMPLATES
+  // CIVIL COURT FORMS (N-Series)
   // ==========================================
 
-  // Family - Care Proceedings (Children Act 1989)
-  { name: 'Care Plan - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Child Looked After Review Minutes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Initial Child Protection Conference Minutes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Core Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Section 7 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Section 37 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Guardian\'s Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'IRO Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Parenting Assessment - [Assessor Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
-  { name: 'Contact Notes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8 },
-  { name: 'Social Work Chronology', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10 },
-  { name: 'Threshold Document', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10 },
-  { name: 'Permanence Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
-  { name: 'Placement Order Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9 },
-  { name: 'Special Guardianship Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
+  // Claims and Applications
+  { name: 'N1 - Claim Form', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 10, aliases: ['N1', 'Claim Form'] },
+  { name: 'N1A - Notes for Claimant', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 7, aliases: ['N1A'] },
+  { name: 'N9 - Defence and Counterclaim', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 10, aliases: ['N9', 'Defence'] },
+  { name: 'N9A - Admission Form', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N9A', 'Admission'] },
+  { name: 'N9B - Defence (Specified Amount)', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N9B'] },
+  { name: 'N9C - Defence (Unspecified Amount)', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N9C'] },
+  { name: 'N9D - Counterclaim', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N9D', 'Counterclaim'] },
+  { name: 'N11 - Acknowledgment of Service', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 10, aliases: ['N11', 'AOS', 'Acknowledgment'] },
+  { name: 'N20 - Dispute to Jurisdiction', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 8, aliases: ['N20'] },
+  { name: 'N205A - Reply to Defence', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N205A', 'Reply'] },
+  { name: 'N205B - Reply to Defence (Specified)', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 8, aliases: ['N205B'] },
+  { name: 'N208 - Part 8 Claim Form', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N208', 'Part 8'] },
+  { name: 'N208A - Notes for Claimant (Part 8)', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 6, aliases: ['N208A'] },
+  { name: 'N210 - Statement of Costs', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 9, aliases: ['N210', 'Costs'] },
+  { name: 'N215 - Certificate of Service', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 8, aliases: ['N215', 'Service'] },
+  { name: 'N225 - Request for Judgment', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9, aliases: ['N225', 'Judgment'] },
+  { name: 'N244 - Application Notice', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family'], priority: 10, aliases: ['N244', 'Application Notice'] },
+  { name: 'N260 - Statement of Truth', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 8, aliases: ['N260', 'Statement of Truth'] },
+  { name: 'N266 - Notice of Discontinuance', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 8, aliases: ['N266', 'Discontinuance'] },
 
-  // Family - Private Law (Children)
-  { name: 'CAFCASS Section 7 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10 },
-  { name: 'Child Arrangements Order Application (C100)', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10 },
-  { name: 'Position Statement - [Party Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
-  { name: 'MIAM Certificate - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
-  { name: 'Safeguarding Letter (CAFCASS) - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8 },
+  // Witness and Evidence
+  { name: 'N20 - Witness Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 10, aliases: ['Witness Statement'] },
+  { name: 'N322 - Notice of Commencement of Assessment', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 7, aliases: ['N322'] },
+  { name: 'N349 - Interim Costs Certificate', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 7, aliases: ['N349'] },
 
-  // Family - Financial Remedy
-  { name: 'Form E - [Party Name]', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10 },
-  { name: 'Form A - Financial Remedy Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10 },
-  { name: 'Schedule of Assets', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9 },
-  { name: 'Pension Valuation - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8 },
-  { name: 'Property Valuation - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8 },
-  { name: 'Bank Statements - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['family', 'civil', 'employment'], priority: 7 },
-  { name: 'Mortgage Statement - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['family', 'civil'], priority: 7 },
-  { name: 'Chronology of Financial Events', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9 },
-  { name: 'FDR Position Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9 },
+  // Enforcement
+  { name: 'N323 - Warrant of Control', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 8, aliases: ['N323', 'Warrant'] },
+  { name: 'N325 - Certificate of Judgment', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 7, aliases: ['N325'] },
+  { name: 'N337 - Request for Charging Order', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 8, aliases: ['N337', 'Charging Order'] },
+  { name: 'N349A - Final Costs Certificate', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 7, aliases: ['N349A'] },
+  { name: 'N380 - Third Party Debt Order', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 8, aliases: ['N380'] },
 
-  // ==========================================
-  // CIVIL LAW TEMPLATES
-  // ==========================================
-
-  // Civil - General Litigation
-  { name: 'Particulars of Claim - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 10 },
-  { name: 'Defence - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 10 },
-  { name: 'Reply to Defence - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 10 },
-  { name: 'Witness Statement - [Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family', 'employment'], priority: 10 },
-  { name: 'Expert Report - [Expert Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 9 },
-  { name: 'Schedule of Loss - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'employment'], priority: 9 },
-  { name: 'Chronology of Events', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family', 'employment'], priority: 9 },
-  { name: 'List of Issues', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9 },
-  { name: 'Case Summary', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family', 'employment'], priority: 8 },
-
-  // Civil - Disclosure
-  { name: 'Disclosure Statement (N265)', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9 },
-  { name: 'List of Documents', category: 'no-date', precision: 'none', caseTypes: ['civil'], priority: 9 },
-  { name: 'Contract dated [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'employment'], priority: 8 },
-  { name: 'Invoice dated [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 8 },
-  { name: 'Letter [From] to [To] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family', 'employment'], priority: 7 },
-  { name: 'Email Correspondence - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family', 'employment'], priority: 7 },
-  { name: 'Medical Records - [Provider] - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['civil', 'family'], priority: 8 },
-
-  // Civil - Applications
-  { name: 'Application Notice (N244) - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil'], priority: 9 },
-  { name: 'Order dated [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 9 },
-  { name: 'Judgment dated [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 9 },
-  { name: 'Directions Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['civil', 'family'], priority: 8 },
+  // Appeals
+  { name: 'N161 - Appellant\'s Notice', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family'], priority: 9, aliases: ['N161', 'Appeal', 'Appellant'] },
+  { name: 'N162 - Respondent\'s Notice', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family'], priority: 9, aliases: ['N162', 'Respondent'] },
+  { name: 'N164 - Application for Permission to Appeal', category: 'no-date', precision: 'none', caseTypes: ['civil', 'family'], priority: 9, aliases: ['N164', 'Permission Appeal'] },
 
   // ==========================================
-  // EMPLOYMENT TRIBUNAL TEMPLATES
+  // FAMILY COURT FORMS (C, FL, D-Series)
   // ==========================================
 
-  { name: 'ET1 Claim Form - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10 },
-  { name: 'ET3 Response Form - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10 },
-  { name: 'Contract of Employment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10 },
-  { name: 'Grievance Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9 },
-  { name: 'Disciplinary Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9 },
-  { name: 'Appeal Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9 },
-  { name: 'Dismissal Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9 },
-  { name: 'Payslips - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['employment'], priority: 8 },
-  { name: 'P60 - [YYYY]', category: 'year-only', precision: 'year', caseTypes: ['employment'], priority: 8 },
-  { name: 'P45 - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8 },
-  { name: 'Sickness Records - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['employment'], priority: 7 },
-  { name: 'Performance Review - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['employment'], priority: 7 },
-  { name: 'Staff Handbook', category: 'no-date', precision: 'none', caseTypes: ['employment'], priority: 7 },
-  { name: 'Equal Pay Questionnaire - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8 },
-  { name: 'ACAS Early Conciliation Certificate', category: 'no-date', precision: 'none', caseTypes: ['employment'], priority: 9 },
-  { name: 'Disability Impact Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8 },
+  // Children - Private Law (C-Series)
+  { name: 'C100 - Child Arrangements Order Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['C100', 'CAO', 'Child Arrangements'] },
+  { name: 'C1A - Allegations of Harm', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['C1A', 'Harm', 'Allegations'] },
+  { name: 'C2 - Application in Existing Proceedings', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['C2', 'Application'] },
+  { name: 'C3 - Application for Variation, Discharge or Suspension', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['C3', 'Variation'] },
+  { name: 'C4 - Application for Witness Summons', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 7, aliases: ['C4', 'Witness Summons'] },
+  { name: 'C6 - Notice of Change of Details', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 6, aliases: ['C6'] },
+  { name: 'C6A - Notice of Acting in Person', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 6, aliases: ['C6A', 'Acting Person'] },
+  { name: 'C7 - Acknowledgement of Service (C100)', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['C7', 'C100 AOS'] },
+  { name: 'C8 - Confidential Contact Details', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['C8'] },
+  { name: 'C9 - Statement of Service', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 7, aliases: ['C9', 'Service'] },
+  { name: 'C10 - Application to Withdraw', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 7, aliases: ['C10', 'Withdraw'] },
+  { name: 'C10A - Application to Delay Service', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 6, aliases: ['C10A'] },
+  { name: 'C13 - Supplement for Parental Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 7, aliases: ['C13', 'Parental Order'] },
+  { name: 'C43 - Application for Special Guardianship', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9, aliases: ['C43', 'Special Guardianship', 'SGO'] },
+  { name: 'C43A - Report on Suitability of Applicant (SGO)', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['C43A'] },
+  { name: 'C45 - Parental Order Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 7, aliases: ['C45'] },
+  { name: 'C47 - Application for Non-Molestation Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['C47', 'Non-Molestation'] },
+  { name: 'C51 - Application for Adoption', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9, aliases: ['C51', 'Adoption'] },
+  { name: 'C63 - Application for Leave to Remove', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9, aliases: ['C63', 'Leave Remove', 'Removal'] },
+
+  // Care Proceedings
+  { name: 'C1 - Care Order Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['C1', 'Care Order'] },
+  { name: 'C13 - Supplement for Care/Supervision', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['C13'] },
+  { name: 'C20 - Application for Emergency Protection Order', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['C20', 'EPO', 'Emergency Protection'] },
+  { name: 'C21 - Interim Care Order', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['C21', 'ICO'] },
+  { name: 'C22 - Care Plan - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['C22', 'Care Plan'] },
+  { name: 'C23 - Application for Discharge of Care Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['C23', 'Discharge Care'] },
+
+  // Divorce and Financial (D and FL-Series)
+  { name: 'D8 - Divorce Petition', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['D8', 'Divorce', 'Petition'] },
+  { name: 'D10 - Acknowledgement of Service (Divorce)', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['D10', 'Divorce AOS'] },
+  { name: 'D11 - Application Notice (Family)', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['D11', 'Family Application'] },
+  { name: 'D36 - Decree Nisi', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['D36', 'Nisi'] },
+  { name: 'D80 - Notice of Application for Decree Absolute', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['D80', 'Absolute'] },
+  { name: 'D81 - Statement of Information', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['D81'] },
+  { name: 'D84 - Application for Consent Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9, aliases: ['D84', 'Consent Order'] },
+
+  // Financial Remedy Forms
+  { name: 'Form A - Financial Remedy Application', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['Form A', 'FRA'] },
+  { name: 'Form E - Financial Statement', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['Form E', 'Financial Statement'] },
+  { name: 'Form F - Notice of First Appointment', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['Form F', 'FDA'] },
+  { name: 'Form G - Notice of Financial Dispute Resolution', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['Form G', 'FDR'] },
+  { name: 'Form H - Costs Estimate', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['Form H', 'Costs'] },
+  { name: 'Form P1 - Pension Attachment Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 7, aliases: ['Form P1', 'P1', 'Pension'] },
+  { name: 'Form P2 - Pension Sharing Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 7, aliases: ['Form P2', 'P2'] },
+
+  // Domestic Violence
+  { name: 'FL401 - Non-Molestation/Occupation Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['FL401', 'Non-Mol', 'Occupation'] },
+  { name: 'FL401A - Non-Molestation Order', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['FL401A'] },
+  { name: 'FL402 - Respondent\'s Answer', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 9, aliases: ['FL402'] },
+  { name: 'FL403 - Application to Vary/Discharge', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['FL403', 'Vary'] },
+  { name: 'FL404 - Witness Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['FL404', 'DV Witness'] },
+  { name: 'FL405 - Statement of Service', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 7, aliases: ['FL405'] },
+  { name: 'FL406 - Application for Arrest Warrant', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['FL406', 'Arrest Warrant'] },
+  { name: 'FL407 - Application for Remand', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 7, aliases: ['FL407', 'Remand'] },
+  { name: 'FL415 - Position Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['FL415', 'Position'] },
+  { name: 'FL416 - Application for Fact-Finding Hearing', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['FL416', 'Fact-Finding'] },
+  { name: 'FL416A - Scott Schedule - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['FL416A', 'Scott Schedule'] },
 
   // ==========================================
-  // INQUEST TEMPLATES
+  // FAMILY LAW DOCUMENTS (Reports & Assessments)
   // ==========================================
 
-  { name: 'Post-Mortem Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10 },
-  { name: 'Toxicology Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10 },
-  { name: 'Police Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10 },
-  { name: 'Ambulance Records - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 9 },
-  { name: 'Hospital Records - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['inquest'], priority: 9 },
-  { name: 'GP Records - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['inquest'], priority: 9 },
-  { name: 'Expert Medical Report - [Expert] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 9 },
-  { name: 'Witness Statement - [Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 9 },
-  { name: 'Rule 43 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 8 },
-  { name: 'Coroner\'s Report to Prevent Future Deaths - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 8 },
+  { name: 'CAFCASS Section 7 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['Section 7', 'S7', 'CAFCASS Report'] },
+  { name: 'CAFCASS Section 37 Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['Section 37', 'S37'] },
+  { name: 'CAFCASS Safeguarding Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['Safeguarding'] },
+  { name: 'Guardian\'s Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['Guardian', 'Children\'s Guardian'] },
+  { name: 'IRO Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['IRO', 'Independent Reviewing Officer'] },
+  { name: 'Social Work Chronology', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 10, aliases: ['Chronology', 'SW Chronology'] },
+  { name: 'Threshold Document - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['Threshold'] },
+  { name: 'Parenting Assessment - [Assessor] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['Parenting', 'Parent Assessment'] },
+  { name: 'Psychological Assessment - [Psychologist] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['Psych', 'Psychology'] },
+  { name: 'Psychiatric Assessment - [Psychiatrist] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['Psychiatric', 'Psychiatry'] },
+  { name: 'Contact Notes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 8, aliases: ['Contact'] },
+  { name: 'Core Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['Core'] },
+  { name: 'Initial Child Protection Conference Minutes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['ICPC', 'Initial Conference', 'CP Conference'] },
+  { name: 'Review Child Protection Conference Minutes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['RCPC', 'Review Conference'] },
+  { name: 'Child Looked After Review Minutes - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 10, aliases: ['LAC Review', 'CLA Review'] },
+  { name: 'Permanence Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['Permanence', 'Perm Report'] },
+  { name: 'MIAM Certificate - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family'], priority: 9, aliases: ['MIAM', 'Mediation'] },
+  { name: 'Risk Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['family', 'civil'], priority: 9, aliases: ['Risk'] },
+  { name: 'Statement of Arrangements for Children', category: 'no-date', precision: 'none', caseTypes: ['family'], priority: 8, aliases: ['Children Arrangements', 'Statement Arrangements'] },
 
   // ==========================================
-  // TRIBUNAL TEMPLATES (General)
+  // EMPLOYMENT TRIBUNAL FORMS (ET-Series)
   // ==========================================
 
-  { name: 'Appeal Form - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 10 },
-  { name: 'Grounds of Appeal - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 10 },
-  { name: 'Decision Notice - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 10 },
-  { name: 'Statement of Reasons - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 9 },
-  { name: 'Appellant\'s Bundle Index', category: 'no-date', precision: 'none', caseTypes: ['tribunal'], priority: 9 },
-  { name: 'Respondent\'s Bundle Index', category: 'no-date', precision: 'none', caseTypes: ['tribunal'], priority: 9 },
-  { name: 'Skeleton Argument - [Party] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal', 'civil'], priority: 9 },
-  { name: 'Authorities Bundle', category: 'no-date', precision: 'none', caseTypes: ['tribunal', 'civil'], priority: 8 },
+  { name: 'ET1 - Claim Form', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10, aliases: ['ET1', 'Claim'] },
+  { name: 'ET3 - Response Form', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10, aliases: ['ET3', 'Response', 'Defence'] },
+  { name: 'ET3A - Employer\'s Contract Claim', category: 'no-date', precision: 'none', caseTypes: ['employment'], priority: 8, aliases: ['ET3A'] },
+  { name: 'ET4 - Application', category: 'no-date', precision: 'none', caseTypes: ['employment'], priority: 9, aliases: ['ET4', 'Application'] },
+  { name: 'Grievance Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9, aliases: ['Grievance'] },
+  { name: 'Appeal Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8, aliases: ['Appeal', 'Internal Appeal'] },
+  { name: 'Disciplinary Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8, aliases: ['Disciplinary'] },
+  { name: 'Dismissal Letter - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 9, aliases: ['Dismissal', 'Termination'] },
+  { name: 'Contract of Employment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8, aliases: ['Contract', 'Employment Contract'] },
+  { name: 'Staff Handbook - [YYYY]', category: 'year-only', precision: 'year', caseTypes: ['employment'], priority: 7, aliases: ['Handbook', 'Policies'] },
+  { name: 'Payslips - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['employment'], priority: 7, aliases: ['Payslip', 'Salary'] },
+  { name: 'P60 - [YYYY]', category: 'year-only', precision: 'year', caseTypes: ['employment'], priority: 8, aliases: ['P60', 'Tax Year End'] },
+  { name: 'Schedule of Loss - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 10, aliases: ['Schedule Loss', 'Loss'] },
+  { name: 'Witness Statement - [Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment', 'civil', 'family'], priority: 10, aliases: ['Witness'] },
+  { name: 'Medical Report - [Doctor] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment', 'civil', 'tribunal'], priority: 9, aliases: ['Medical', 'Doctor Report'] },
+  { name: 'Occupational Health Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment'], priority: 8, aliases: ['OH', 'Occ Health'] },
+  { name: 'Subject Access Request Response - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['employment', 'civil'], priority: 7, aliases: ['SAR', 'DSAR', 'Data Request'] },
 
   // ==========================================
-  // COURT OF PROTECTION TEMPLATES
+  // TRIBUNAL FORMS (First-tier & Upper Tribunal)
   // ==========================================
 
-  { name: 'Capacity Assessment - [Assessor] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 10 },
-  { name: 'Best Interests Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 10 },
-  { name: 'Court of Protection Application (COP1)', category: 'no-date', precision: 'none', caseTypes: ['court-of-protection'], priority: 10 },
-  { name: 'Deputy\'s Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 9 },
-  { name: 'Medical Report - [Doctor] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection', 'civil'], priority: 9 },
-  { name: 'Care Plan - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 9 },
-  { name: 'Financial Statement', category: 'no-date', precision: 'none', caseTypes: ['court-of-protection'], priority: 8 },
-  { name: 'Property and Affairs Report - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['court-of-protection'], priority: 8 },
-  { name: 'Mental Capacity Act Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 10 },
+  { name: 'SSCS1 - Social Security Appeal', category: 'no-date', precision: 'none', caseTypes: ['tribunal'], priority: 10, aliases: ['SSCS1', 'PIP Appeal', 'ESA Appeal', 'UC Appeal'] },
+  { name: 'SSCS5 - Response to Appeal', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 9, aliases: ['SSCS5'] },
+  { name: 'IA1 - Immigration Appeal', category: 'no-date', precision: 'none', caseTypes: ['tribunal'], priority: 10, aliases: ['IA1', 'Immigration'] },
+  { name: 'Notice of Appeal to Upper Tribunal', category: 'no-date', precision: 'none', caseTypes: ['tribunal'], priority: 9, aliases: ['UT Appeal', 'Upper Tribunal'] },
+  { name: 'Decision Notice - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal', 'employment'], priority: 10, aliases: ['Decision', 'Tribunal Decision'] },
+  { name: 'Mandatory Reconsideration Request - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 10, aliases: ['MR', 'Reconsideration'] },
+  { name: 'Mandatory Reconsideration Notice - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 10, aliases: ['MRN'] },
+  { name: 'ESA85 - Capability for Work Questionnaire', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 8, aliases: ['ESA85', 'ESA'] },
+  { name: 'PIP2 - How Your Disability Affects You', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 8, aliases: ['PIP2', 'PIP'] },
+  { name: 'UC50 - Capability for Work Questionnaire', category: 'full-date', precision: 'day', caseTypes: ['tribunal'], priority: 8, aliases: ['UC50', 'UC'] },
 
   // ==========================================
-  // GENERAL TEMPLATES (All Case Types)
+  // INQUEST DOCUMENTS
   // ==========================================
 
-  { name: 'Skeleton Argument - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family', 'employment', 'tribunal'], priority: 8 },
-  { name: 'Chronology', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 8 },
-  { name: 'Correspondence - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 6 },
-  { name: 'Documents from [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 6 },
-  { name: 'Annual Report [YYYY]', category: 'year-only', precision: 'year', caseTypes: ['general'], priority: 5 },
-  { name: 'Records [YYYY]', category: 'year-only', precision: 'year', caseTypes: ['general'], priority: 5 },
-  { name: 'Witness List', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family'], priority: 7 },
-  { name: 'Bundle Index', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family', 'employment', 'tribunal'], priority: 7 },
-  { name: 'Correspondence (undated)', category: 'no-date', precision: 'none', caseTypes: ['general'], priority: 5 },
-  { name: 'Legal Submissions - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 7 },
-  { name: 'Case Analysis - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general'], priority: 6 },
-  { name: 'Custom name...', category: 'no-date', precision: 'none', caseTypes: ['general'], priority: 1 },
+  { name: 'Post-Mortem Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['PM', 'Post Mortem', 'Autopsy'] },
+  { name: 'Toxicology Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['Toxicology', 'Tox Report'] },
+  { name: 'Pathologist Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['Pathology'] },
+  { name: 'Police Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['Police'] },
+  { name: 'Ambulance Records - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 9, aliases: ['Ambulance', 'Paramedic'] },
+  { name: 'Medical Records - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest', 'civil', 'tribunal'], priority: 9, aliases: ['Medical Records', 'GP Records', 'Hospital Records'] },
+  { name: 'Witness Statement - [Name] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10 },
+  { name: 'Coroner\'s Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['Coroner'] },
+  { name: 'Rule 43 Report (Prevention of Future Deaths)', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 9, aliases: ['Rule 43', 'PFD', 'Prevention'] },
+  { name: 'Verdict and Conclusions - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['inquest'], priority: 10, aliases: ['Verdict', 'Conclusion'] },
+
+  // ==========================================
+  // COURT OF PROTECTION
+  // ==========================================
+
+  { name: 'COP1 - Application Form', category: 'no-date', precision: 'none', caseTypes: ['court-of-protection'], priority: 10, aliases: ['COP1'] },
+  { name: 'COP3 - Assessment of Capacity', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 10, aliases: ['COP3', 'Capacity', 'MCA'] },
+  { name: 'COP4 - Deputy\'s Declaration', category: 'no-date', precision: 'none', caseTypes: ['court-of-protection'], priority: 9, aliases: ['COP4'] },
+  { name: 'COP5 - Acknowledgement of Service', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 8, aliases: ['COP5'] },
+  { name: 'COP9 - Application Notice', category: 'no-date', precision: 'none', caseTypes: ['court-of-protection'], priority: 9, aliases: ['COP9'] },
+  { name: 'COP24 - Witness Statement', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 9, aliases: ['COP24'] },
+  { name: 'Deputy\'s Report - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 9, aliases: ['Deputy Report'] },
+  { name: 'Mental Capacity Act Assessment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection'], priority: 10, aliases: ['MCA Assessment'] },
+  { name: 'Property and Affairs Report - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['court-of-protection'], priority: 8, aliases: ['Property Affairs'] },
+  { name: 'Financial Statement - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['court-of-protection', 'family'], priority: 8 },
+
+  // ==========================================
+  // GENERAL DOCUMENTS (All Case Types)
+  // ==========================================
+
+  { name: 'Skeleton Argument - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 9, aliases: ['Skeleton', 'Skel Arg'] },
+  { name: 'Chronology - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 8, aliases: ['Chronology'] },
+  { name: 'Case Summary - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 8, aliases: ['Summary', 'Case Sum'] },
+  { name: 'Bundle Index', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 7, aliases: ['Index'] },
+  { name: 'Position Statement - [Party] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 9, aliases: ['Position', 'Pos Statement'] },
+  { name: 'Legal Submissions - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 8, aliases: ['Submissions', 'Legal Subs'] },
+  { name: 'Authorities Bundle', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family'], priority: 7, aliases: ['Authorities', 'Case Law'] },
+  { name: 'Expert Report - [Expert] - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 9, aliases: ['Expert'] },
+  { name: 'Correspondence - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['general', 'civil', 'family', 'employment'], priority: 6, aliases: ['Letters', 'Correspondence'] },
+  { name: 'Email Correspondence - [Month YYYY]', category: 'month-year', precision: 'month', caseTypes: ['general'], priority: 6, aliases: ['Emails'] },
+  { name: 'Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 10, aliases: ['Court Order'] },
+  { name: 'Draft Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 8, aliases: ['Draft'] },
+  { name: 'Consent Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 9, aliases: ['Consent'] },
+  { name: 'Judgment - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 10, aliases: ['Judgment', 'Reasons'] },
+  { name: 'Transcript - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 8, aliases: ['Transcript', 'Hearing Transcript'] },
+  { name: 'Attendance Note - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general'], priority: 6, aliases: ['Attendance', 'File Note'] },
+  { name: 'Exhibit [Ref] - [Description]', category: 'no-date', precision: 'none', caseTypes: ['general', 'civil', 'family'], priority: 7, aliases: ['Exhibit'] },
+  { name: 'First, Second, Third Party Evidence - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general'], priority: 7, aliases: ['First', 'Second', 'Third', 'Party Evidence'] },
+  { name: 'Application for Extension of Time', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 8, aliases: ['Extension', 'Extension Time'] },
+  { name: 'Notice of Hearing - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general'], priority: 8, aliases: ['Notice Hearing'] },
+  { name: 'Case Management Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 9, aliases: ['CMO', 'Case Management'] },
+  { name: 'Directions Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 9, aliases: ['Directions'] },
+  { name: 'Unless Order - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil'], priority: 9, aliases: ['Unless'] },
+  { name: 'Certificate of Service - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil', 'family'], priority: 7, aliases: ['Certificate Service'] },
+  { name: 'Costs Budget - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil'], priority: 8, aliases: ['Precedent H', 'Budget'] },
+  { name: 'Bill of Costs - [DD-MM-YYYY]', category: 'full-date', precision: 'day', caseTypes: ['general', 'civil'], priority: 8, aliases: ['Bill Costs', 'Costs Bill'] },
+
+  // Fallback
+  { name: 'Custom name...', category: 'no-date', precision: 'none', caseTypes: ['general'], priority: 1, aliases: ['Other', 'Custom'] },
 ];
 
 /**
- * Search templates by query string with case-type prioritization
- * Returns matching templates, prioritizing those relevant to the current case type
+ * Intelligent fuzzy search with form code recognition and word boundary matching
+ */
+function intelligentMatch(template: DocumentTemplate, query: string): { matches: boolean; score: number } {
+  const lowerQuery = query.toLowerCase().trim();
+  const lowerName = template.name.toLowerCase();
+  const aliases = template.aliases || [];
+
+  // Exact match (highest score)
+  if (lowerName === lowerQuery || aliases.some(a => a.toLowerCase() === lowerQuery)) {
+    return { matches: true, score: 1000 };
+  }
+
+  // Starts with query (very high score)
+  if (lowerName.startsWith(lowerQuery) || aliases.some(a => a.toLowerCase().startsWith(lowerQuery))) {
+    return { matches: true, score: 900 };
+  }
+
+  // Form code matching (e.g., "D11", "N244", "C100")
+  const formCodeMatch = lowerQuery.match(/^([a-z]+)?(\d+)([a-z])?$/i);
+  if (formCodeMatch) {
+    const formPattern = new RegExp(`\\b${lowerQuery}\\b`, 'i');
+    if (formPattern.test(lowerName) || aliases.some(a => formPattern.test(a))) {
+      return { matches: true, score: 850 };
+    }
+  }
+
+  // Word boundary start match (e.g., "Thi" matches "Third Party")
+  const words = lowerName.split(/[\s\-\/\(\)]/);
+  const aliasWords = aliases.flatMap(a => a.toLowerCase().split(/[\s\-\/\(\)]/));
+  const allWords = [...words, ...aliasWords];
+
+  if (allWords.some(word => word.startsWith(lowerQuery))) {
+    return { matches: true, score: 800 };
+  }
+
+  // Acronym match (e.g., "CAO" matches "Child Arrangements Order")
+  if (lowerQuery.length >= 2) {
+    const acronym = allWords
+      .map(w => w[0])
+      .join('')
+      .toLowerCase();
+    if (acronym.includes(lowerQuery)) {
+      return { matches: true, score: 750 };
+    }
+  }
+
+  // Contains query in name or aliases
+  if (lowerName.includes(lowerQuery) || aliases.some(a => a.toLowerCase().includes(lowerQuery))) {
+    // Score based on position (earlier = higher score)
+    const position = lowerName.indexOf(lowerQuery);
+    const positionScore = position >= 0 ? 700 - position : 600;
+    return { matches: true, score: positionScore };
+  }
+
+  // Fuzzy matching for typos (simple version - checks if most characters match)
+  if (lowerQuery.length >= 3) {
+    const fuzzyScore = calculateFuzzyScore(lowerQuery, lowerName);
+    if (fuzzyScore > 0.6) {
+      return { matches: true, score: fuzzyScore * 500 };
+    }
+  }
+
+  return { matches: false, score: 0 };
+}
+
+/**
+ * Calculate fuzzy matching score (simple Levenshtein-like approach)
+ */
+function calculateFuzzyScore(query: string, text: string): number {
+  let matches = 0;
+  let lastIndex = -1;
+
+  for (const char of query) {
+    const index = text.indexOf(char, lastIndex + 1);
+    if (index > lastIndex) {
+      matches++;
+      lastIndex = index;
+    }
+  }
+
+  return matches / query.length;
+}
+
+/**
+ * Search templates with intelligent fuzzy matching and form code recognition
  */
 export function searchTemplates(
   query: string,
@@ -180,43 +346,32 @@ export function searchTemplates(
     return [];
   }
 
-  const normalizedQuery = query.toLowerCase().trim();
+  // Find all matching templates with scores
+  const matchesWithScores = documentTemplates
+    .map(template => {
+      const match = intelligentMatch(template, query);
+      return { template, ...match };
+    })
+    .filter(result => result.matches);
 
-  // Find all matching templates
-  const matches = documentTemplates.filter(template =>
-    template.name.toLowerCase().includes(normalizedQuery)
-  );
+  // Sort by relevance
+  const sorted = matchesWithScores.sort((a, b) => {
+    // Case-type relevant templates get bonus
+    const aRelevant = caseType && a.template.caseTypes.includes(caseType);
+    const bRelevant = caseType && b.template.caseTypes.includes(caseType);
+    const caseTypeBonus = 100;
 
-  // Sort by relevance: case-type matches first, then by priority, then alphabetically
-  const sorted = matches.sort((a, b) => {
-    const aRelevant = caseType && a.caseTypes.includes(caseType);
-    const bRelevant = caseType && b.caseTypes.includes(caseType);
+    const aFinalScore = a.score + (aRelevant ? caseTypeBonus : 0) + a.template.priority;
+    const bFinalScore = b.score + (bRelevant ? caseTypeBonus : 0) + b.template.priority;
 
-    // Case-type relevant templates come first
-    if (aRelevant && !bRelevant) return -1;
-    if (!aRelevant && bRelevant) return 1;
-
-    // Then sort by priority (higher first)
-    if (a.priority !== b.priority) {
-      return b.priority - a.priority;
-    }
-
-    // Finally alphabetically
-    return a.name.localeCompare(b.name);
+    return bFinalScore - aFinalScore;
   });
 
-  return sorted.slice(0, maxResults);
+  return sorted.slice(0, maxResults).map(result => result.template);
 }
 
 /**
- * Get templates by category
- */
-export function getTemplatesByCategory(category: DocumentTemplate['category']): DocumentTemplate[] {
-  return documentTemplates.filter(template => template.category === category);
-}
-
-/**
- * Get templates by case type, sorted by priority
+ * Get templates filtered by case type
  */
 export function getTemplatesByCaseType(caseType: BundleType, maxResults?: number): DocumentTemplate[] {
   const templates = documentTemplates
@@ -228,7 +383,6 @@ export function getTemplatesByCaseType(caseType: BundleType, maxResults?: number
 
 /**
  * Select placeholder text in a template
- * Returns range of first placeholder or null
  */
 export function getFirstPlaceholderRange(text: string): { start: number; end: number } | null {
   const placeholderPattern = /\[([^\]]+)\]/;
