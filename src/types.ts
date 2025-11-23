@@ -106,6 +106,7 @@ export interface SerializedDocument {
   pageCount: number;
   order: number;
   fileData: string; // base64 encoded file data
-  documentDate?: string; // Optional date in DD-MM-YYYY format
+  documentDate?: string; // Optional date in DD-MM-YYYY, MM-YYYY, or YYYY format
+  datePrecision?: DatePrecision; // Optional precision level (for backward compatibility)
   customTitle?: string; // Optional custom title for display in index
 }

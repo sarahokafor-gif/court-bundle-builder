@@ -47,6 +47,7 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
         order: doc.order,
         fileData,
         documentDate: doc.documentDate,
+        datePrecision: doc.datePrecision,
         customTitle: doc.customTitle,
       })
     }
@@ -66,21 +67,62 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
 }
 
 /**
+ * Infers date precision from date format for backward compatibility
+ */
+function inferDatePrecision(dateStr: string): 'day' | 'month' | 'year' | 'none' {
+  if (!dateStr) return 'none'
+
+  const parts = dateStr.split('-')
+
+  // Check format based on number of parts and their values
+  if (parts.length === 3) {
+    // Could be DD-MM-YYYY or YYYY-MM-DD
+    const firstPart = parseInt(parts[0])
+    if (firstPart > 31) {
+      // Likely YYYY-MM-DD format
+      return 'day'
+    } else {
+      // Likely DD-MM-YYYY format
+      return 'day'
+    }
+  } else if (parts.length === 2) {
+    // MM-YYYY or YYYY-MM format
+    return 'month'
+  } else if (parts.length === 1 && /^\d{4}$/.test(dateStr)) {
+    // Just a year: YYYY
+    return 'year'
+  }
+
+  return 'none'
+}
+
+/**
  * Deserializes sections (converts base64 back to Files)
  */
 export function deserializeSections(serializedSections: SerializedSection[]): Section[] {
   return serializedSections.map((section) => ({
     id: section.id,
     name: section.name,
-    documents: section.documents.map((doc) => ({
-      id: doc.id,
-      file: base64ToFile(doc.fileData, doc.name),
-      name: doc.name,
-      pageCount: doc.pageCount,
-      order: doc.order,
-      documentDate: doc.documentDate,
-      customTitle: doc.customTitle,
-    })),
+    documents: section.documents.map((doc) => {
+      // Backward compatibility: infer precision if not present
+      let precision = doc.datePrecision
+      if (!precision && doc.documentDate) {
+        precision = inferDatePrecision(doc.documentDate)
+      } else if (!precision) {
+        precision = 'none'
+      }
+
+      return {
+        id: doc.id,
+        file: base64ToFile(doc.fileData, doc.name),
+        name: doc.name,
+        pageCount: doc.pageCount,
+        order: doc.order,
+        documentDate: doc.documentDate,
+        datePrecision: precision,
+        customTitle: doc.customTitle,
+      }
+    }),
     addDivider: section.addDivider,
     order: section.order,
     pagePrefix: section.pagePrefix,
