@@ -24,6 +24,7 @@ import {
   hasAutoSave,
   AUTO_SAVE_INTERVAL,
 } from './utils/autoSave'
+import { getPdfPageCount } from './utils/pdfUtils'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import './App.css'
 
@@ -322,14 +323,27 @@ function App() {
     )
   }, [])
 
-  const handleUpdateDocumentFile = useCallback((sectionId: string, docId: string, modifiedFile: File) => {
+  const handleUpdateDocumentFile = useCallback(async (sectionId: string, docId: string, modifiedFile: File, newPageCount?: number) => {
+    // Get page count of modified file if not provided
+    let pageCount = newPageCount
+    if (!pageCount) {
+      try {
+        pageCount = await getPdfPageCount(modifiedFile)
+      } catch (error) {
+        console.error('Failed to get page count:', error)
+        return
+      }
+    }
+
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
           ? {
               ...section,
               documents: section.documents.map(doc =>
-                doc.id === docId ? { ...doc, file: modifiedFile, modifiedFile } : doc
+                doc.id === docId
+                  ? { ...doc, modifiedFile, pageCount } // Keep original file, set modifiedFile and update pageCount
+                  : doc
               ),
             }
           : section
