@@ -41,7 +41,9 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   useEffect(() => {
     const loadPdf = async () => {
       try {
-        const arrayBuffer = await document.file.arrayBuffer()
+        // Use modifiedFile if it exists (edited/filtered version), otherwise use original
+        const fileToEdit = document.modifiedFile || document.file
+        const arrayBuffer = await fileToEdit.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         setPdfDoc(pdf)
 
