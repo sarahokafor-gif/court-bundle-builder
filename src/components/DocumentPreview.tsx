@@ -12,6 +12,22 @@ export default function DocumentPreview({ document, onClose }: DocumentPreviewPr
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Debug logging - runs on every render
+  if (document) {
+    const fileToCheck = document.modifiedFile || document.file
+    console.log('DocumentPreview RENDER:', {
+      documentName: document.name,
+      hasFile: !!document.file,
+      hasModifiedFile: !!document.modifiedFile,
+      fileType: typeof fileToCheck,
+      fileIsFile: fileToCheck instanceof File,
+      fileIsBlob: fileToCheck instanceof Blob,
+      fileConstructor: fileToCheck?.constructor?.name,
+      fileSize: fileToCheck?.size,
+      fileName: fileToCheck?.name,
+    })
+  }
+
   useEffect(() => {
     if (document) {
       try {
@@ -19,7 +35,7 @@ export default function DocumentPreview({ document, onClose }: DocumentPreviewPr
         const fileToPreview = document.modifiedFile || document.file
 
         // Debug logging
-        console.log('DocumentPreview - Attempting to preview:', {
+        console.log('DocumentPreview useEffect - Attempting to preview:', {
           documentName: document.name,
           hasModifiedFile: !!document.modifiedFile,
           fileType: typeof fileToPreview,

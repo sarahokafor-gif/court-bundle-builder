@@ -400,6 +400,26 @@ function App() {
   const handleRestoreAutoSave = () => {
     const autoSaveData = getAutoSaveData()
     if (autoSaveData) {
+      // Debug: Verify File objects are valid immediately after deserialization
+      console.log('=== RESTORE AUTO-SAVE DEBUG ===')
+      autoSaveData.deserializedSections.forEach((section, sIdx) => {
+        section.documents.forEach((doc, dIdx) => {
+          const fileCheck = {
+            section: section.name,
+            document: doc.name,
+            hasFile: !!doc.file,
+            fileIsFile: doc.file instanceof File,
+            fileIsBlob: doc.file instanceof Blob,
+            fileConstructor: doc.file?.constructor?.name,
+            hasModifiedFile: !!doc.modifiedFile,
+            modifiedFileIsFile: doc.modifiedFile instanceof File,
+            modifiedFileIsBlob: doc.modifiedFile instanceof Blob,
+          }
+          console.log(`Section ${sIdx} Doc ${dIdx}:`, fileCheck)
+        })
+      })
+      console.log('=== END RESTORE DEBUG ===')
+
       setMetadata(autoSaveData.metadata)
       setSections(autoSaveData.deserializedSections) // Use deserialized sections with File objects
       setPageNumberSettings(autoSaveData.pageNumberSettings)
