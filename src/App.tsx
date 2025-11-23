@@ -22,7 +22,6 @@ import {
   getAutoSaveData,
   restoreAutoSaveProgressively,
   clearAutoSave,
-  hasAutoSave,
   isBundleTooLargeForAutoSave,
   AUTO_SAVE_INTERVAL,
 } from './utils/autoSave'
@@ -367,10 +366,24 @@ function App() {
 
   // Check for auto-save on mount
   useEffect(() => {
-    if (hasAutoSave()) {
+    const autoSaveData = getAutoSaveData()
+
+    if (autoSaveData) {
+      // Check if the auto-save data is too large to restore safely
+      const totalDocs = autoSaveData.sections.reduce((sum, section) => sum + section.documents.length, 0)
+
+      if (totalDocs > 8) {
+        // Too large - clear it immediately and show warning
+        console.warn(`Auto-save data has ${totalDocs} documents - too large to restore. Clearing...`)
+        clearAutoSave()
+        showToast('warning', `Old auto-save data was too large (${totalDocs} documents) and has been cleared. Please load your saved ZIP file instead.`)
+        return
+      }
+
+      // Small enough - show recovery modal
       setShowRecoveryModal(true)
     }
-  }, [])
+  }, [showToast])
 
   // Auto-save interval (every 30 seconds)
   useEffect(() => {
