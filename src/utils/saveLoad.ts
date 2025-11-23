@@ -424,10 +424,18 @@ export async function loadBundleProgressively(
 
         processedDocs++
         const progressPercent = Math.floor((processedDocs / totalDocs) * 90) + 5 // 5-95%
-        onProgress(progressPercent, 100, `Loading document ${processedDocs}/${totalDocs}: ${serializedDoc.name}`)
 
-        // Yield to browser to prevent UI freezing
-        await new Promise(resolve => setTimeout(resolve, 0))
+        // Show message about taking a break for memory optimization
+        if (processedDocs % 10 === 0) {
+          onProgress(progressPercent, 100, `Processing... (${processedDocs}/${totalDocs} loaded, optimizing memory...)`)
+        } else {
+          onProgress(progressPercent, 100, `Loading document ${processedDocs}/${totalDocs}: ${serializedDoc.name}`)
+        }
+
+        // Yield to browser with longer delay to allow garbage collection
+        // Every 10 documents, take a longer break to let memory stabilize
+        const delay = processedDocs % 10 === 0 ? 500 : 100
+        await new Promise(resolve => setTimeout(resolve, delay))
 
       } catch (error) {
         console.error(`Failed to deserialize document "${serializedDoc.name}":`, error)
@@ -447,6 +455,9 @@ export async function loadBundleProgressively(
     })
 
     onProgress(Math.floor((processedDocs / totalDocs) * 90) + 5, 100, `Completed section: ${serializedSection.name}`)
+
+    // Longer pause between sections to allow garbage collection
+    await new Promise(resolve => setTimeout(resolve, 500))
   }
 
   onProgress(100, 100, 'Loading complete!')

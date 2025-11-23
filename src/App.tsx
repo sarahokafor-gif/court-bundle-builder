@@ -455,9 +455,9 @@ function App() {
 
   const handleLoad = async (file: File) => {
     try {
-      // Check file size - if > 50MB, use progressive loading
+      // Check file size - if > 10MB, use progressive loading
       const fileSizeMB = file.size / (1024 * 1024)
-      const useProgressiveLoading = fileSizeMB > 50
+      const useProgressiveLoading = fileSizeMB > 10
 
       if (useProgressiveLoading) {
         // Progressive loading for large files
