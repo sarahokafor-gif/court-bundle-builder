@@ -25,7 +25,6 @@
     "stripe": "^19.2.1"
   },
   "devDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.53.2",
     "@types/pdfjs-dist": "^2.10.377",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -38,5 +37,8 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.0",
     "wrangler": "^4.46.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.53.3"
   }
 }
