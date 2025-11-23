@@ -426,7 +426,8 @@ function App() {
       showToast('success', 'Bundle saved successfully')
     } catch (error) {
       console.error('Save failed:', error)
-      showToast('error', 'Failed to save bundle. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      showToast('error', `Failed to save bundle: ${errorMessage}`)
     }
   }
 

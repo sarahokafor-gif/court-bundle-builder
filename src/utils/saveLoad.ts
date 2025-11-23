@@ -5,12 +5,25 @@ import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings, Saved
  */
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
+    // Validate that we have a proper File object
+    if (!file || !(file instanceof File)) {
+      reject(new Error(`Invalid file object: ${file}`))
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = () => {
       const result = reader.result as string
+      if (!result) {
+        reject(new Error('FileReader returned empty result'))
+        return
+      }
       resolve(result.split(',')[1]) // Remove data:application/pdf;base64, prefix
     }
-    reader.onerror = reject
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error)
+      reject(new Error(`Failed to read file: ${file.name}`))
+    }
     reader.readAsDataURL(file)
   })
 }
@@ -19,14 +32,30 @@ async function fileToBase64(file: File): Promise<string> {
  * Converts base64 string back to File
  */
 function base64ToFile(base64: string, filename: string): File {
-  const byteCharacters = atob(base64)
-  const byteNumbers = new Array(byteCharacters.length)
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i)
+  try {
+    if (!base64) {
+      throw new Error('Empty base64 data')
+    }
+
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: 'application/pdf' })
+    const file = new File([blob], filename, { type: 'application/pdf' })
+
+    // Validate the file was created properly
+    if (!file || file.size === 0) {
+      throw new Error('Created file is empty or invalid')
+    }
+
+    return file
+  } catch (error) {
+    console.error(`Failed to create File from base64 for "${filename}":`, error)
+    throw new Error(`Failed to restore file "${filename}": ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
-  const byteArray = new Uint8Array(byteNumbers)
-  const blob = new Blob([byteArray], { type: 'application/pdf' })
-  return new File([blob], filename, { type: 'application/pdf' })
 }
 
 /**
@@ -39,26 +68,36 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
     const serializedDocs: SerializedDocument[] = []
 
     for (const doc of section.documents) {
-      const fileData = await fileToBase64(doc.file)
+      try {
+        const fileData = await fileToBase64(doc.file)
 
-      // Also save modifiedFile if it exists (edited/redacted version)
-      let modifiedFileData: string | undefined = undefined
-      if (doc.modifiedFile) {
-        modifiedFileData = await fileToBase64(doc.modifiedFile)
+        // Also save modifiedFile if it exists (edited/redacted version)
+        let modifiedFileData: string | undefined = undefined
+        if (doc.modifiedFile) {
+          try {
+            modifiedFileData = await fileToBase64(doc.modifiedFile)
+          } catch (error) {
+            console.error(`Failed to serialize modifiedFile for document "${doc.name}":`, error)
+            // Continue without modifiedFile if it fails
+          }
+        }
+
+        serializedDocs.push({
+          id: doc.id,
+          name: doc.name,
+          pageCount: doc.pageCount,
+          order: doc.order,
+          fileData,
+          documentDate: doc.documentDate,
+          datePrecision: doc.datePrecision,
+          customTitle: doc.customTitle,
+          selectedPages: doc.selectedPages, // Save selected pages
+          modifiedFileData, // Save edited/redacted version
+        })
+      } catch (error) {
+        console.error(`Failed to serialize document "${doc.name}" in section "${section.name}":`, error)
+        throw new Error(`Failed to save document "${doc.name}": ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
-
-      serializedDocs.push({
-        id: doc.id,
-        name: doc.name,
-        pageCount: doc.pageCount,
-        order: doc.order,
-        fileData,
-        documentDate: doc.documentDate,
-        datePrecision: doc.datePrecision,
-        customTitle: doc.customTitle,
-        selectedPages: doc.selectedPages, // Save selected pages
-        modifiedFileData, // Save edited/redacted version
-      })
     }
 
     serialized.push({
