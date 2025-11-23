@@ -53,13 +53,29 @@ export function getAutoSaveData(): (AutoSaveData & { deserializedSections: Secti
 
     const parsed = JSON.parse(data) as AutoSaveData
 
+    // Check version compatibility - clear old versions
+    if (!parsed.version || parsed.version !== '2.0') {
+      console.warn('Incompatible auto-save version found. Clearing old auto-save data.')
+      clearAutoSave()
+      return null
+    }
+
     // Validate the data has required fields
     if (!parsed.metadata || !parsed.sections || !parsed.timestamp) {
+      console.warn('Invalid auto-save data structure. Clearing.')
+      clearAutoSave()
       return null
     }
 
     // Deserialize sections (convert base64 back to Files)
-    const deserializedSections = deserializeSections(parsed.sections)
+    let deserializedSections: Section[]
+    try {
+      deserializedSections = deserializeSections(parsed.sections)
+    } catch (error) {
+      console.error('Failed to deserialize auto-save sections:', error)
+      clearAutoSave()
+      return null
+    }
 
     // Backward compatibility: Add default values for new fields if they don't exist
     const metadata = parsed.metadata

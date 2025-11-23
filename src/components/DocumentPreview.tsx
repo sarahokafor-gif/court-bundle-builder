@@ -18,8 +18,20 @@ export default function DocumentPreview({ document, onClose }: DocumentPreviewPr
         // Use modifiedFile if it exists (edited/redacted version), otherwise use original file
         const fileToPreview = document.modifiedFile || document.file
 
+        // Debug logging
+        console.log('DocumentPreview - Attempting to preview:', {
+          documentName: document.name,
+          hasModifiedFile: !!document.modifiedFile,
+          fileType: typeof fileToPreview,
+          isFile: fileToPreview instanceof File,
+          isBlob: fileToPreview instanceof Blob,
+          fileConstructor: fileToPreview?.constructor?.name,
+          fileKeys: fileToPreview ? Object.keys(fileToPreview) : [],
+        })
+
         // Validate that we have a valid File object
         if (!fileToPreview || !(fileToPreview instanceof File)) {
+          console.error('Invalid file object:', fileToPreview)
           setError('Invalid file format. Cannot preview this document.')
           setPreviewUrl(null)
           return
