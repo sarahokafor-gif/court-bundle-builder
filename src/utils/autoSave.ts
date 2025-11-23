@@ -14,16 +14,58 @@ export interface AutoSaveData {
 }
 
 /**
+ * Maximum size for auto-save (5MB - localStorage limit is typically 5-10MB)
+ * If bundle exceeds this, auto-save is disabled
+ */
+const MAX_AUTO_SAVE_SIZE = 5 * 1024 * 1024 // 5MB
+
+/**
+ * Check if bundle is too large for auto-save
+ */
+export function isBundleTooLargeForAutoSave(sections: Section[]): boolean {
+  const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
+
+  // Quick check: more than 8 documents is usually too large
+  if (totalDocs > 8) {
+    return true
+  }
+
+  // Calculate approximate size (file sizes + overhead)
+  let totalSize = 0
+  for (const section of sections) {
+    for (const doc of section.documents) {
+      // Base64 encoding increases size by ~33%
+      totalSize += doc.file.size * 1.33
+      if (doc.modifiedFile) {
+        totalSize += doc.modifiedFile.size * 1.33
+      }
+    }
+  }
+
+  return totalSize > MAX_AUTO_SAVE_SIZE
+}
+
+/**
  * Save current state to localStorage as auto-save
  * Now properly serializes PDF files to base64
+ *
+ * Returns: true if saved successfully, false if bundle too large
  */
 export async function autoSaveToLocalStorage(
   metadata: BundleMetadata,
   sections: Section[],
   pageNumberSettings: PageNumberSettings,
   batesNumberSettings: BatesNumberSettings
-): Promise<void> {
+): Promise<boolean> {
   try {
+    // Check if bundle is too large for auto-save
+    if (isBundleTooLargeForAutoSave(sections)) {
+      console.warn('Bundle too large for auto-save. Please use manual Save button.')
+      // Clear any existing auto-save to free up space
+      clearAutoSave()
+      return false
+    }
+
     // Serialize sections (convert Files to base64)
     const serializedSections = await serializeSections(sections)
 
@@ -36,10 +78,21 @@ export async function autoSaveToLocalStorage(
       version: '2.0', // Updated version to indicate new serialization format
     }
 
-    localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(autoSaveData))
+    const jsonString = JSON.stringify(autoSaveData)
+
+    // Final size check before saving
+    if (jsonString.length > MAX_AUTO_SAVE_SIZE) {
+      console.warn('Serialized bundle exceeds size limit. Auto-save disabled.')
+      clearAutoSave()
+      return false
+    }
+
+    localStorage.setItem(AUTO_SAVE_KEY, jsonString)
     console.log('Auto-saved at', new Date().toLocaleTimeString())
+    return true
   } catch (error) {
     console.error('Failed to auto-save:', error)
+    return false
   }
 }
 

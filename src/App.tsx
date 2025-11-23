@@ -23,6 +23,7 @@ import {
   restoreAutoSaveProgressively,
   clearAutoSave,
   hasAutoSave,
+  isBundleTooLargeForAutoSave,
   AUTO_SAVE_INTERVAL,
 } from './utils/autoSave'
 import { getPdfPageCount } from './utils/pdfUtils'
@@ -72,6 +73,7 @@ function App() {
   const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number; message: string } | null>(null)
   const [showConversionPrompt, setShowConversionPrompt] = useState(false)
   const [loadedFileSize, setLoadedFileSize] = useState<number>(0)
+  const [autoSaveDisabled, setAutoSaveDisabled] = useState(false)
   const autoSaveIntervalRef = useRef<number | null>(null)
   const isInitialMount = useRef(true)
   const generateButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -376,8 +378,13 @@ function App() {
       clearInterval(autoSaveIntervalRef.current)
     }
 
-    autoSaveIntervalRef.current = window.setInterval(() => {
-      autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
+    autoSaveIntervalRef.current = window.setInterval(async () => {
+      const saved = await autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
+      if (!saved && isBundleTooLargeForAutoSave(sections)) {
+        setAutoSaveDisabled(true)
+      } else if (saved) {
+        setAutoSaveDisabled(false)
+      }
     }, AUTO_SAVE_INTERVAL)
 
     return () => {
@@ -396,8 +403,13 @@ function App() {
     }
 
     // Debounce: wait 2 seconds after last change before auto-saving
-    const timeoutId = setTimeout(() => {
-      autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
+    const timeoutId = setTimeout(async () => {
+      const saved = await autoSaveToLocalStorage(metadata, sections, pageNumberSettings, batesNumberSettings)
+      if (!saved && isBundleTooLargeForAutoSave(sections)) {
+        setAutoSaveDisabled(true)
+      } else if (saved) {
+        setAutoSaveDisabled(false)
+      }
     }, 2000)
 
     return () => clearTimeout(timeoutId)
@@ -650,6 +662,25 @@ function App() {
       <header className="app-header" role="banner">
         <h1>Court Bundle Builder</h1>
         <p>Create professional, court-ready bundles in 5 simple steps</p>
+
+        {/* Warning banner when auto-save is disabled */}
+        {autoSaveDisabled && (
+          <div style={{
+            backgroundColor: '#fef3c7',
+            border: '2px solid #f59e0b',
+            borderRadius: '8px',
+            padding: '1rem',
+            margin: '1rem 0',
+            textAlign: 'center'
+          }}>
+            <strong style={{ color: '#78350f', fontSize: '1.1rem' }}>⚠️ Auto-Save Disabled - Bundle Too Large</strong>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#78350f' }}>
+              Your bundle has {totalDocs} documents. Auto-save only works for small bundles (≤8 documents).
+              <br />
+              <strong>Please use the "Save Progress" button regularly to save your work as a ZIP file.</strong>
+            </p>
+          </div>
+        )}
 
         <div className="workflow-progress">
           <div className={`workflow-step ${metadata.bundleTitle || metadata.caseNumber ? 'completed' : 'active'}`}>
