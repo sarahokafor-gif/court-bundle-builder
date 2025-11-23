@@ -765,6 +765,9 @@ export default function SectionDocumentList({
           onSave={(selectedPages) => {
             onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, selectedPages)
           }}
+          onUpdateModifiedFile={(modifiedFile) => {
+            onUpdateDocumentFile(managingDocument.sectionId, managingDocument.doc.id, modifiedFile)
+          }}
         />
       )}
 

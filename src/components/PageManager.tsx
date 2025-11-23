@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Trash2, Check, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { Document } from '../types'
+import { extractSelectedPages } from '../utils/pdfUtils'
 import './PageManager.css'
 
 // Configure PDF.js worker
@@ -11,9 +12,10 @@ interface PageManagerProps {
   document: Document
   onClose: () => void
   onSave: (selectedPages: number[]) => void
+  onUpdateModifiedFile: (modifiedFile: File) => void
 }
 
-export default function PageManager({ document, onClose, onSave }: PageManagerProps) {
+export default function PageManager({ document, onClose, onSave, onUpdateModifiedFile }: PageManagerProps) {
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [scale, setScale] = useState(1.5)
@@ -77,13 +79,24 @@ export default function PageManager({ document, onClose, onSave }: PageManagerPr
     })
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedPages.length === 0) {
       alert('Please keep at least one page.')
       return
     }
-    onSave(selectedPages)
-    onClose()
+
+    try {
+      // Create a new PDF with only the selected pages
+      const modifiedFile = await extractSelectedPages(document.file, selectedPages, document.name)
+
+      // Save the selected pages array and the modified file
+      onSave(selectedPages)
+      onUpdateModifiedFile(modifiedFile)
+      onClose()
+    } catch (error) {
+      console.error('Error extracting pages:', error)
+      alert('Failed to extract selected pages. Please try again.')
+    }
   }
 
   const goToNextPage = () => {
