@@ -160,15 +160,35 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
         precision = 'none'
       }
 
+      // Restore main file from base64
+      const file = base64ToFile(doc.fileData, doc.name)
+
+      // Validate the file was created properly (File extends Blob)
+      const isValidFile = file && file instanceof Blob
+      if (!isValidFile) {
+        console.error(`Invalid File object created for "${doc.name}"`, {
+          file,
+          hasFile: !!file,
+          type: typeof file,
+        })
+        throw new Error(`Failed to create valid File object for "${doc.name}"`)
+      }
+
       // Restore modifiedFile if it was saved
       let modifiedFile: File | undefined = undefined
       if (doc.modifiedFileData) {
         modifiedFile = base64ToFile(doc.modifiedFileData, doc.name)
+
+        // Validate modifiedFile (File extends Blob)
+        if (modifiedFile && !(modifiedFile instanceof Blob)) {
+          console.error(`Invalid modifiedFile object created for "${doc.name}"`)
+          modifiedFile = undefined // Fall back to not having modifiedFile
+        }
       }
 
       return {
         id: doc.id,
-        file: base64ToFile(doc.fileData, doc.name),
+        file,
         name: doc.name,
         pageCount: doc.pageCount,
         order: doc.order,
