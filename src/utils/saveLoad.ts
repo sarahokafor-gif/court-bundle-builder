@@ -367,7 +367,13 @@ export async function loadBundleProgressively(
     }
   }
 
-  onProgress(5, 100, `Preparing to load ${totalDocs} documents...`)
+  // Warn about loading time for large files
+  if (totalDocs > 10) {
+    onProgress(5, 100, `Large file detected (${totalDocs} documents). This will take 5-10 minutes. Please be patient...`)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+  } else {
+    onProgress(5, 100, `Preparing to load ${totalDocs} documents...`)
+  }
 
   // Deserialize sections progressively
   const deserializedSections: Section[] = []
@@ -427,16 +433,22 @@ export async function loadBundleProgressively(
         const progressPercent = Math.floor((processedDocs / totalDocs) * 90) + 5 // 5-95%
 
         // Show message about taking a break for memory optimization
-        if (processedDocs % 10 === 0) {
-          onProgress(progressPercent, 100, `Processing... (${processedDocs}/${totalDocs} loaded, optimizing memory...)`)
+        if (processedDocs % 3 === 0) {
+          onProgress(progressPercent, 100, `Processing... (${processedDocs}/${totalDocs} loaded, waiting for memory cleanup...)`)
         } else {
           onProgress(progressPercent, 100, `Loading document ${processedDocs}/${totalDocs}: ${serializedDoc.name}`)
         }
 
-        // Yield to browser with longer delay to allow garbage collection
-        // Every 10 documents, take a longer break to let memory stabilize
-        const delay = processedDocs % 10 === 0 ? 500 : 100
+        // EXTREME delays for very large files to prevent memory crashes
+        // Every 3 documents, take a VERY long break to let memory stabilize
+        const delay = processedDocs % 3 === 0 ? 10000 : 3000 // 3s normal, 10s every 3 docs
         await new Promise(resolve => setTimeout(resolve, delay))
+
+        // Try to hint at garbage collection (browser may ignore)
+        if (processedDocs % 3 === 0 && typeof window !== 'undefined') {
+          // Force a small allocation to potentially trigger GC
+          void new Array(1000).fill(0)
+        }
 
       } catch (error) {
         console.error(`Failed to deserialize document "${serializedDoc.name}":`, error)
