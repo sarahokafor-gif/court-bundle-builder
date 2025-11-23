@@ -1,11 +1,12 @@
-import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings } from '../types'
+import { Section, BundleMetadata, PageNumberSettings, BatesNumberSettings, SerializedSection } from '../types'
+import { serializeSections, deserializeSections } from './saveLoad'
 
 const AUTO_SAVE_KEY = 'court-bundle-autosave'
 const AUTO_SAVE_INTERVAL = 30000 // 30 seconds
 
 export interface AutoSaveData {
   metadata: BundleMetadata
-  sections: Section[]
+  sections: SerializedSection[] // Changed from Section[] to SerializedSection[]
   pageNumberSettings: PageNumberSettings
   batesNumberSettings: BatesNumberSettings
   timestamp: number
@@ -14,21 +15,25 @@ export interface AutoSaveData {
 
 /**
  * Save current state to localStorage as auto-save
+ * Now properly serializes PDF files to base64
  */
-export function autoSaveToLocalStorage(
+export async function autoSaveToLocalStorage(
   metadata: BundleMetadata,
   sections: Section[],
   pageNumberSettings: PageNumberSettings,
   batesNumberSettings: BatesNumberSettings
-): void {
+): Promise<void> {
   try {
+    // Serialize sections (convert Files to base64)
+    const serializedSections = await serializeSections(sections)
+
     const autoSaveData: AutoSaveData = {
       metadata,
-      sections,
+      sections: serializedSections,
       pageNumberSettings,
       batesNumberSettings,
       timestamp: Date.now(),
-      version: '1.0',
+      version: '2.0', // Updated version to indicate new serialization format
     }
 
     localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(autoSaveData))
@@ -39,9 +44,9 @@ export function autoSaveToLocalStorage(
 }
 
 /**
- * Retrieve auto-save data from localStorage
+ * Retrieve auto-save data from localStorage and deserialize PDF files
  */
-export function getAutoSaveData(): AutoSaveData | null {
+export function getAutoSaveData(): (AutoSaveData & { deserializedSections: Section[] }) | null {
   try {
     const data = localStorage.getItem(AUTO_SAVE_KEY)
     if (!data) return null
@@ -52,6 +57,9 @@ export function getAutoSaveData(): AutoSaveData | null {
     if (!parsed.metadata || !parsed.sections || !parsed.timestamp) {
       return null
     }
+
+    // Deserialize sections (convert base64 back to Files)
+    const deserializedSections = deserializeSections(parsed.sections)
 
     // Backward compatibility: Add default values for new fields if they don't exist
     const metadata = parsed.metadata
@@ -113,7 +121,11 @@ export function getAutoSaveData(): AutoSaveData | null {
       metadata.date = new Date().toISOString().split('T')[0]
     }
 
-    return parsed
+    // Return both serialized and deserialized data
+    return {
+      ...parsed,
+      deserializedSections,
+    }
   } catch (error) {
     console.error('Failed to retrieve auto-save:', error)
     return null

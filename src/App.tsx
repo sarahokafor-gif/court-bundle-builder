@@ -387,13 +387,14 @@ function App() {
     const autoSaveData = getAutoSaveData()
     if (autoSaveData) {
       setMetadata(autoSaveData.metadata)
-      setSections(autoSaveData.sections)
+      setSections(autoSaveData.deserializedSections) // Use deserialized sections with File objects
       setPageNumberSettings(autoSaveData.pageNumberSettings)
       if (autoSaveData.batesNumberSettings) {
         setBatesNumberSettings(autoSaveData.batesNumberSettings)
       }
       setShowRecoveryModal(false)
       showToast('success', 'Previous work restored successfully')
+      clearAutoSave() // Clear auto-save after successful restore
     }
   }
 
