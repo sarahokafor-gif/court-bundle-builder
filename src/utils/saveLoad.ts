@@ -40,6 +40,13 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
 
     for (const doc of section.documents) {
       const fileData = await fileToBase64(doc.file)
+
+      // Also save modifiedFile if it exists (edited/redacted version)
+      let modifiedFileData: string | undefined = undefined
+      if (doc.modifiedFile) {
+        modifiedFileData = await fileToBase64(doc.modifiedFile)
+      }
+
       serializedDocs.push({
         id: doc.id,
         name: doc.name,
@@ -49,6 +56,8 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
         documentDate: doc.documentDate,
         datePrecision: doc.datePrecision,
         customTitle: doc.customTitle,
+        selectedPages: doc.selectedPages, // Save selected pages
+        modifiedFileData, // Save edited/redacted version
       })
     }
 
@@ -112,6 +121,12 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
         precision = 'none'
       }
 
+      // Restore modifiedFile if it was saved
+      let modifiedFile: File | undefined = undefined
+      if (doc.modifiedFileData) {
+        modifiedFile = base64ToFile(doc.modifiedFileData, doc.name)
+      }
+
       return {
         id: doc.id,
         file: base64ToFile(doc.fileData, doc.name),
@@ -121,6 +136,8 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
         documentDate: doc.documentDate,
         datePrecision: precision,
         customTitle: doc.customTitle,
+        selectedPages: doc.selectedPages, // Restore selected pages
+        modifiedFile, // Restore edited/redacted version
       }
     }),
     addDivider: section.addDivider,

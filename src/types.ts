@@ -109,4 +109,6 @@ export interface SerializedDocument {
   documentDate?: string; // Optional date in DD-MM-YYYY, MM-YYYY, or YYYY format
   datePrecision?: DatePrecision; // Optional precision level (for backward compatibility)
   customTitle?: string; // Optional custom title for display in index
+  selectedPages?: number[]; // Optional array of selected page indices (0-indexed)
+  modifiedFileData?: string; // Optional base64 encoded modified file (edited/redacted version)
 }
