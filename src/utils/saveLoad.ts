@@ -1,4 +1,5 @@
 import { Section, Document, BundleMetadata, PageNumberSettings, BatesNumberSettings, SavedBundle, SerializedSection, SerializedDocument } from '../types'
+import JSZip from 'jszip'
 
 /**
  * Converts a File to base64 string
@@ -466,4 +467,269 @@ export async function loadBundleProgressively(
     ...savedBundle,
     deserializedSections,
   }
+}
+
+/**
+ * Saves bundle as a ZIP file (new format - much more efficient)
+ * Structure:
+ *   metadata.json - case info and structure
+ *   documents/doc_1_original.pdf
+ *   documents/doc_1_modified.pdf (if exists)
+ *   documents/doc_2_original.pdf
+ *   etc.
+ */
+export async function saveBundleAsZip(
+  metadata: BundleMetadata,
+  sections: Section[],
+  pageNumberSettings: PageNumberSettings,
+  batesNumberSettings: BatesNumberSettings,
+  customFilename?: string
+): Promise<void> {
+  const zip = new JSZip()
+
+  // Create metadata object (without File objects - just IDs and references)
+  const metadataObj = {
+    metadata,
+    sections: sections.map(section => ({
+      id: section.id,
+      name: section.name,
+      addDivider: section.addDivider,
+      order: section.order,
+      pagePrefix: section.pagePrefix,
+      startPage: section.startPage,
+      documents: section.documents.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        pageCount: doc.pageCount,
+        order: doc.order,
+        documentDate: doc.documentDate,
+        datePrecision: doc.datePrecision,
+        customTitle: doc.customTitle,
+        selectedPages: doc.selectedPages,
+        hasModifiedFile: !!doc.modifiedFile,
+      })),
+    })),
+    pageNumberSettings,
+    batesNumberSettings,
+    savedAt: new Date().toISOString(),
+    version: '3.0', // ZIP format version
+  }
+
+  // Add metadata.json
+  zip.file('metadata.json', JSON.stringify(metadataObj, null, 2))
+
+  // Add all document files
+  const documentsFolder = zip.folder('documents')
+  if (!documentsFolder) {
+    throw new Error('Failed to create documents folder in ZIP')
+  }
+
+  for (const section of sections) {
+    for (const doc of section.documents) {
+      // Add original file
+      const originalFileName = `${doc.id}_original.pdf`
+      documentsFolder.file(originalFileName, doc.file)
+
+      // Add modified file if it exists
+      if (doc.modifiedFile) {
+        const modifiedFileName = `${doc.id}_modified.pdf`
+        documentsFolder.file(modifiedFileName, doc.modifiedFile)
+      }
+    }
+  }
+
+  // Generate ZIP file
+  const zipBlob = await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }, // Good balance between size and speed
+  })
+
+  // Download the ZIP file
+  const url = URL.createObjectURL(zipBlob)
+  let filename = customFilename || `${metadata.caseNumber || 'bundle'}_${(metadata.bundleTitle || metadata.caseName || 'bundle').replace(/\s+/g, '_')}_save`
+
+  // Remove .zip or .cbz extension if user added it
+  filename = filename.replace(/\.(zip|cbz)$/i, '')
+
+  // Add .cbz extension (Court Bundle Zip)
+  filename = `${filename}.cbz`
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Loads bundle from a ZIP file (new format)
+ * Progressive extraction to prevent memory issues
+ */
+export async function loadBundleFromZip(
+  file: File,
+  onProgress: (current: number, total: number, message: string) => void
+): Promise<SavedBundle & { deserializedSections: Section[] }> {
+  onProgress(0, 100, 'Reading ZIP file...')
+
+  // Load the ZIP
+  const zip = await JSZip.loadAsync(file)
+
+  // Extract metadata first
+  onProgress(5, 100, 'Reading bundle information...')
+  const metadataFile = zip.file('metadata.json')
+  if (!metadataFile) {
+    throw new Error('Invalid bundle file: missing metadata.json')
+  }
+
+  const metadataText = await metadataFile.async('text')
+  const bundleData = JSON.parse(metadataText)
+
+  // Validate version
+  if (!bundleData.version || bundleData.version !== '3.0') {
+    throw new Error('Invalid or unsupported ZIP bundle format')
+  }
+
+  // Count total documents
+  const totalDocs = bundleData.sections.reduce((sum: number, section: any) => sum + section.documents.length, 0)
+
+  if (totalDocs === 0) {
+    return {
+      ...bundleData,
+      deserializedSections: bundleData.sections.map((section: any) => ({
+        ...section,
+        documents: []
+      }))
+    }
+  }
+
+  onProgress(10, 100, `Preparing to load ${totalDocs} documents...`)
+
+  // Extract documents progressively
+  const deserializedSections: Section[] = []
+  let processedDocs = 0
+
+  for (const sectionData of bundleData.sections) {
+    const deserializedDocs: Document[] = []
+
+    for (const docData of sectionData.documents) {
+      try {
+        // Extract original file
+        const originalFileName = `documents/${docData.id}_original.pdf`
+        const originalZipFile = zip.file(originalFileName)
+        if (!originalZipFile) {
+          throw new Error(`Missing original file: ${originalFileName}`)
+        }
+
+        const originalBlob = await originalZipFile.async('blob')
+        const originalFile = new File([originalBlob], docData.name, { type: 'application/pdf' })
+
+        // Extract modified file if it exists
+        let modifiedFile: File | undefined = undefined
+        if (docData.hasModifiedFile) {
+          const modifiedFileName = `documents/${docData.id}_modified.pdf`
+          const modifiedZipFile = zip.file(modifiedFileName)
+          if (modifiedZipFile) {
+            const modifiedBlob = await modifiedZipFile.async('blob')
+            modifiedFile = new File([modifiedBlob], docData.name, { type: 'application/pdf' })
+          }
+        }
+
+        deserializedDocs.push({
+          id: docData.id,
+          file: originalFile,
+          name: docData.name,
+          pageCount: docData.pageCount,
+          order: docData.order,
+          documentDate: docData.documentDate,
+          datePrecision: docData.datePrecision || 'none',
+          customTitle: docData.customTitle,
+          selectedPages: docData.selectedPages,
+          modifiedFile,
+        })
+
+        processedDocs++
+        const progressPercent = Math.floor((processedDocs / totalDocs) * 80) + 10 // 10-90%
+
+        if (processedDocs % 10 === 0) {
+          onProgress(progressPercent, 100, `Processing... (${processedDocs}/${totalDocs} loaded)`)
+        } else {
+          onProgress(progressPercent, 100, `Loading document ${processedDocs}/${totalDocs}: ${docData.name}`)
+        }
+
+        // Yield to browser (shorter delays needed for ZIP since files are already compressed)
+        const delay = processedDocs % 10 === 0 ? 100 : 10
+        await new Promise(resolve => setTimeout(resolve, delay))
+
+      } catch (error) {
+        console.error(`Failed to extract document "${docData.name}":`, error)
+        throw new Error(`Failed to load document "${docData.name}": ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+
+    deserializedSections.push({
+      id: sectionData.id,
+      name: sectionData.name,
+      documents: deserializedDocs,
+      addDivider: sectionData.addDivider,
+      order: sectionData.order,
+      pagePrefix: sectionData.pagePrefix,
+      startPage: sectionData.startPage,
+    })
+
+    onProgress(Math.floor((processedDocs / totalDocs) * 80) + 10, 100, `Completed section: ${sectionData.name}`)
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+
+  onProgress(100, 100, 'Loading complete!')
+
+  return {
+    metadata: bundleData.metadata,
+    sections: bundleData.sections,
+    pageNumberSettings: bundleData.pageNumberSettings,
+    batesNumberSettings: bundleData.batesNumberSettings,
+    savedAt: bundleData.savedAt,
+    deserializedSections,
+  }
+}
+
+/**
+ * Detects if a file is ZIP or JSON format
+ */
+export async function detectFileFormat(file: File): Promise<'zip' | 'json'> {
+  // Check file extension first
+  const filename = file.name.toLowerCase()
+  if (filename.endsWith('.cbz') || filename.endsWith('.zip')) {
+    return 'zip'
+  }
+  if (filename.endsWith('.json')) {
+    return 'json'
+  }
+
+  // Check file signature (magic bytes) by reading first few bytes
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer
+        const bytes = new Uint8Array(arrayBuffer)
+
+        // ZIP files start with 'PK' (0x50 0x4B)
+        if (bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4B) {
+          resolve('zip')
+        } else {
+          // Assume JSON (starts with '{' or '[')
+          resolve('json')
+        }
+      } catch (error) {
+        reject(new Error('Failed to detect file format'))
+      }
+    }
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    // Read first 4 bytes to check signature
+    reader.readAsArrayBuffer(file.slice(0, 4))
+  })
 }

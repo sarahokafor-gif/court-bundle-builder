@@ -16,7 +16,7 @@ import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import BundleValidation from './components/BundleValidation'
 import TemplateSelector from './components/TemplateSelector'
 import { useToast } from './components/Toast'
-import { saveBundle, loadBundle, deserializeSections, loadBundleProgressively } from './utils/saveLoad'
+import { saveBundle, loadBundle, deserializeSections, loadBundleProgressively, saveBundleAsZip, loadBundleFromZip, detectFileFormat } from './utils/saveLoad'
 import {
   autoSaveToLocalStorage,
   getAutoSaveData,
@@ -27,6 +27,7 @@ import {
 import { getPdfPageCount } from './utils/pdfUtils'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import LoadingProgress from './components/LoadingProgress'
+import ConversionPrompt from './components/ConversionPrompt'
 import './App.css'
 
 function App() {
@@ -68,6 +69,8 @@ function App() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState<{ current: number; total: number; message: string } | null>(null)
+  const [showConversionPrompt, setShowConversionPrompt] = useState(false)
+  const [loadedFileSize, setLoadedFileSize] = useState<number>(0)
   const autoSaveIntervalRef = useRef<number | null>(null)
   const isInitialMount = useRef(true)
   const generateButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -440,12 +443,16 @@ function App() {
     console.log('Auto-save dismissed')
   }
 
-  const handleSave = async (filename?: string) => {
+  const handleSave = async (filename?: string, useZipFormat: boolean = true) => {
     try {
-      await saveBundle(metadata, sections, pageNumberSettings, batesNumberSettings, filename)
+      if (useZipFormat) {
+        await saveBundleAsZip(metadata, sections, pageNumberSettings, batesNumberSettings, filename)
+      } else {
+        await saveBundle(metadata, sections, pageNumberSettings, batesNumberSettings, filename)
+      }
       // Clear auto-save after successful manual save
       clearAutoSave()
-      showToast('success', 'Bundle saved successfully')
+      showToast('success', `Bundle saved successfully as ${useZipFormat ? 'ZIP' : 'JSON'}`)
     } catch (error) {
       console.error('Save failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -455,13 +462,13 @@ function App() {
 
   const handleLoad = async (file: File) => {
     try {
-      // Check file size - if > 10MB, use progressive loading
+      // Detect file format
+      const format = await detectFileFormat(file)
       const fileSizeMB = file.size / (1024 * 1024)
-      const useProgressiveLoading = fileSizeMB > 10
 
-      if (useProgressiveLoading) {
-        // Progressive loading for large files
-        const result = await loadBundleProgressively(file, (current, total, message) => {
+      if (format === 'zip') {
+        // Load ZIP format (always use progressive loading for ZIP)
+        const result = await loadBundleFromZip(file, (current, total, message) => {
           setLoadingProgress({ current, total, message })
         })
 
@@ -476,16 +483,48 @@ function App() {
         setTimeout(() => setLoadingProgress(null), 500)
 
         showToast('success', `Loaded "${file.name}" successfully`)
+
       } else {
-        // Fast loading for small files (original method)
-        const savedBundle = await loadBundle(file)
-        setMetadata(savedBundle.metadata)
-        setSections(deserializeSections(savedBundle.sections))
-        setPageNumberSettings(savedBundle.pageNumberSettings)
-        if (savedBundle.batesNumberSettings) {
-          setBatesNumberSettings(savedBundle.batesNumberSettings)
+        // JSON format - use progressive loading for files > 10MB
+        const useProgressiveLoading = fileSizeMB > 10
+
+        if (useProgressiveLoading) {
+          // Progressive loading for large JSON files
+          const result = await loadBundleProgressively(file, (current, total, message) => {
+            setLoadingProgress({ current, total, message })
+          })
+
+          setMetadata(result.metadata)
+          setSections(result.deserializedSections)
+          setPageNumberSettings(result.pageNumberSettings)
+          if (result.batesNumberSettings) {
+            setBatesNumberSettings(result.batesNumberSettings)
+          }
+
+          // Clear loading progress after brief delay to show 100%
+          setTimeout(() => setLoadingProgress(null), 500)
+
+          showToast('success', `Loaded "${file.name}" successfully`)
+
+          // Offer to convert to ZIP format
+          setLoadedFileSize(file.size)
+          setShowConversionPrompt(true)
+
+        } else {
+          // Fast loading for small JSON files
+          const savedBundle = await loadBundle(file)
+          setMetadata(savedBundle.metadata)
+          setSections(deserializeSections(savedBundle.sections))
+          setPageNumberSettings(savedBundle.pageNumberSettings)
+          if (savedBundle.batesNumberSettings) {
+            setBatesNumberSettings(savedBundle.batesNumberSettings)
+          }
+          showToast('success', `Loaded "${file.name}" successfully`)
+
+          // Offer to convert to ZIP format
+          setLoadedFileSize(file.size)
+          setShowConversionPrompt(true)
         }
-        showToast('success', `Loaded "${file.name}" successfully`)
       }
     } catch (error) {
       console.error('Load failed:', error)
@@ -493,6 +532,24 @@ function App() {
       const errorMessage = error instanceof Error ? error.message : 'The file may be corrupted.'
       showToast('error', `Failed to load bundle: ${errorMessage}`)
     }
+  }
+
+  const handleConvertToZip = async () => {
+    setShowConversionPrompt(false)
+    try {
+      // Save the currently loaded bundle as ZIP
+      await saveBundleAsZip(metadata, sections, pageNumberSettings, batesNumberSettings)
+      showToast('success', 'Bundle converted and saved as ZIP! Use this file from now on.')
+    } catch (error) {
+      console.error('Conversion failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      showToast('error', `Failed to convert bundle: ${errorMessage}`)
+    }
+  }
+
+  const handleKeepJson = () => {
+    setShowConversionPrompt(false)
+    showToast('info', 'Keeping JSON format. You can convert later using Save.')
   }
 
 
@@ -852,6 +909,17 @@ function App() {
           progress={loadingProgress.current}
           total={loadingProgress.total}
           message={loadingProgress.message}
+        />
+      )}
+
+      {/* Conversion Prompt Modal */}
+      {showConversionPrompt && (
+        <ConversionPrompt
+          oldFormat="json"
+          oldFileSize={loadedFileSize}
+          estimatedNewSize={Math.floor(loadedFileSize * 0.75)} // Estimate 25% reduction
+          onConvert={handleConvertToZip}
+          onKeep={handleKeepJson}
         />
       )}
 

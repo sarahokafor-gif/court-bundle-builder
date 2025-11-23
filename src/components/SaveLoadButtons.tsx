@@ -17,7 +17,7 @@ export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: S
     // Prompt user for filename
     const defaultName = suggestedFilename || 'my_bundle_save'
     const userFilename = prompt(
-      'Enter a name for your saved bundle:\n(The .json extension will be added automatically)',
+      'Enter a name for your saved bundle:\n(The .cbz extension will be added automatically - new ZIP format, faster and smaller)',
       defaultName
     )
 
@@ -49,8 +49,11 @@ export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: S
     const file = event.target.files?.[0]
     if (!file) return
 
-    if (!file.name.endsWith('.json')) {
-      alert('Please select a valid bundle save file (.json)')
+    const fileName = file.name.toLowerCase()
+    const isValidFile = fileName.endsWith('.json') || fileName.endsWith('.cbz') || fileName.endsWith('.zip')
+
+    if (!isValidFile) {
+      alert('Please select a valid bundle save file (.cbz, .zip, or .json)')
       return
     }
 
@@ -74,7 +77,7 @@ export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: S
         className="btn btn-primary"
         onClick={handleSave}
         disabled={isSaving}
-        title="Save your bundle progress as a .json file"
+        title="Save your bundle progress as a .cbz file (ZIP format - smaller and faster)"
         aria-label="Save work progress"
       >
         <Save size={18} />
@@ -84,7 +87,7 @@ export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: S
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json,application/json"
+        accept=".cbz,.zip,.json,application/zip,application/json"
         onChange={handleFileChange}
         style={{ display: 'none' }}
         aria-label="Load saved bundle file"
@@ -94,7 +97,7 @@ export default function SaveLoadButtons({ onSave, onLoad, suggestedFilename }: S
         className="btn btn-success"
         onClick={handleLoadClick}
         disabled={isLoading}
-        title="Load a previously saved bundle (.json file)"
+        title="Load a previously saved bundle (.cbz, .zip, or .json file)"
         aria-label="Load saved bundle"
       >
         <FolderOpen size={18} />
