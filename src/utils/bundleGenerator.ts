@@ -821,12 +821,18 @@ export async function generateBundlePreview(
 
       // Load documents
       for (const doc of section.documents) {
-        const pdfDoc = await loadPdfFromFile(doc.file)
+        // CRITICAL: Use modifiedFile if it exists (contains edits like eraser/redaction/page deletion)
+        // Only use selectedPages if there's no modifiedFile (backwards compatibility)
+        const fileToUse = doc.modifiedFile || doc.file
+        const pdfDoc = await loadPdfFromFile(fileToUse)
 
-        // Determine which pages to include (use selectedPages if defined, otherwise all pages)
-        const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
-          ? doc.selectedPages
-          : pdfDoc.getPageIndices()
+        // If using modifiedFile, it already has the right pages - use all of them
+        // If using original file, respect selectedPages filtering
+        const pageIndices = doc.modifiedFile
+          ? pdfDoc.getPageIndices() // Use all pages from modified file
+          : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
+              ? doc.selectedPages
+              : pdfDoc.getPageIndices())
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
@@ -962,10 +968,14 @@ export async function generateIndexOnly(
         const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
-        // Calculate the actual number of pages (selected pages or all pages)
-        const actualPageCount = doc.selectedPages !== undefined && doc.selectedPages.length > 0
-          ? doc.selectedPages.length
-          : doc.pageCount
+        // Calculate the actual number of pages
+        // If modifiedFile exists, doc.pageCount is already updated to match it
+        // Otherwise, use selectedPages count or total page count
+        const actualPageCount = doc.modifiedFile
+          ? doc.pageCount // ModifiedFile page count (already updated when file was modified)
+          : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
+              ? doc.selectedPages.length
+              : doc.pageCount)
 
         // Calculate end page based on actual page count
         sectionPageNum += actualPageCount
@@ -1070,10 +1080,14 @@ export async function generateIndexPreview(
         const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
-        // Calculate the actual number of pages (selected pages or all pages)
-        const actualPageCount = doc.selectedPages !== undefined && doc.selectedPages.length > 0
-          ? doc.selectedPages.length
-          : doc.pageCount
+        // Calculate the actual number of pages
+        // If modifiedFile exists, doc.pageCount is already updated to match it
+        // Otherwise, use selectedPages count or total page count
+        const actualPageCount = doc.modifiedFile
+          ? doc.pageCount // ModifiedFile page count (already updated when file was modified)
+          : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
+              ? doc.selectedPages.length
+              : doc.pageCount)
 
         // Calculate end page based on actual page count
         sectionPageNum += actualPageCount
@@ -1166,12 +1180,18 @@ export async function generateBundle(
 
       // Load documents
       for (const doc of section.documents) {
-        const pdfDoc = await loadPdfFromFile(doc.file)
+        // CRITICAL: Use modifiedFile if it exists (contains edits like eraser/redaction/page deletion)
+        // Only use selectedPages if there's no modifiedFile (backwards compatibility)
+        const fileToUse = doc.modifiedFile || doc.file
+        const pdfDoc = await loadPdfFromFile(fileToUse)
 
-        // Determine which pages to include (use selectedPages if defined, otherwise all pages)
-        const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
-          ? doc.selectedPages
-          : pdfDoc.getPageIndices()
+        // If using modifiedFile, it already has the right pages - use all of them
+        // If using original file, respect selectedPages filtering
+        const pageIndices = doc.modifiedFile
+          ? pdfDoc.getPageIndices() // Use all pages from modified file
+          : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
+              ? doc.selectedPages
+              : pdfDoc.getPageIndices())
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 

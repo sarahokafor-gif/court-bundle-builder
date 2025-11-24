@@ -27,11 +27,13 @@ export default function PageManager({ document, onClose, onSave, onUpdateModifie
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Load PDF
+  // Load PDF - use modifiedFile if it exists (preserves previous edits)
   useEffect(() => {
     const loadPdf = async () => {
       try {
-        const arrayBuffer = await document.file.arrayBuffer()
+        // CRITICAL: Use modifiedFile if it exists to preserve eraser/redaction edits
+        const fileToLoad = document.modifiedFile || document.file
+        const arrayBuffer = await fileToLoad.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         setPdfDoc(pdf)
       } catch (error) {
@@ -86,11 +88,18 @@ export default function PageManager({ document, onClose, onSave, onUpdateModifie
     }
 
     try {
-      // Create a new PDF with only the selected pages
-      const modifiedFile = await extractSelectedPages(document.file, selectedPages, document.name)
+      // Use modifiedFile if it exists (preserves previous edits)
+      const baseFile = document.modifiedFile || document.file
 
-      // Save the selected pages array and the modified file
-      onSave(selectedPages)
+      // Create a new PDF with only the selected pages
+      const modifiedFile = await extractSelectedPages(baseFile, selectedPages, document.name)
+
+      // After extracting pages, the new PDF has different page count
+      // So we reset selectedPages to "all pages" of the NEW PDF
+      const newPageCount = selectedPages.length
+      const allPagesSelected = Array.from({ length: newPageCount }, (_, i) => i)
+
+      onSave(allPagesSelected) // Reset to all pages selected
       onUpdateModifiedFile(modifiedFile)
       onClose()
     } catch (error) {
