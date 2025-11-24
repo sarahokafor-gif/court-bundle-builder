@@ -782,7 +782,10 @@ export default function SectionDocumentList({
             }
 
             try {
-              const modifiedFile = await burnRectanglesIntoPDF(editingDocument.doc.file, rectangles)
+              // CRITICAL: Use modifiedFile if it exists, otherwise use original
+              // This preserves previous edits when re-editing a document
+              const baseFile = editingDocument.doc.modifiedFile || editingDocument.doc.file
+              const modifiedFile = await burnRectanglesIntoPDF(baseFile, rectangles)
               onUpdateDocumentFile(editingDocument.sectionId, editingDocument.doc.id, modifiedFile)
               alert(`Successfully applied ${rectangles.length} redaction${rectangles.length !== 1 ? 's' : ''}/erasure${rectangles.length !== 1 ? 's' : ''}!`)
               setEditingDocument(null)

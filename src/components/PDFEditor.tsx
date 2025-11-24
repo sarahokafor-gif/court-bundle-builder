@@ -33,6 +33,9 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
   const [hoveredRectIndex, setHoveredRectIndex] = useState<number | null>(null)
   const [pageViewport, setPageViewport] = useState<{ width: number; height: number } | null>(null)
+  const [multiPageMode, setMultiPageMode] = useState(false)
+  const [pageRangeStart, setPageRangeStart] = useState(1)
+  const [pageRangeEnd, setPageRangeEnd] = useState(1)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -252,15 +255,38 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
 
     // Only add rectangle if it has meaningful size
     if (Math.abs(width) > 5 && Math.abs(height) > 5) {
-      const newRect: Rectangle = {
+      const baseRect = {
         x: Math.min(startPos.x, endX),
         y: Math.min(startPos.y, endY),
         width: Math.abs(width),
         height: Math.abs(height),
-        page: currentPage,
         type: tool,
       }
-      setRectangles(prev => [...prev, newRect])
+
+      if (multiPageMode) {
+        // Apply to all pages in range
+        const start = Math.min(pageRangeStart, pageRangeEnd)
+        const end = Math.max(pageRangeStart, pageRangeEnd)
+        const maxPages = pdfDoc?.numPages || 1
+        const validStart = Math.max(1, Math.min(start, maxPages))
+        const validEnd = Math.max(1, Math.min(end, maxPages))
+
+        const newRects: Rectangle[] = []
+        for (let pageNum = validStart; pageNum <= validEnd; pageNum++) {
+          newRects.push({
+            ...baseRect,
+            page: pageNum,
+          })
+        }
+        setRectangles(prev => [...prev, ...newRects])
+      } else {
+        // Apply to current page only
+        const newRect: Rectangle = {
+          ...baseRect,
+          page: currentPage,
+        }
+        setRectangles(prev => [...prev, newRect])
+      }
     }
 
     setIsDrawing(false)
@@ -364,6 +390,54 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
               <Eraser size={20} />
               Erase
             </button>
+          </div>
+
+          <div className="tool-group" style={{ borderLeft: '1px solid #ddd', paddingLeft: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={multiPageMode}
+                onChange={(e) => {
+                  setMultiPageMode(e.target.checked)
+                  if (e.target.checked && pdfDoc) {
+                    // Initialize range to all pages when enabling
+                    setPageRangeStart(1)
+                    setPageRangeEnd(pdfDoc.numPages)
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              />
+              <span style={{ fontWeight: multiPageMode ? 'bold' : 'normal' }}>Multi-Page Mode</span>
+            </label>
+            {multiPageMode && (
+              <>
+                <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>From:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={pdfDoc?.numPages || 1}
+                    value={pageRangeStart}
+                    onChange={(e) => setPageRangeStart(Math.max(1, parseInt(e.target.value) || 1))}
+                    style={{ width: '50px', padding: '2px 4px', fontSize: '13px' }}
+                  />
+                </label>
+                <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>To:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={pdfDoc?.numPages || 1}
+                    value={pageRangeEnd}
+                    onChange={(e) => setPageRangeEnd(Math.max(1, parseInt(e.target.value) || 1))}
+                    style={{ width: '50px', padding: '2px 4px', fontSize: '13px' }}
+                  />
+                </label>
+                <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
+                  (Draw once, applies to {Math.abs(pageRangeEnd - pageRangeStart) + 1} pages)
+                </span>
+              </>
+            )}
           </div>
 
           <div className="tool-group">
