@@ -261,7 +261,18 @@ async function generateIndexPage(
         yPosition -= 10 // Extra space before section
       }
 
-      const sectionText = entry.title.toUpperCase()
+      // Truncate section title if too long to prevent overlap
+      let sectionText = entry.title.toUpperCase()
+      const maxSectionWidth = width - 100 // Leave margin on right
+      const sectionTextWidth = fontBold.widthOfTextAtSize(sectionText, 11)
+
+      if (sectionTextWidth > maxSectionWidth) {
+        while (fontBold.widthOfTextAtSize(sectionText + '...', 11) > maxSectionWidth && sectionText.length > 0) {
+          sectionText = sectionText.slice(0, -1)
+        }
+        sectionText = sectionText.trim() + '...'
+      }
+
       page.drawText(sectionText, {
         x: 50,
         y: yPosition,
