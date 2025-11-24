@@ -78,11 +78,28 @@ async function recoverBundle(jsonFilePath) {
 
     const zip = new JSZip()
 
-    // Prepare metadata object
+    // Prepare metadata object - MUST match version 3.0 format exactly
     const metadataObj = {
-      version: '2.0',
-      format: 'zip',
-      ...bundleData.metadata,
+      metadata: bundleData.metadata,
+      sections: bundleData.sections.map(section => ({
+        id: section.id,
+        name: section.name,
+        addDivider: section.addDivider,
+        order: section.order,
+        pagePrefix: section.pagePrefix,
+        startPage: section.startPage,
+        documents: section.documents.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          pageCount: doc.pageCount,
+          order: doc.order,
+          documentDate: doc.documentDate,
+          datePrecision: doc.datePrecision,
+          customTitle: doc.customTitle,
+          selectedPages: doc.selectedPages,
+          hasModifiedFile: !!doc.modifiedFileData,
+        })),
+      })),
       pageNumberSettings: bundleData.pageNumberSettings || {
         enabled: true,
         position: 'bottom-center',
@@ -95,35 +112,14 @@ async function recoverBundle(jsonFilePath) {
         startNumber: 1,
         position: 'top-right',
         fontSize: 8
-      }
+      },
+      savedAt: new Date().toISOString(),
+      version: '3.0', // CRITICAL: Must be 3.0 for ZIP format
     }
 
-    // Add metadata
+    // Add metadata.json
     zip.file('metadata.json', JSON.stringify(metadataObj, null, 2))
-    console.log('   ✓ Added metadata.json')
-
-    // Add sections metadata
-    const sectionsMetadata = bundleData.sections.map(section => ({
-      id: section.id,
-      name: section.name,
-      order: section.order,
-      addDivider: section.addDivider,
-      pagePrefix: section.pagePrefix,
-      startPage: section.startPage,
-      documents: section.documents.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        pageCount: doc.pageCount,
-        order: doc.order,
-        documentDate: doc.documentDate,
-        datePrecision: doc.datePrecision,
-        customTitle: doc.customTitle,
-        selectedPages: doc.selectedPages
-      }))
-    }))
-
-    zip.file('sections.json', JSON.stringify(sectionsMetadata, null, 2))
-    console.log('   ✓ Added sections.json')
+    console.log('   ✓ Added metadata.json (version 3.0)')
 
     // Create documents folder
     const documentsFolder = zip.folder('documents')
