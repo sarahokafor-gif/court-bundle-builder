@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Section, Document, DatePrecision, BundleType } from '../types'
 import { formatDateForInput, formatDateFromInput, extractDateWithPrecision } from '../utils/dateExtraction'
 import { searchTemplates, getFirstPlaceholderRange } from '../utils/documentTemplates'
-import PageManager from './PageManager'
+import PageManagerGrid from './PageManagerGrid'
 import PDFEditor from './PDFEditor'
 import { burnRectanglesIntoPDF } from '../utils/pdfEditing'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
@@ -22,7 +22,7 @@ interface SectionDocumentListProps {
   onUpdateDocumentDate: (sectionId: string, docId: string, date: string, precision?: DatePrecision) => void
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
-  onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File) => void
+  onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File, newPageCount?: number) => void
 }
 
 interface SortableDocumentItemProps {
@@ -759,14 +759,14 @@ export default function SectionDocumentList({
       </DndContext>
 
       {managingDocument && (
-        <PageManager
+        <PageManagerGrid
           document={managingDocument.doc}
           onClose={() => setManagingDocument(null)}
-          onSave={(selectedPages) => {
-            onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, selectedPages)
-          }}
-          onUpdateModifiedFile={(modifiedFile) => {
-            onUpdateDocumentFile(managingDocument.sectionId, managingDocument.doc.id, modifiedFile)
+          onUpdateFile={(newFile, newPageCount) => {
+            // Directly update the document file - simpler and clearer
+            onUpdateDocumentFile(managingDocument.sectionId, managingDocument.doc.id, newFile, newPageCount)
+            // Clear selectedPages since the file now has the correct pages
+            onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, [])
           }}
         />
       )}
