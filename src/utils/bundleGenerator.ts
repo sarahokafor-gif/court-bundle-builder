@@ -832,10 +832,21 @@ export async function generateBundlePreview(
 
       // Load documents
       for (const doc of section.documents) {
+        console.log('[BundleGenerator] Processing document:', {
+          name: doc.name,
+          hasModifiedFile: !!doc.modifiedFile,
+          originalFileSize: doc.file.size,
+          modifiedFileSize: doc.modifiedFile?.size,
+          originalPageCount: doc.pageCount,
+          hasSelectedPages: !!doc.selectedPages
+        })
+
         // CRITICAL: Use modifiedFile if it exists (contains edits like eraser/redaction/page deletion)
         // Only use selectedPages if there's no modifiedFile (backwards compatibility)
         const fileToUse = doc.modifiedFile || doc.file
+        console.log('[BundleGenerator] Using file:', fileToUse.name, 'size:', fileToUse.size)
         const pdfDoc = await loadPdfFromFile(fileToUse)
+        console.log('[BundleGenerator] Loaded PDF, pages:', pdfDoc.getPageCount())
 
         // If using modifiedFile, it already has the right pages - use all of them
         // If using original file, respect selectedPages filtering
@@ -844,6 +855,8 @@ export async function generateBundlePreview(
           : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
               ? doc.selectedPages
               : pdfDoc.getPageIndices())
+
+        console.log('[BundleGenerator] Page indices to use:', pageIndices)
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
@@ -1191,10 +1204,21 @@ export async function generateBundle(
 
       // Load documents
       for (const doc of section.documents) {
+        console.log('[BundleGenerator] Processing document:', {
+          name: doc.name,
+          hasModifiedFile: !!doc.modifiedFile,
+          originalFileSize: doc.file.size,
+          modifiedFileSize: doc.modifiedFile?.size,
+          originalPageCount: doc.pageCount,
+          hasSelectedPages: !!doc.selectedPages
+        })
+
         // CRITICAL: Use modifiedFile if it exists (contains edits like eraser/redaction/page deletion)
         // Only use selectedPages if there's no modifiedFile (backwards compatibility)
         const fileToUse = doc.modifiedFile || doc.file
+        console.log('[BundleGenerator] Using file:', fileToUse.name, 'size:', fileToUse.size)
         const pdfDoc = await loadPdfFromFile(fileToUse)
+        console.log('[BundleGenerator] Loaded PDF, pages:', pdfDoc.getPageCount())
 
         // If using modifiedFile, it already has the right pages - use all of them
         // If using original file, respect selectedPages filtering
@@ -1203,6 +1227,8 @@ export async function generateBundle(
           : (doc.selectedPages !== undefined && doc.selectedPages.length > 0
               ? doc.selectedPages
               : pdfDoc.getPageIndices())
+
+        console.log('[BundleGenerator] Page indices to use:', pageIndices)
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 

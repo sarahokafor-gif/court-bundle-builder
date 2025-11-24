@@ -777,7 +777,10 @@ export default function SectionDocumentList({
           document={editingDocument.doc}
           onClose={() => setEditingDocument(null)}
           onSave={async (rectangles) => {
+            console.log('[SectionDocumentList] PDFEditor onSave called, rectangles:', rectangles.length)
+
             if (rectangles.length === 0) {
+              console.log('[SectionDocumentList] No rectangles, closing editor')
               setEditingDocument(null)
               return
             }
@@ -786,12 +789,15 @@ export default function SectionDocumentList({
               // CRITICAL: Use modifiedFile if it exists, otherwise use original
               // This preserves previous edits when re-editing a document
               const baseFile = editingDocument.doc.modifiedFile || editingDocument.doc.file
+              console.log('[SectionDocumentList] Burning rectangles into:', baseFile.name, 'size:', baseFile.size)
               const modifiedFile = await burnRectanglesIntoPDF(baseFile, rectangles)
+              console.log('[SectionDocumentList] Created modified file:', modifiedFile.name, 'size:', modifiedFile.size)
+              console.log('[SectionDocumentList] Calling onUpdateDocumentFile')
               onUpdateDocumentFile(editingDocument.sectionId, editingDocument.doc.id, modifiedFile)
               alert(`Successfully applied ${rectangles.length} redaction${rectangles.length !== 1 ? 's' : ''}/erasure${rectangles.length !== 1 ? 's' : ''}!`)
               setEditingDocument(null)
             } catch (error) {
-              console.error('Error saving PDF edits:', error)
+              console.error('[SectionDocumentList] Error saving PDF edits:', error)
               alert('Failed to save PDF edits. Please try again.')
             }
           }}

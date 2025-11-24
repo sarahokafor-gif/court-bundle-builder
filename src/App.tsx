@@ -332,6 +332,13 @@ function App() {
 
   // Handler for page deletion - replaces the file entirely
   const handleReplaceDocumentFile = useCallback((sectionId: string, docId: string, newFile: File, newPageCount: number) => {
+    console.log('[APP] handleReplaceDocumentFile called:', {
+      sectionId,
+      docId,
+      newFileName: newFile.name,
+      newFileSize: newFile.size,
+      newPageCount
+    })
     setSections(prev =>
       prev.map(section =>
         section.id === sectionId
@@ -352,17 +359,27 @@ function App() {
           : section
       )
     )
+    console.log('[APP] Document file replaced successfully')
   }, [])
 
   // Handler for visual edits (eraser/redactor) - creates modifiedFile
   const handleUpdateDocumentFile = useCallback(async (sectionId: string, docId: string, modifiedFile: File, newPageCount?: number) => {
+    console.log('[APP] handleUpdateDocumentFile called:', {
+      sectionId,
+      docId,
+      modifiedFileName: modifiedFile.name,
+      modifiedFileSize: modifiedFile.size,
+      newPageCount
+    })
+
     // Get page count of modified file if not provided
     let pageCount = newPageCount
     if (!pageCount) {
       try {
         pageCount = await getPdfPageCount(modifiedFile)
+        console.log('[APP] Counted pages in modified file:', pageCount)
       } catch (error) {
-        console.error('Failed to get page count:', error)
+        console.error('[APP] Failed to get page count:', error)
         return
       }
     }
@@ -381,6 +398,7 @@ function App() {
           : section
       )
     )
+    console.log('[APP] Modified file saved successfully')
   }, [])
 
   const handleSelectTemplate = (newSections: Section[], bundleType: BundleType) => {

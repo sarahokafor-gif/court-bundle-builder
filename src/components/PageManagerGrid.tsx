@@ -95,12 +95,15 @@ export default function PageManagerGrid({ document, onClose, onUpdateFile }: Pag
   const selectedCount = thumbnails.filter(t => t.selected).length
 
   const handleSave = async () => {
+    console.log('[PageManagerGrid] handleSave called, selectedCount:', selectedCount, 'totalPages:', thumbnails.length)
+
     if (selectedCount === 0) {
       alert('Please select at least one page to keep.')
       return
     }
 
     if (selectedCount === thumbnails.length) {
+      console.log('[PageManagerGrid] All pages selected, no extraction needed')
       // All pages selected - no need to extract, just close
       onClose()
       return
@@ -114,17 +117,22 @@ export default function PageManagerGrid({ document, onClose, onUpdateFile }: Pag
         .filter(t => t.selected)
         .map(t => t.pageNumber - 1) // Convert to 0-indexed
 
+      console.log('[PageManagerGrid] Extracting pages:', selectedPageIndices)
+
       // Use modifiedFile if it exists (preserves previous edits)
       const baseFile = document.modifiedFile || document.file
+      console.log('[PageManagerGrid] Using file:', baseFile.name, 'size:', baseFile.size)
 
       // Extract selected pages
       const newFile = await extractSelectedPages(baseFile, selectedPageIndices, document.name)
+      console.log('[PageManagerGrid] Extracted file:', newFile.name, 'size:', newFile.size, 'pages:', selectedCount)
 
       // Update the document with the new file
+      console.log('[PageManagerGrid] Calling onUpdateFile with new file')
       onUpdateFile(newFile, selectedCount)
       onClose()
     } catch (error) {
-      console.error('Error extracting pages:', error)
+      console.error('[PageManagerGrid] Error extracting pages:', error)
       alert('Failed to extract selected pages. Please try again.')
       setLoading(false)
     }
