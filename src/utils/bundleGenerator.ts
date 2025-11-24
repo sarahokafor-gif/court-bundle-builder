@@ -281,14 +281,23 @@ async function generateIndexPage(
         color: rgb(0, 0, 0),
       })
 
-      currentSection = entry.title.split(':')[0].trim() // Extract section letter (e.g., "SECTION A")
+      // Extract section letter - handle both "SECTION A" and standalone section names
+      const titleParts = entry.title.split(':')[0].trim()
+      let extractedLetter = titleParts.replace(/^SECTION\s+/i, '').trim()
+
+      // If still too long (e.g., "PRELIMINARY DOCUMENTS"), just use first letter
+      if (extractedLetter.length > 3) {
+        extractedLetter = extractedLetter.charAt(0)
+      }
+
+      currentSection = extractedLetter
       documentCounter = 0
       yPosition -= 25
       lastWasSection = true
     } else {
       // DOCUMENT ENTRY with numbering (e.g., A1, A2, B1, B2)
       documentCounter++
-      const sectionLetter = currentSection.replace('SECTION ', '').trim() || 'A'
+      const sectionLetter = currentSection || 'A'
       const docNumber = `${sectionLetter}${documentCounter}.`
 
       // Calculate page range
