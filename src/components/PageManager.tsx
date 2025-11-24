@@ -42,7 +42,7 @@ export default function PageManager({ document, onClose, onSave, onUpdateModifie
       }
     }
     loadPdf()
-  }, [document])
+  }, [document, document.modifiedFile]) // Re-load when modifiedFile changes
 
   // Render current page
   useEffect(() => {

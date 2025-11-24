@@ -69,7 +69,7 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
       }
     }
     loadPdf()
-  }, [document])
+  }, [document, document.modifiedFile]) // Re-load when modifiedFile changes
 
   // Render current page
   useEffect(() => {
