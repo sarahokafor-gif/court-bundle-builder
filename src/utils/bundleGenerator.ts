@@ -341,16 +341,23 @@ async function generateIndexPage(
         // Create link annotation to jump to the target page
         const targetPage = pdfDoc.getPage(entry.startPageIndex)
 
-        // Create destination array using context.obj for proper PDF structure
-        const dest = pdfDoc.context.obj([targetPage.ref, 'Fit'])
+        // Create destination array - XYZ with null params goes to top of page
+        const dest = pdfDoc.context.obj([
+          targetPage.ref,
+          PDFName.of('XYZ'),
+          null,
+          null,
+          null
+        ])
 
         // Create link annotation
         const linkAnnotation = pdfDoc.context.obj({
-          Type: 'Annot',
-          Subtype: 'Link',
+          Type: PDFName.of('Annot'),
+          Subtype: PDFName.of('Link'),
           Rect: [60, yPosition - 2, 60 + linkWidth, yPosition + linkHeight],
           Border: [0, 0, 0],
           Dest: dest,
+          H: PDFName.of('I'), // Highlighting mode
         })
 
         const linkAnnotationRef = pdfDoc.context.register(linkAnnotation)
@@ -547,8 +554,14 @@ async function addLinksToIndex(
 
         // Create link annotation
         try {
-          // Create destination array
-          const dest = pdfDoc.context.obj([targetPage.ref, PDFName.of('Fit')])
+          // Create destination array (direct array, not wrapped in obj)
+          const dest = pdfDoc.context.obj([
+            targetPage.ref,
+            PDFName.of('XYZ'),
+            null,
+            null,
+            null
+          ])
 
           // Create a link annotation
           const linkAnnotDict = pdfDoc.context.obj({
