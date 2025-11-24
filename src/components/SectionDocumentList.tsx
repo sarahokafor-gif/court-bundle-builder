@@ -23,6 +23,7 @@ interface SectionDocumentListProps {
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
   onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File, newPageCount?: number) => void
+  onReplaceDocumentFile: (sectionId: string, docId: string, newFile: File, newPageCount: number) => void
 }
 
 interface SortableDocumentItemProps {
@@ -410,8 +411,9 @@ export default function SectionDocumentList({
   onPreview,
   onUpdateDocumentDate,
   onUpdateDocumentTitle,
-  onUpdateSelectedPages,
+  onUpdateSelectedPages: _onUpdateSelectedPages, // Not used anymore, but keep for backwards compatibility
   onUpdateDocumentFile,
+  onReplaceDocumentFile,
 }: SectionDocumentListProps) {
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
@@ -763,10 +765,8 @@ export default function SectionDocumentList({
           document={managingDocument.doc}
           onClose={() => setManagingDocument(null)}
           onUpdateFile={(newFile, newPageCount) => {
-            // Directly update the document file - simpler and clearer
-            onUpdateDocumentFile(managingDocument.sectionId, managingDocument.doc.id, newFile, newPageCount)
-            // Clear selectedPages since the file now has the correct pages
-            onUpdateSelectedPages(managingDocument.sectionId, managingDocument.doc.id, [])
+            // Replace the file entirely - clears modifiedFile and selectedPages
+            onReplaceDocumentFile(managingDocument.sectionId, managingDocument.doc.id, newFile, newPageCount)
           }}
         />
       )}

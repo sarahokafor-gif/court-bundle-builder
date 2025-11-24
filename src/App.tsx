@@ -330,6 +330,31 @@ function App() {
     )
   }, [])
 
+  // Handler for page deletion - replaces the file entirely
+  const handleReplaceDocumentFile = useCallback((sectionId: string, docId: string, newFile: File, newPageCount: number) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId
+                  ? {
+                      ...doc,
+                      file: newFile,  // Replace the file
+                      modifiedFile: undefined,  // Clear modifiedFile
+                      pageCount: newPageCount,
+                      selectedPages: undefined // Clear selectedPages
+                    }
+                  : doc
+              ),
+            }
+          : section
+      )
+    )
+  }, [])
+
+  // Handler for visual edits (eraser/redactor) - creates modifiedFile
   const handleUpdateDocumentFile = useCallback(async (sectionId: string, docId: string, modifiedFile: File, newPageCount?: number) => {
     // Get page count of modified file if not provided
     let pageCount = newPageCount
@@ -929,6 +954,7 @@ function App() {
             onUpdateDocumentTitle={handleUpdateDocumentTitle}
             onUpdateSelectedPages={handleUpdateSelectedPages}
             onUpdateDocumentFile={handleUpdateDocumentFile}
+            onReplaceDocumentFile={handleReplaceDocumentFile}
           />
         </section>
 
