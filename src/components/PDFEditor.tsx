@@ -44,6 +44,10 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   useEffect(() => {
     const loadPdf = async () => {
       try {
+        // Reset to page 1 when document changes
+        setCurrentPage(1)
+        setRectangles([]) // Clear any unsaved edits when document changes
+
         // Use modifiedFile if it exists (edited/filtered version), otherwise use original
         const fileToEdit = document.modifiedFile || document.file
         const arrayBuffer = await fileToEdit.arrayBuffer()
@@ -69,7 +73,7 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
       }
     }
     loadPdf()
-  }, [document, document.modifiedFile]) // Re-load when modifiedFile changes
+  }, [document.file, document.modifiedFile, document.pageCount]) // Re-load when file changes or pages are deleted
 
   // Render current page
   useEffect(() => {

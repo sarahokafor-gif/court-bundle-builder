@@ -773,6 +773,7 @@ export default function SectionDocumentList({
 
       {editingDocument && (
         <PDFEditor
+          key={`${editingDocument.doc.id}-${editingDocument.doc.pageCount}`}
           document={editingDocument.doc}
           onClose={() => setEditingDocument(null)}
           onSave={async (rectangles) => {
