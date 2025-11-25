@@ -53,15 +53,14 @@ export async function burnRectanglesIntoPDF(
             borderWidth: 1,
           })
         } else {
-          // White rectangle for erasing
+          // White rectangle for erasing - no border for seamless blending
           page.drawRectangle({
             x: rect.x,
             y: pdfY,
             width: rect.width,
             height: rect.height,
             color: rgb(1, 1, 1),
-            borderColor: rgb(0.8, 0.8, 0.8),
-            borderWidth: 0.5,
+            borderWidth: 0, // No border - blends perfectly with white page
           })
         }
       }
