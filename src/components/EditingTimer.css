@@ -1,0 +1,394 @@
+/* Compact Timer */
+.editing-timer-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.editing-timer-compact.first {
+  background: #fef3c7;
+  color: #b45309;
+  animation: pulse-warning 2s ease-in-out infinite;
+}
+
+.editing-timer-compact.final {
+  background: #fee2e2;
+  color: #dc2626;
+  animation: pulse-danger 1s ease-in-out infinite;
+}
+
+.editing-timer-compact.expired {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Full Timer */
+.editing-timer {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.editing-timer.first {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.editing-timer.final {
+  border-color: #ef4444;
+  background: #fef2f2;
+  animation: border-pulse-danger 1s ease-in-out infinite;
+}
+
+.editing-timer.expired {
+  border-color: #374151;
+  background: #f3f4f6;
+}
+
+.timer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.editing-timer.first .timer-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.editing-timer.final .timer-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.editing-timer.expired .timer-icon {
+  background: #374151;
+  color: white;
+}
+
+.timer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timer-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timer-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}
+
+.editing-timer.expired .timer-value {
+  color: #dc2626;
+}
+
+/* Progress Bar */
+.timer-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.timer-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timer-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+  border-radius: 4px;
+  transition: width 1s linear;
+}
+
+.editing-timer.first .timer-progress-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.editing-timer.final .timer-progress-fill {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.timer-percent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Warning */
+.timer-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.editing-timer.final .timer-warning {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.editing-timer.expired .timer-warning {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Extend Button */
+.extend-time-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #3b82f6;
+  color: white;
+}
+
+.extend-time-btn:hover {
+  background: #2563eb;
+}
+
+.editing-timer.expired .extend-time-btn {
+  background: #059669;
+}
+
+.editing-timer.expired .extend-time-btn:hover {
+  background: #047857;
+}
+
+/* Floating Timer */
+.floating-timer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 900;
+  min-width: 180px;
+}
+
+.floating-timer.first {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.floating-timer.final {
+  border-color: #ef4444;
+  background: #fef2f2;
+  animation: border-pulse-danger 1s ease-in-out infinite;
+}
+
+.floating-timer.expired {
+  border-color: #374151;
+  background: #f3f4f6;
+}
+
+.floating-timer-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.floating-timer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.floating-timer.first .floating-timer-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.floating-timer.final .floating-timer-icon {
+  background: #fee2e2;
+  color: #dc2626;
+  animation: pulse-icon 1s ease-in-out infinite;
+}
+
+.floating-timer.expired .floating-timer-icon {
+  background: #374151;
+  color: white;
+}
+
+.floating-timer-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.floating-timer-time {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.floating-timer.final .floating-timer-time {
+  color: #dc2626;
+}
+
+.floating-timer.expired .floating-timer-time {
+  color: #374151;
+  font-size: 20px;
+}
+
+.floating-timer-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.floating-extend-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #3b82f6;
+  color: white;
+}
+
+.floating-extend-btn:hover {
+  background: #2563eb;
+}
+
+.floating-timer.expired .floating-extend-btn {
+  background: #059669;
+}
+
+.floating-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.floating-close-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Animations */
+@keyframes pulse-warning {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-danger {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes border-pulse-danger {
+  0%, 100% {
+    border-color: #ef4444;
+  }
+  50% {
+    border-color: #f87171;
+  }
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .floating-timer {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    min-width: auto;
+  }
+
+  .floating-timer-content {
+    justify-content: center;
+  }
+}

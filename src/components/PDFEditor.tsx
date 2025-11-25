@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Square, Eraser, Save, Trash2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize, Minimize, RotateCw } from 'lucide-react'
+import { X, Square, Eraser, Save, Trash2, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize, Minimize, RotateCw, Lock, Sparkles } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { Document } from '../types'
+import { usePaymentContext } from '../context/PaymentContext'
+import EditingTimer from './EditingTimer'
 import './PDFEditor.css'
 
 // Configure PDF.js worker
@@ -23,6 +25,11 @@ interface PDFEditorProps {
 }
 
 export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps) {
+  // Payment context for feature gating
+  const payment = usePaymentContext()
+  const isEditingUnlocked = payment.isEditingUnlocked
+  const isEditingExpired = payment.isEditingExpired
+
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [scale, setScale] = useState(1.5)
@@ -379,21 +386,60 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
         </div>
 
         <div className="pdf-editor-toolbar">
+          {/* Editing Timer (when editing is unlocked) */}
+          {isEditingUnlocked && !isEditingExpired && (
+            <div className="toolbar-timer">
+              <EditingTimer timerState={payment.timerState} compact />
+            </div>
+          )}
+
+          {/* Locked Banner (when editing not purchased) */}
+          {!isEditingUnlocked && (
+            <div className="editing-locked-banner">
+              <Lock size={16} />
+              <span>Editing tools locked</span>
+              <button
+                className="unlock-button"
+                onClick={() => payment.setShowPaymentModal(true)}
+              >
+                <Sparkles size={14} />
+                Unlock Editing
+              </button>
+            </div>
+          )}
+
+          {/* Expired Banner */}
+          {isEditingExpired && (
+            <div className="editing-expired-banner">
+              <Lock size={16} />
+              <span>Editing time expired</span>
+              <button
+                className="unlock-button"
+                onClick={payment.handleExtendTime}
+              >
+                <Sparkles size={14} />
+                Extend Time
+              </button>
+            </div>
+          )}
+
           <div className="tool-group">
             <button
-              className={`tool-button ${tool === 'redact' ? 'active' : ''}`}
-              onClick={() => setTool('redact')}
-              title="Redact - Black box for sensitive info"
+              className={`tool-button ${tool === 'redact' ? 'active' : ''} ${!isEditingUnlocked || isEditingExpired ? 'locked' : ''}`}
+              onClick={() => isEditingUnlocked && !isEditingExpired && setTool('redact')}
+              title={isEditingUnlocked && !isEditingExpired ? "Redact - Black box for sensitive info" : "Purchase editing add-on to unlock"}
+              disabled={!isEditingUnlocked || isEditingExpired}
             >
-              <Square size={20} />
+              {!isEditingUnlocked || isEditingExpired ? <Lock size={16} /> : <Square size={20} />}
               Redact
             </button>
             <button
-              className={`tool-button ${tool === 'erase' ? 'active' : ''}`}
-              onClick={() => setTool('erase')}
-              title="Erase - White box to remove old page numbers"
+              className={`tool-button ${tool === 'erase' ? 'active' : ''} ${!isEditingUnlocked || isEditingExpired ? 'locked' : ''}`}
+              onClick={() => isEditingUnlocked && !isEditingExpired && setTool('erase')}
+              title={isEditingUnlocked && !isEditingExpired ? "Erase - White box to remove old page numbers" : "Purchase editing add-on to unlock"}
+              disabled={!isEditingUnlocked || isEditingExpired}
             >
-              <Eraser size={20} />
+              {!isEditingUnlocked || isEditingExpired ? <Lock size={16} /> : <Eraser size={20} />}
               Erase
             </button>
           </div>

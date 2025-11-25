@@ -264,3 +264,65 @@
     justify-content: center;
   }
 }
+
+/* Editing Locked/Timer Styles */
+.toolbar-timer {
+  margin-right: auto;
+}
+
+.editing-locked-banner,
+.editing-expired-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-right: auto;
+}
+
+.editing-locked-banner {
+  background: linear-gradient(135deg, #374151, #1f2937);
+  color: #9ca3af;
+  border: 1px solid #4b5563;
+}
+
+.editing-expired-banner {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b);
+  color: #fecaca;
+  border: 1px solid #dc2626;
+}
+
+.unlock-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin-left: 8px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.unlock-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.tool-button.locked {
+  background: #2d2d2d;
+  border-color: #4b5563;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.tool-button.locked:hover {
+  transform: none;
+  background: #2d2d2d;
+}

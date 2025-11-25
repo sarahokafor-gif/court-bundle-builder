@@ -1,8 +1,16 @@
-import { useState } from 'react'
-import { Download, FileText, Eye, CreditCard } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Download, FileText, Eye, CreditCard, Sparkles } from 'lucide-react'
 import { Section, BundleMetadata, PageNumberSettings } from '../types'
 import { generateBundle, generateIndexOnly, generateBundlePreview, generateIndexPreview } from '../utils/bundleGenerator'
-import { getPricingTier, formatPrice, isPaymentRequired } from '../utils/pricing'
+import {
+  calculateBaseCost,
+  calculateEditingCost,
+  formatPrice,
+  isPaymentRequired,
+  getEditingTimeLimitString
+} from '../utils/pricing'
+import { usePaymentContext } from '../context/PaymentContext'
+import PaymentModal from './PaymentModal'
 import ProgressIndicator from './ProgressIndicator'
 import './BundleGenerator.css'
 
@@ -27,6 +35,10 @@ export default function BundleGenerator({
   const [indexPreviewUrl, setIndexPreviewUrl] = useState<string | null>(null)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [generationStep, setGenerationStep] = useState<string>('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+
+  // Payment context
+  const payment = usePaymentContext()
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
@@ -34,8 +46,22 @@ export default function BundleGenerator({
     0
   )
 
-  const pricingTier = getPricingTier(totalDocs)
-  const needsPayment = isPaymentRequired(totalDocs)
+  // Update payment context when page count changes
+  useEffect(() => {
+    if (totalPages > 0) {
+      payment.setCurrentPageCount(totalPages)
+      // Initialize bundle if not already done
+      if (!payment.currentBundleId) {
+        payment.initializeBundle(totalPages)
+      }
+    }
+  }, [totalPages])
+
+  // Page-based pricing
+  const baseCost = calculateBaseCost(totalPages)
+  const editingCost = calculateEditingCost(totalPages)
+  const editingTimeString = getEditingTimeLimitString(totalPages)
+  const needsPayment = isPaymentRequired(totalPages)
 
   const handleGenerateIndexPreview = async () => {
     if (!metadata.bundleTitle && !metadata.caseName) {
@@ -126,12 +152,41 @@ export default function BundleGenerator({
       return
     }
 
+    // Show payment modal
+    setShowPaymentModal(true)
+  }
+
+  // Handle basic bundle purchase (no editing)
+  const handlePurchaseBasic = async () => {
+    setShowPaymentModal(false)
     setIsProcessingPayment(true)
 
     try {
-      // TODO: Implement Stripe payment flow
-      // For now, just generate clean bundle
-      alert('Payment processing will be implemented here. For now, generating clean bundle...')
+      // For demo: simulate payment success
+      // In production: payment.handlePurchaseBase() would redirect to Stripe
+      payment.simulatePayment(false)
+
+      // Generate the bundle after "payment"
+      await generateBundle(metadata, sections, pageNumberSettings)
+    } catch (error) {
+      console.error('Error processing payment:', error)
+      alert('An error occurred. Please try again.')
+    } finally {
+      setIsProcessingPayment(false)
+    }
+  }
+
+  // Handle bundle + editing purchase
+  const handlePurchaseWithEditing = async () => {
+    setShowPaymentModal(false)
+    setIsProcessingPayment(true)
+
+    try {
+      // For demo: simulate payment success with editing
+      // In production: payment.handlePurchaseWithEditing() would redirect to Stripe
+      payment.simulatePayment(true)
+
+      // Generate the bundle after "payment"
       await generateBundle(metadata, sections, pageNumberSettings)
     } catch (error) {
       console.error('Error processing payment:', error)
@@ -171,9 +226,15 @@ export default function BundleGenerator({
       {/* Pricing Tier Display */}
       <div className={`pricing-tier ${needsPayment ? 'paid-tier' : 'free-tier'}`}>
         <div className="tier-info">
-          <span className="tier-label">{pricingTier.description}</span>
-          <span className="tier-price">{formatPrice(pricingTier.price)}</span>
+          <span className="tier-label">{totalPages} pages</span>
+          <span className="tier-price">{formatPrice(baseCost)}</span>
         </div>
+        {baseCost > 0 && (
+          <div className="tier-editing-addon">
+            <Sparkles size={14} />
+            <span>+ Editing: {formatPrice(editingCost)} ({editingTimeString})</span>
+          </div>
+        )}
       </div>
 
       {/* Index Generation Section */}
@@ -269,7 +330,7 @@ export default function BundleGenerator({
           {!isGenerating && (
             <p className="generate-hint">
               Generate a watermarked preview to review before{' '}
-              {needsPayment ? `paying ${formatPrice(pricingTier.price)} for` : 'downloading'} the final bundle.
+              {needsPayment ? `paying ${formatPrice(baseCost)} for` : 'downloading'} the final bundle.
             </p>
           )}
         </>
@@ -291,7 +352,7 @@ export default function BundleGenerator({
             <div className="preview-notice">
               <strong>⚠️ Preview Only:</strong> This PDF contains a "PREVIEW - NOT FOR OFFICIAL USE" watermark.
               {needsPayment
-                ? ` Pay ${formatPrice(pricingTier.price)} to download the clean version for court submission.`
+                ? ` Pay ${formatPrice(baseCost)} to download the clean version for court submission.`
                 : ' Download the clean version below.'}
             </div>
           </div>
@@ -302,12 +363,12 @@ export default function BundleGenerator({
               className="btn btn-warning btn-lg btn-block"
               onClick={handlePayAndDownload}
               disabled={isProcessingPayment}
-              aria-label={`Pay ${formatPrice(pricingTier.price)} and download clean bundle`}
+              aria-label={`Pay ${formatPrice(baseCost)} and download clean bundle`}
             >
               <CreditCard size={20} />
               {isProcessingPayment
                 ? 'Processing Payment...'
-                : `Pay ${formatPrice(pricingTier.price)} & Download Clean Version`}
+                : `Pay ${formatPrice(baseCost)} & Download Clean Version`}
             </button>
           ) : (
             <button
@@ -327,6 +388,16 @@ export default function BundleGenerator({
           )}
         </>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        pageCount={totalPages}
+        bundleId={payment.currentBundleId || 'new-bundle'}
+        onSelectBasic={handlePurchaseBasic}
+        onSelectWithEditing={handlePurchaseWithEditing}
+      />
     </div>
   )
 }

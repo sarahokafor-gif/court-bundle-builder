@@ -15,6 +15,8 @@ import AutoSaveRecovery from './components/AutoSaveRecovery'
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp'
 import BundleValidation from './components/BundleValidation'
 import TemplateSelector from './components/TemplateSelector'
+import { FloatingEditingTimer } from './components/EditingTimer'
+import { usePaymentContext } from './context/PaymentContext'
 import { useToast } from './components/Toast'
 import { saveBundle, loadBundle, deserializeSections, loadBundleProgressively, saveBundleAsZip, loadBundleFromZip, detectFileFormat } from './utils/saveLoad'
 import {
@@ -32,6 +34,9 @@ import ConversionPrompt from './components/ConversionPrompt'
 import './App.css'
 
 function App() {
+  // Payment context for editing timer
+  const payment = usePaymentContext()
+
   const [metadata, setMetadata] = useState<BundleMetadata>({
     bundleTitle: '',
     caseNumber: '',
@@ -1039,6 +1044,14 @@ function App() {
       >
         ?
       </button>
+
+      {/* Floating Editing Timer - shows when editing is active */}
+      {payment.isEditingUnlocked && (
+        <FloatingEditingTimer
+          timerState={payment.timerState}
+          onExtendTime={payment.handleExtendTime}
+        />
+      )}
     </div>
   )
 }
