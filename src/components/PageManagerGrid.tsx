@@ -195,7 +195,8 @@ export default function PageManagerGrid({ document, onClose, onUpdateFile }: Pag
         <div className="thumbnail-grid">
           {loading && thumbnails.some(t => !t.dataUrl) && (
             <div className="loading-message">
-              Generating thumbnails... {thumbnails.filter(t => t.dataUrl).length} of {thumbnails.length}
+              <div className="loading-spinner"></div>
+              Generating page previews... {thumbnails.filter(t => t.dataUrl).length} of {thumbnails.length}
             </div>
           )}
 
@@ -216,7 +217,10 @@ export default function PageManagerGrid({ document, onClose, onUpdateFile }: Pag
               {dataUrl ? (
                 <img src={dataUrl} alt={`Page ${pageNumber}`} className="thumbnail-image" />
               ) : (
-                <div className="thumbnail-loading">Loading...</div>
+                <div className="thumbnail-loading">
+                  <div className="loading-spinner-small"></div>
+                  <span>Loading page {pageNumber}...</span>
+                </div>
               )}
 
               <div className="thumbnail-label">

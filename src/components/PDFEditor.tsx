@@ -54,18 +54,20 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         setPdfDoc(pdf)
 
-        // Calculate optimal scale to fit window
+        // Calculate optimal scale to fit window - prioritize readability
         if (containerRef.current) {
           const page = await pdf.getPage(1)
           const viewport = page.getViewport({ scale: 1, rotation: 0 })
-          const containerHeight = containerRef.current.clientHeight - 80 // Account for padding
-          const containerWidth = containerRef.current.clientWidth - 80
+          // Use more of the available space (only 40px padding, not 80px)
+          const containerHeight = containerRef.current.clientHeight - 40
+          const containerWidth = containerRef.current.clientWidth - 40
 
           const scaleHeight = containerHeight / viewport.height
           const scaleWidth = containerWidth / viewport.width
-          const optimalScale = Math.min(scaleHeight, scaleWidth, 3) // Max 3x zoom
+          const optimalScale = Math.min(scaleHeight, scaleWidth, 5) // Max 5x zoom (increased from 3x)
 
-          setScale(Math.max(optimalScale, 0.5)) // Min 0.5x zoom
+          // Start at minimum 1.2x for better readability, max 5x
+          setScale(Math.max(optimalScale, 1.2))
         }
       } catch (error) {
         console.error('Error loading PDF:', error)
@@ -347,20 +349,20 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   // Fit to width: scale so page width matches container width
   const handleFitToWidth = () => {
     if (!pageViewport || !containerRef.current) return
-    const containerWidth = containerRef.current.clientWidth - 80 // Account for padding
+    const containerWidth = containerRef.current.clientWidth - 40 // Reduced padding
     const newScale = containerWidth / pageViewport.width
-    setScale(Math.min(Math.max(newScale, 0.5), 3)) // Clamp between 0.5 and 3
+    setScale(Math.min(Math.max(newScale, 0.5), 5)) // Clamp between 0.5 and 5x
   }
 
   // Fit to page: scale to fit entire page in view (whatever is smaller)
   const handleFitToPage = () => {
     if (!pageViewport || !containerRef.current) return
-    const containerWidth = containerRef.current.clientWidth - 80
-    const containerHeight = containerRef.current.clientHeight - 80
+    const containerWidth = containerRef.current.clientWidth - 40 // Reduced padding
+    const containerHeight = containerRef.current.clientHeight - 40
     const scaleWidth = containerWidth / pageViewport.width
     const scaleHeight = containerHeight / pageViewport.height
     const newScale = Math.min(scaleWidth, scaleHeight)
-    setScale(Math.min(Math.max(newScale, 0.5), 3))
+    setScale(Math.min(Math.max(newScale, 0.5), 5)) // Clamp between 0.5 and 5x
   }
 
   return (
@@ -447,19 +449,25 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
           <div className="tool-group">
             <button className="tool-button" onClick={handleRotate} title="Rotate page 90° clockwise">
               <RotateCw size={20} />
+              Rotate
             </button>
-            <button className="tool-button" onClick={() => setScale(s => Math.min(s + 0.25, 3))} title="Zoom in">
+          </div>
+
+          <div className="tool-group" style={{ borderLeft: '1px solid #ddd', paddingLeft: '12px' }}>
+            <button className="tool-button" onClick={() => setScale(s => Math.min(s + 0.25, 5))} title="Zoom in">
               <ZoomIn size={20} />
             </button>
             <span className="zoom-level">{Math.round(scale * 100)}%</span>
             <button className="tool-button" onClick={() => setScale(s => Math.max(s - 0.25, 0.5))} title="Zoom out">
               <ZoomOut size={20} />
             </button>
-            <button className="tool-button" onClick={handleFitToWidth} title="Fit to width">
+            <button className="tool-button" onClick={handleFitToWidth} title="Fit page width to screen">
               <Maximize size={18} style={{ transform: 'rotate(90deg)' }} />
+              Fit Width
             </button>
-            <button className="tool-button" onClick={handleFitToPage} title="Fit whole page">
+            <button className="tool-button" onClick={handleFitToPage} title="Fit entire page in view">
               <Minimize size={18} />
+              Fit Page
             </button>
           </div>
 
