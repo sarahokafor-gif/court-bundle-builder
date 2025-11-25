@@ -57,6 +57,27 @@ export default function BundleGenerator({
     }
   }, [totalPages])
 
+  // Auto-download bundle after successful payment callback
+  useEffect(() => {
+    if (payment.paymentJustCompleted && payment.isBaseUnlocked) {
+      // Clear the flag first
+      payment.clearPaymentCompleted()
+
+      // Auto-generate and download the bundle
+      const autoDownload = async () => {
+        try {
+          setGenerationStep('Payment successful! Generating your bundle...')
+          await generateBundle(metadata, sections, pageNumberSettings)
+          setGenerationStep('')
+        } catch (error) {
+          console.error('Error generating bundle after payment:', error)
+          alert('Payment successful! But there was an error generating the bundle. Please try the download button.')
+        }
+      }
+      autoDownload()
+    }
+  }, [payment.paymentJustCompleted, payment.isBaseUnlocked, metadata, sections, pageNumberSettings])
+
   // Page-based pricing
   const baseCost = calculateBaseCost(totalPages)
   const editingCost = calculateEditingCost(totalPages)
@@ -162,12 +183,16 @@ export default function BundleGenerator({
     setIsProcessingPayment(true)
 
     try {
-      // For demo: simulate payment success
-      // In production: payment.handlePurchaseBase() would redirect to Stripe
-      payment.simulatePayment(false)
+      // Free tier - just generate the bundle
+      if (!needsPayment) {
+        await generateBundle(metadata, sections, pageNumberSettings)
+        return
+      }
 
-      // Generate the bundle after "payment"
-      await generateBundle(metadata, sections, pageNumberSettings)
+      // Redirect to Stripe Checkout for paid tier
+      await payment.handlePurchaseBase()
+      // Note: User will be redirected to Stripe, then back to success URL
+      // The bundle generation happens after successful payment callback
     } catch (error) {
       console.error('Error processing payment:', error)
       alert('An error occurred. Please try again.')
@@ -182,12 +207,9 @@ export default function BundleGenerator({
     setIsProcessingPayment(true)
 
     try {
-      // For demo: simulate payment success with editing
-      // In production: payment.handlePurchaseWithEditing() would redirect to Stripe
-      payment.simulatePayment(true)
-
-      // Generate the bundle after "payment"
-      await generateBundle(metadata, sections, pageNumberSettings)
+      // Redirect to Stripe Checkout with editing add-on
+      await payment.handlePurchaseWithEditing()
+      // Note: User will be redirected to Stripe, then back to success URL
     } catch (error) {
       console.error('Error processing payment:', error)
       alert('An error occurred. Please try again.')

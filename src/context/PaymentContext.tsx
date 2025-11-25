@@ -37,6 +37,10 @@ interface PaymentContextValue {
   paymentModalMode: 'bundle' | 'extend'
   setPaymentModalMode: (mode: 'bundle' | 'extend') => void
 
+  // Payment success callback
+  paymentJustCompleted: boolean
+  clearPaymentCompleted: () => void
+
   // For development/demo: simulate payment success
   simulatePayment: (includesEditing: boolean) => void
 }
@@ -52,6 +56,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
   const [currentPageCount, setCurrentPageCount] = useState(0)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentModalMode, setPaymentModalMode] = useState<'bundle' | 'extend'>('bundle')
+  const [paymentJustCompleted, setPaymentJustCompleted] = useState(false)
 
   // Get current bundle status
   const status = payment.getCurrentBundleStatus()
@@ -170,10 +175,18 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
       }
       payment.setCurrentBundleId(bundleId)
 
+      // Mark that payment just completed (for auto-download trigger)
+      setPaymentJustCompleted(true)
+
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [payment])
+
+  // Clear payment completed flag
+  const clearPaymentCompleted = useCallback(() => {
+    setPaymentJustCompleted(false)
+  }, [])
 
   const value: PaymentContextValue = {
     currentBundleId: payment.currentBundleId,
@@ -201,6 +214,9 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     setShowPaymentModal,
     paymentModalMode,
     setPaymentModalMode,
+
+    paymentJustCompleted,
+    clearPaymentCompleted,
 
     simulatePayment,
   }
