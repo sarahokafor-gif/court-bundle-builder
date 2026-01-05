@@ -21,6 +21,20 @@ function formatPageNumber(prefix: string, pageNum: number): string {
 }
 
 /**
+ * Generate section prefix letter based on section index
+ * 0 -> 'A', 1 -> 'B', ... 25 -> 'Z', 26 -> 'AA', 27 -> 'AB', etc.
+ */
+function getSectionPrefix(sectionIndex: number): string {
+  if (sectionIndex < 26) {
+    return String.fromCharCode(65 + sectionIndex) // A-Z
+  }
+  // For more than 26 sections, use AA, AB, AC, etc.
+  const firstLetter = String.fromCharCode(65 + Math.floor(sectionIndex / 26) - 1)
+  const secondLetter = String.fromCharCode(65 + (sectionIndex % 26))
+  return firstLetter + secondLetter
+}
+
+/**
  * Generates a table of contents page for the bundle
  * Returns the number of index pages created
  */
@@ -36,45 +50,219 @@ async function generateIndexPage(
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
   let indexPageCount = 1
-  let yPosition = height - 80
+  let yPosition = height - 50
+  const leftMargin = 50
+  const rightMargin = width - 50
+  const fontSize = 14
 
-  // Title
-  page.drawText('COURT BUNDLE INDEX', {
-    x: 50,
-    y: yPosition,
-    size: 18,
-    font: fontBold,
-    color: rgb(0, 0, 0),
-  })
+  const hasParties = (metadata.applicants?.length || 0) > 0 || (metadata.respondents?.length || 0) > 0
 
-  yPosition -= 40
-
-  // Case information
-  const caseInfo = [
-    `Case: ${metadata.caseName}`,
-    `Case Number: ${metadata.caseNumber}`,
-    metadata.court ? `Court: ${metadata.court}` : null,
-    `Date: ${new Date(metadata.date).toLocaleDateString()}`,
-  ].filter(Boolean)
-
-  for (const info of caseInfo) {
-    page.drawText(info!, {
-      x: 50,
+  // Court-compliant header format
+  // Case Number - RIGHT ALIGNED
+  if (metadata.caseNumber) {
+    const caseNoText = `Case No: ${metadata.caseNumber}`
+    const caseNoWidth = fontBold.widthOfTextAtSize(caseNoText, fontSize)
+    page.drawText(caseNoText, {
+      x: rightMargin - caseNoWidth,
       y: yPosition,
-      size: 11,
+      size: fontSize,
+      font: fontBold,
+      color: rgb(0, 0, 0),
+    })
+    yPosition -= 25
+  }
+
+  // Court name - LEFT ALIGNED
+  if (metadata.court) {
+    page.drawText(metadata.court.toUpperCase(), {
+      x: leftMargin,
+      y: yPosition,
+      size: fontSize,
+      font: fontBold,
+      color: rgb(0, 0, 0),
+    })
+    yPosition -= 25
+  }
+
+  // If there are parties, show them in proper court format
+  if (hasParties) {
+    // "B E T W E E N:" - LEFT ALIGNED
+    const betweenText = 'B E T W E E N:'
+    page.drawText(betweenText, {
+      x: leftMargin,
+      y: yPosition,
+      size: fontSize,
+      font: fontBold,
+      color: rgb(0, 0, 0),
+    })
+    yPosition -= 25
+
+    // Draw applicants/claimants
+    for (const party of (metadata.applicants || [])) {
+      // Party name - CENTRED
+      const partyName = party.name.toUpperCase()
+      const partyNameWidth = fontBold.widthOfTextAtSize(partyName, fontSize)
+      page.drawText(partyName, {
+        x: (width - partyNameWidth) / 2,
+        y: yPosition,
+        size: fontSize,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 18
+
+      // Litigation friend - CENTRED (if present)
+      if (party.litigationFriend) {
+        const litFriendText = `(${party.litigationFriend})`
+        const litFriendWidth = font.widthOfTextAtSize(litFriendText, fontSize - 2)
+        page.drawText(litFriendText, {
+          x: (width - litFriendWidth) / 2,
+          y: yPosition,
+          size: fontSize - 2,
+          font: font,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= 16
+      }
+
+      // Designation - RIGHT ALIGNED (on same line as name or lit friend)
+      const designationWidth = font.widthOfTextAtSize(party.designation, fontSize - 2)
+      page.drawText(party.designation, {
+        x: rightMargin - designationWidth,
+        y: yPosition + (party.litigationFriend ? 16 : 18),
+        size: fontSize - 2,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 4
+    }
+
+    yPosition -= 5
+
+    // Separator: -v- for adversarial, -and- for non-adversarial
+    const separator = metadata.isAdversarial ? '-v-' : '-and-'
+    const separatorWidth = font.widthOfTextAtSize(separator, fontSize)
+    page.drawText(separator, {
+      x: (width - separatorWidth) / 2,
+      y: yPosition,
+      size: fontSize,
+      font: font,
+      color: rgb(0, 0, 0),
+    })
+    yPosition -= 25
+
+    // Draw respondents/defendants
+    for (const party of (metadata.respondents || [])) {
+      // Party name - CENTRED
+      const partyName = party.name.toUpperCase()
+      const partyNameWidth = fontBold.widthOfTextAtSize(partyName, fontSize)
+      page.drawText(partyName, {
+        x: (width - partyNameWidth) / 2,
+        y: yPosition,
+        size: fontSize,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 18
+
+      // Litigation friend - CENTRED (if present)
+      if (party.litigationFriend) {
+        const litFriendText = `(${party.litigationFriend})`
+        const litFriendWidth = font.widthOfTextAtSize(litFriendText, fontSize - 2)
+        page.drawText(litFriendText, {
+          x: (width - litFriendWidth) / 2,
+          y: yPosition,
+          size: fontSize - 2,
+          font: font,
+          color: rgb(0, 0, 0),
+        })
+        yPosition -= 16
+      }
+
+      // Designation - RIGHT ALIGNED (on same line as name or lit friend)
+      const designationWidth = font.widthOfTextAtSize(party.designation, fontSize - 2)
+      page.drawText(party.designation, {
+        x: rightMargin - designationWidth,
+        y: yPosition + (party.litigationFriend ? 16 : 18),
+        size: fontSize - 2,
+        font: font,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 4
+    }
+
+    yPosition -= 5
+  } else {
+    // No parties - use simple "IN THE MATTER OF" format
+    page.drawText('IN THE MATTER OF:', {
+      x: leftMargin,
+      y: yPosition,
+      size: fontSize,
       font: fontBold,
       color: rgb(0, 0, 0),
     })
     yPosition -= 20
+
+    // Case name - CENTRED
+    if (metadata.caseName) {
+      const caseNameWidth = fontBold.widthOfTextAtSize(metadata.caseName.toUpperCase(), fontSize)
+      page.drawText(metadata.caseName.toUpperCase(), {
+        x: (width - caseNameWidth) / 2,
+        y: yPosition,
+        size: fontSize,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      })
+      yPosition -= 25
+    }
   }
 
+  // Horizontal line
+  page.drawLine({
+    start: { x: leftMargin, y: yPosition },
+    end: { x: rightMargin, y: yPosition },
+    thickness: 1,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 20
+
+  // INDEX title - CENTRED
+  const indexTitle = 'INDEX'
+  const indexTitleWidth = fontBold.widthOfTextAtSize(indexTitle, fontSize)
+  page.drawText(indexTitle, {
+    x: (width - indexTitleWidth) / 2,
+    y: yPosition,
+    size: fontSize,
+    font: fontBold,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 20
+
+  // Horizontal line
+  page.drawLine({
+    start: { x: leftMargin, y: yPosition },
+    end: { x: rightMargin, y: yPosition },
+    thickness: 1,
+    color: rgb(0, 0, 0),
+  })
   yPosition -= 30
 
-  // Table header (no background - professional black text only)
+  // Bundle date
+  const dateText = `Bundle Date: ${new Date(metadata.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+  page.drawText(dateText, {
+    x: leftMargin,
+    y: yPosition,
+    size: fontSize - 2,
+    font: font,
+    color: rgb(0, 0, 0),
+  })
+  yPosition -= 30
+
+  // Table header
   page.drawText('Document', {
     x: 60,
     y: yPosition + 5,
-    size: 11,
+    size: fontSize,
     font: fontBold,
     color: rgb(0, 0, 0),
   })
@@ -82,7 +270,7 @@ async function generateIndexPage(
   page.drawText('Page(s)', {
     x: width - 120,
     y: yPosition + 5,
-    size: 11,
+    size: fontSize,
     font: fontBold,
     color: rgb(0, 0, 0),
   })
@@ -98,8 +286,8 @@ async function generateIndexPage(
       yPosition = page.getSize().height - 80
     }
 
-    const entryFont = fontBold // All entries use bold font for professional appearance
-    const entrySize = entry.isSection ? 11 : 10
+    const entryFont = entry.isSection ? fontBold : font // Section headers bold, documents regular
+    const entrySize = fontSize // Use consistent font size 14
     const xOffset = entry.indent ? 80 : 60
 
     // Calculate page range and date widths first
@@ -196,7 +384,7 @@ async function generateIndexPage(
       }
     }
 
-    yPosition -= entry.isSection ? 30 : 25
+    yPosition -= entry.isSection ? 32 : 28 // Match line heights with addLinksToIndex
   }
 
   // Footer
@@ -221,34 +409,79 @@ async function addLinksToIndex(
   metadata: BundleMetadata
 ): Promise<void> {
   // Calculate the starting Y position to match where entries actually appear
-  // This must match the exact logic in generateIndexPage
+  // This must match the exact logic in generateIndexPage (court-compliant header)
   const pageHeight = 842 // A4 height
-  let yPosition = pageHeight - 80 // Initial position
+  const fontSize = 14
+  let yPosition = pageHeight - 50 // Initial position (matches generateIndexPage)
 
-  // Account for title
-  yPosition -= 40
+  const hasParties = (metadata.applicants?.length || 0) > 0 || (metadata.respondents?.length || 0) > 0
 
-  // Calculate actual case info lines (matching generateIndexPage logic)
-  const caseInfo = [
-    `Case: ${metadata.caseName}`,
-    `Case Number: ${metadata.caseNumber}`,
-    metadata.court ? `Court: ${metadata.court}` : null,
-    `Date: ${new Date(metadata.date).toLocaleDateString()}`,
-  ].filter(Boolean)
+  // Account for court-compliant header elements
+  // Case number (if exists)
+  if (metadata.caseNumber) {
+    yPosition -= 25
+  }
 
-  // Account for case info lines
-  yPosition -= caseInfo.length * 20
+  // Court name (if exists)
+  if (metadata.court) {
+    yPosition -= 25
+  }
 
-  // Account for spacing before table header
+  if (hasParties) {
+    // "B E T W E E N:"
+    yPosition -= 25
+
+    // Applicants/claimants (with potential litigation friends)
+    for (const party of (metadata.applicants || [])) {
+      yPosition -= 18 // Party name
+      if (party.litigationFriend) {
+        yPosition -= 16 // Litigation friend line
+      }
+      yPosition -= 4 // After designation
+    }
+    yPosition -= 5
+
+    // Separator (-v- or -and-)
+    yPosition -= 25
+
+    // Respondents/defendants (with potential litigation friends)
+    for (const party of (metadata.respondents || [])) {
+      yPosition -= 18 // Party name
+      if (party.litigationFriend) {
+        yPosition -= 16 // Litigation friend line
+      }
+      yPosition -= 4 // After designation
+    }
+    yPosition -= 5
+  } else {
+    // "IN THE MATTER OF:"
+    yPosition -= 20
+
+    // Case name
+    if (metadata.caseName) {
+      yPosition -= 25
+    }
+  }
+
+  // Horizontal line
+  yPosition -= 20
+
+  // INDEX title
+  yPosition -= 20
+
+  // Horizontal line
   yPosition -= 30
 
-  // Account for table header
+  // Bundle date
+  yPosition -= 30
+
+  // Table header
   yPosition -= 30
 
   // Now yPosition is at the first entry position
   const yStart = yPosition
-  const lineHeight = 25
-  const sectionLineHeight = 30
+  const lineHeight = 28 // Adjusted for font size 14
+  const sectionLineHeight = 32
 
   let currentIndexPage = 0
   yPosition = yStart
@@ -264,22 +497,18 @@ async function addLinksToIndex(
 
     const page = pdfDoc.getPage(currentIndexPage)
     const { width } = page.getSize()
-    const entrySize = entry.isSection ? 11 : 10
     const xOffset = entry.indent ? 80 : 60
-    const textHeight = entrySize
+    const textHeight = fontSize
 
     // Only add links for entries that have pages (not section headers without documents)
     if (entry.startPage && entry.startPageIndex < pdfDoc.getPageCount()) {
       const linkWidth = width - xOffset - 50
-      const linkHeight = textHeight + 4
+      const linkHeight = textHeight + 6
 
       // Get the target page
       const targetPage = pdfDoc.getPage(entry.startPageIndex)
 
-      // Debug logging
-      console.log(`Creating link: "${entry.title}" -> page index ${entry.startPageIndex}, total pages: ${pdfDoc.getPageCount()}, yPos: ${yPosition}`)
-
-      // Try simpler approach - use pdf-lib's link annotation method
+      // Create link annotation
       try {
         // Create destination array (matching bookmarks exactly)
         const dest = pdfDoc.context.obj([targetPage.ref, PDFName.of('Fit')])
@@ -288,7 +517,7 @@ async function addLinksToIndex(
         const linkAnnotDict = pdfDoc.context.obj({
           Type: PDFName.of('Annot'),
           Subtype: PDFName.of('Link'),
-          Rect: [xOffset, yPosition - 2, xOffset + linkWidth, yPosition + linkHeight],
+          Rect: [xOffset, yPosition - 4, xOffset + linkWidth, yPosition + linkHeight],
           Border: [0, 0, 0],
           Dest: dest,
           H: PDFName.of('I'), // Highlighting mode: Invert
@@ -303,8 +532,6 @@ async function addLinksToIndex(
         } else {
           page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([linkAnnotRef]))
         }
-
-        console.log(`✓ Link created for "${entry.title}"`)
       } catch (err) {
         console.error(`Failed to create link for "${entry.title}":`, err)
       }
@@ -511,18 +738,24 @@ export async function generateBundlePreview(
     const documentPageNumbers: string[] = []
     let currentPageIndex = 0
 
-    // Collect document pages and build index entries
-    for (const section of sections) {
-      if (section.documents.length === 0) continue
+    // Filter to only sections with documents and assign sequential prefixes
+    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
 
-      let sectionPageNum = section.startPage
+    // Collect document pages and build index entries
+    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
+      const section = sectionsWithDocs[sectionIdx]
+
+      // Auto-assign section prefix based on order (A, B, C, D...)
+      const sectionPrefix = getSectionPrefix(sectionIdx)
+      let sectionPageNum = 1 // Always start at 1 for each section
+
       let dividerPageNumber = ''
       let dividerPageIndex = -1
 
       // Track divider page
       if (section.addDivider) {
         await createDividerPage(tempPdf, section.name)
-        dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        dividerPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         documentPageNumbers.push(dividerPageNumber)
         dividerPageIndex = currentPageIndex
         currentPageIndex++
@@ -534,7 +767,7 @@ export async function generateBundlePreview(
         title: section.name.toUpperCase(),
         startPage: section.addDivider ? dividerPageNumber : '',
         endPage: section.addDivider ? dividerPageNumber : '',
-        startPageIndex: dividerPageIndex >= 0 ? dividerPageIndex : 0,
+        startPageIndex: dividerPageIndex >= 0 ? dividerPageIndex : currentPageIndex,
         isSection: true,
       })
 
@@ -549,17 +782,17 @@ export async function generateBundlePreview(
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
-        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
         copiedPages.forEach((page) => {
           tempPdf.addPage(page)
-          documentPageNumbers.push(formatPageNumber(section.pagePrefix, sectionPageNum))
+          documentPageNumbers.push(formatPageNumber(sectionPrefix, sectionPageNum))
           sectionPageNum++
           currentPageIndex++
         })
 
-        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+        const docEndPageNumber = formatPageNumber(sectionPrefix, sectionPageNum - 1)
 
         indexEntries.push({
           title: doc.customTitle || doc.name.replace('.pdf', ''),
@@ -644,15 +877,21 @@ export async function generateIndexOnly(
     const indexEntries: IndexEntry[] = []
     let currentPageIndex = 0
 
-    for (const section of sections) {
-      if (section.documents.length === 0) continue
+    // Filter to only sections with documents and assign sequential prefixes
+    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
 
-      let sectionPageNum = section.startPage
+    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
+      const section = sectionsWithDocs[sectionIdx]
+
+      // Auto-assign section prefix based on order (A, B, C, D...)
+      const sectionPrefix = getSectionPrefix(sectionIdx)
+      let sectionPageNum = 1 // Always start at 1 for each section
+
       let dividerPageIndex = -1
 
       // Account for divider page
       if (section.addDivider) {
-        const dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const dividerPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         dividerPageIndex = currentPageIndex
         currentPageIndex++
         sectionPageNum++
@@ -678,7 +917,7 @@ export async function generateIndexOnly(
 
       // Add document entries
       for (const doc of section.documents) {
-        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
         // Calculate the actual number of pages (selected pages or all pages)
@@ -690,7 +929,7 @@ export async function generateIndexOnly(
         sectionPageNum += actualPageCount
         currentPageIndex += actualPageCount
 
-        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+        const docEndPageNumber = formatPageNumber(sectionPrefix, sectionPageNum - 1)
 
         indexEntries.push({
           title: doc.customTitle || doc.name.replace('.pdf', ''),
@@ -755,18 +994,24 @@ export async function generateBundle(
     const documentPageNumbers: string[] = []
     let currentPageIndex = 0
 
-    // Collect document pages and build index entries
-    for (const section of sections) {
-      if (section.documents.length === 0) continue
+    // Filter to only sections with documents and assign sequential prefixes
+    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
 
-      let sectionPageNum = section.startPage
+    // Collect document pages and build index entries
+    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
+      const section = sectionsWithDocs[sectionIdx]
+
+      // Auto-assign section prefix based on order (A, B, C, D...)
+      const sectionPrefix = getSectionPrefix(sectionIdx)
+      let sectionPageNum = 1 // Always start at 1 for each section
+
       let dividerPageNumber = ''
       let dividerPageIndex = -1
 
       // Track divider page
       if (section.addDivider) {
         await createDividerPage(tempPdf, section.name)
-        dividerPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        dividerPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         documentPageNumbers.push(dividerPageNumber)
         dividerPageIndex = currentPageIndex
         currentPageIndex++
@@ -778,7 +1023,7 @@ export async function generateBundle(
         title: section.name.toUpperCase(),
         startPage: section.addDivider ? dividerPageNumber : '',
         endPage: section.addDivider ? dividerPageNumber : '',
-        startPageIndex: dividerPageIndex >= 0 ? dividerPageIndex : 0,
+        startPageIndex: dividerPageIndex >= 0 ? dividerPageIndex : currentPageIndex,
         isSection: true,
       })
 
@@ -793,17 +1038,17 @@ export async function generateBundle(
 
         const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
 
-        const docStartPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum)
+        const docStartPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
         const docStartPageIndex = currentPageIndex
 
         copiedPages.forEach((page) => {
           tempPdf.addPage(page)
-          documentPageNumbers.push(formatPageNumber(section.pagePrefix, sectionPageNum))
+          documentPageNumbers.push(formatPageNumber(sectionPrefix, sectionPageNum))
           sectionPageNum++
           currentPageIndex++
         })
 
-        const docEndPageNumber = formatPageNumber(section.pagePrefix, sectionPageNum - 1)
+        const docEndPageNumber = formatPageNumber(sectionPrefix, sectionPageNum - 1)
 
         indexEntries.push({
           title: doc.customTitle || doc.name.replace('.pdf', ''),

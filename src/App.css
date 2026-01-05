@@ -12,9 +12,17 @@
   position: relative;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto var(--spacing-sm) auto;
+}
+
 .app-header h1 {
   font-size: var(--font-size-3xl);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 0;
   font-weight: var(--font-weight-bold);
   color: white;
 }
@@ -23,6 +31,33 @@
   font-size: var(--font-size-lg);
   opacity: 0.95;
   margin-bottom: 0;
+}
+
+/* Auth Loading State */
+.auth-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  color: white;
+  gap: 1rem;
+}
+
+.auth-loading .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Workflow Progress Indicator */

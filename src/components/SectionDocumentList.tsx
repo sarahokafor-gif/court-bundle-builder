@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square } from 'lucide-react'
+import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -19,6 +19,7 @@ interface SectionDocumentListProps {
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
   onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File) => void
+  onSortSectionByDate: (sectionId: string) => void
 }
 
 interface SortableDocumentItemProps {
@@ -100,29 +101,40 @@ function SortableDocumentItem({
               </span>
             )}
           </div>
+          <label className="sr-only" htmlFor={`title-${doc.id}`}>Custom title for {doc.name}</label>
           <input
+            id={`title-${doc.id}`}
             type="text"
             className="document-title-input"
             value={doc.customTitle || ''}
             onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
             placeholder="Custom title for index (optional)"
-            title="Custom title to display in the bundle index"
+            aria-label={`Custom title for ${doc.name}`}
           />
-          <input
-            type="date"
-            className="document-date-input"
-            value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
-            onChange={(e) => {
-              if (e.target.value) {
-                const [year, month, day] = e.target.value.split('-')
-                onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
-              } else {
-                onUpdateDocumentDate(section.id, doc.id, '')
-              }
-            }}
-            placeholder="Document date (optional)"
-            title="Document date (optional)"
-          />
+          <div className="date-input-wrapper">
+            <label className="date-label" htmlFor={`date-${doc.id}`}>
+              📅 Document Date:
+            </label>
+            <input
+              id={`date-${doc.id}`}
+              type="date"
+              className="document-date-input"
+              value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const [year, month, day] = e.target.value.split('-')
+                  onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
+                } else {
+                  onUpdateDocumentDate(section.id, doc.id, '')
+                }
+              }}
+              aria-label={`Set date for ${doc.name}`}
+              aria-describedby={`date-help-${doc.id}`}
+            />
+            <span id={`date-help-${doc.id}`} className="sr-only">
+              Enter the document date to enable automatic date sorting
+            </span>
+          </div>
         </div>
       </div>
 
@@ -184,6 +196,7 @@ export default function SectionDocumentList({
   onUpdateDocumentTitle,
   onUpdateSelectedPages,
   onUpdateDocumentFile,
+  onSortSectionByDate,
 }: SectionDocumentListProps) {
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
@@ -328,11 +341,34 @@ export default function SectionDocumentList({
     }
   }
 
+  // Count documents with dates set
+  const docsWithDates = sections.reduce(
+    (sum, section) => sum + section.documents.filter(doc => doc.documentDate).length,
+    0
+  )
+
   return (
-    <div className="section-document-list">
+    <div className="section-document-list" role="region" aria-label="Document list organised by sections">
       <div className="section-document-list-header">
         <span>{totalDocs} document{totalDocs !== 1 ? 's' : ''} in {sections.length} section{sections.length !== 1 ? 's' : ''}</span>
         <span>{totalPages} total page{totalPages !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Accessibility Guide */}
+      <div className="document-guide" role="note" aria-label="Instructions for managing documents">
+        <h3 className="guide-title">📋 How to Organise Your Documents</h3>
+        <ol className="guide-steps">
+          <li><strong>Set document dates:</strong> Use the date picker on each document to enter when it was created or received</li>
+          <li><strong>Sort automatically:</strong> Click the yellow <strong>"SORT BY DATE"</strong> button in any section header to arrange documents (undated first, then oldest to newest)</li>
+          <li><strong>Drag to reorder:</strong> Use the grip handle (⋮⋮) on the left to manually drag documents into your preferred order</li>
+          <li><strong>Move between sections:</strong> Use the dropdown menu to move a document to a different section</li>
+        </ol>
+        {totalDocs > 0 && (
+          <p className="guide-status" aria-live="polite">
+            <strong>Status:</strong> {docsWithDates} of {totalDocs} documents have dates set.
+            {docsWithDates < totalDocs && " Add dates to enable automatic sorting."}
+          </p>
+        )}
       </div>
 
       {/* Batch Operations Toolbar */}
@@ -413,9 +449,22 @@ export default function SectionDocumentList({
                 <span className="section-name">{section.name}</span>
                 {section.addDivider && <span className="divider-badge">Divider</span>}
               </div>
-              <span className="section-doc-count">
-                {section.documents.length} doc{section.documents.length !== 1 ? 's' : ''}
-              </span>
+              <div className="section-header-actions">
+                {section.documents.length > 1 && (
+                  <button
+                    className="sort-by-date-btn"
+                    onClick={() => onSortSectionByDate(section.id)}
+                    aria-label={`Sort all ${section.documents.length} documents in ${section.name} by date, oldest first`}
+                    title="Click to automatically arrange documents by date (undated first, then oldest to newest)"
+                  >
+                    <ArrowUpDown size={18} aria-hidden="true" />
+                    <span>Sort by Date</span>
+                  </button>
+                )}
+                <span className="section-doc-count" aria-label={`${section.documents.length} document${section.documents.length !== 1 ? 's' : ''} in this section`}>
+                  {section.documents.length} doc{section.documents.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
 
             {section.documents.length === 0 && !section.addDivider ? (

@@ -74,58 +74,33 @@
   margin: 0;
 }
 
-/* Pricing Tier Display */
-.pricing-tier {
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  border: 2px solid;
-  margin: var(--spacing-md) 0;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-base);
-}
-
-.pricing-tier:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.pricing-tier.free-tier {
-  background: linear-gradient(135deg, rgba(22, 160, 133, 0.08) 0%, rgba(22, 160, 133, 0.04) 100%);
-  border-color: var(--color-accent);
-}
-
-.pricing-tier.paid-tier {
-  background: linear-gradient(135deg, rgba(243, 156, 18, 0.08) 0%, rgba(243, 156, 18, 0.04) 100%);
-  border-color: var(--color-warning);
-}
-
-.tier-info {
+/* Free Access Banner */
+.free-access-banner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(22, 160, 133, 0.1) 0%, rgba(22, 160, 133, 0.05) 100%);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  margin: var(--spacing-md) 0;
 }
 
-.tier-label {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-lg);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.tier-price {
-  font-size: var(--font-size-3xl);
+.free-badge {
+  background: linear-gradient(135deg, var(--color-accent) 0%, #0d9488 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary-dark);
+  font-size: var(--font-size-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.free-tier .tier-price {
-  color: var(--color-accent);
-}
-
-.paid-tier .tier-price {
-  color: var(--color-warning);
+.free-message {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
 }
 
 /* Paid Bundle Actions */

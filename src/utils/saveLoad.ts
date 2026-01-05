@@ -8,7 +8,9 @@ async function fileToBase64(file: File): Promise<string> {
     const reader = new FileReader()
     reader.onload = () => {
       const result = reader.result as string
-      resolve(result.split(',')[1]) // Remove data:application/pdf;base64, prefix
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64 = result.split(',')[1]
+      resolve(base64)
     }
     reader.onerror = reject
     reader.readAsDataURL(file)
@@ -18,7 +20,7 @@ async function fileToBase64(file: File): Promise<string> {
 /**
  * Converts base64 string back to File
  */
-function base64ToFile(base64: string, filename: string): File {
+function base64ToFile(base64: string, fileName: string): File {
   const byteCharacters = atob(base64)
   const byteNumbers = new Array(byteCharacters.length)
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -26,11 +28,11 @@ function base64ToFile(base64: string, filename: string): File {
   }
   const byteArray = new Uint8Array(byteNumbers)
   const blob = new Blob([byteArray], { type: 'application/pdf' })
-  return new File([blob], filename, { type: 'application/pdf' })
+  return new File([blob], fileName, { type: 'application/pdf' })
 }
 
 /**
- * Serializes sections with documents (converts Files to base64)
+ * Serializes sections with embedded PDF files
  */
 export async function serializeSections(sections: Section[]): Promise<SerializedSection[]> {
   const serialized: SerializedSection[] = []
@@ -46,6 +48,7 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
         pageCount: doc.pageCount,
         order: doc.order,
         fileData,
+        fileName: doc.file.name,
         documentDate: doc.documentDate,
         customTitle: doc.customTitle,
       })
@@ -66,7 +69,7 @@ export async function serializeSections(sections: Section[]): Promise<Serialized
 }
 
 /**
- * Deserializes sections (converts base64 back to Files)
+ * Deserializes sections with embedded PDF files
  */
 export function deserializeSections(serializedSections: SerializedSection[]): Section[] {
   return serializedSections.map((section) => ({
@@ -74,7 +77,7 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
     name: section.name,
     documents: section.documents.map((doc) => ({
       id: doc.id,
-      file: base64ToFile(doc.fileData, doc.name),
+      file: base64ToFile(doc.fileData, doc.fileName || doc.name),
       name: doc.name,
       pageCount: doc.pageCount,
       order: doc.order,
@@ -89,7 +92,7 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
 }
 
 /**
- * Saves bundle to a JSON file for download
+ * Saves bundle to a JSON file for download (with embedded PDFs)
  */
 export async function saveBundle(
   metadata: BundleMetadata,
@@ -104,6 +107,7 @@ export async function saveBundle(
     sections: serializedSections,
     pageNumberSettings,
     savedAt: new Date().toISOString(),
+    version: '1.0', // Embeds PDFs in save file
   }
 
   const json = JSON.stringify(savedBundle, null, 2)
@@ -146,5 +150,32 @@ export async function loadBundle(file: File): Promise<SavedBundle> {
     }
     reader.onerror = () => reject(new Error('Failed to read file'))
     reader.readAsText(file)
+  })
+}
+
+/**
+ * Sorts documents within a section by date
+ * Order: Undated first, then oldest to newest
+ */
+export function sortDocumentsByDate(documents: Section['documents']): Section['documents'] {
+  return [...documents].sort((a, b) => {
+    // If neither has a date, maintain original order
+    if (!a.documentDate && !b.documentDate) return 0
+
+    // Undated documents come first
+    if (!a.documentDate) return -1
+    if (!b.documentDate) return 1
+
+    // Parse dates in DD-MM-YYYY format
+    const parseDate = (dateStr: string): Date => {
+      const [day, month, year] = dateStr.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    }
+
+    const dateA = parseDate(a.documentDate)
+    const dateB = parseDate(b.documentDate)
+
+    // Sort oldest first (ascending order)
+    return dateA.getTime() - dateB.getTime()
   })
 }

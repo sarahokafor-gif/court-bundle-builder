@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Section, Document, BundleMetadata, PageNumberSettings } from './types'
+import { useAuth } from './contexts/AuthContext'
+import AuthModal from './components/Auth/AuthModal'
+import UserMenu from './components/Auth/UserMenu'
 import MetadataForm from './components/MetadataForm'
 import DocumentUploader from './components/DocumentUploader'
 import SectionManager from './components/SectionManager'
@@ -9,9 +12,8 @@ import DocumentPreview from './components/DocumentPreview'
 import PageNumberSettingsComponent from './components/PageNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
 import BundleRequirementsInfo from './components/BundleRequirementsInfo'
-import PricingDisplay from './components/PricingDisplay'
 import AutoSaveRecovery from './components/AutoSaveRecovery'
-import { saveBundle, loadBundle, deserializeSections } from './utils/saveLoad'
+import { saveBundle, loadBundle, deserializeSections, sortDocumentsByDate } from './utils/saveLoad'
 import {
   autoSaveToLocalStorage,
   getAutoSaveData,
@@ -22,6 +24,7 @@ import {
 import './App.css'
 
 function App() {
+  const { currentUser, loading } = useAuth()
   const [metadata, setMetadata] = useState<BundleMetadata>({
     caseName: '',
     caseNumber: '',
@@ -220,6 +223,22 @@ function App() {
     )
   }
 
+  const handleSortSectionByDate = (sectionId: string) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: sortDocumentsByDate(section.documents).map((doc, index) => ({
+                ...doc,
+                order: index,
+              })),
+            }
+          : section
+      )
+    )
+  }
+
   // Check for auto-save on mount
   useEffect(() => {
     if (hasAutoSave()) {
@@ -303,6 +322,22 @@ function App() {
 
   const autoSaveData = getAutoSaveData()
 
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="auth-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  // Show login/register modal if not authenticated
+  if (!currentUser) {
+    return <AuthModal />
+  }
+
+  // User is authenticated - show the main app
   return (
     <div className="app">
       {showRecoveryModal && autoSaveData && (
@@ -317,7 +352,10 @@ function App() {
         Skip to main content
       </a>
       <header className="app-header" role="banner">
-        <h1>Court Bundle Builder</h1>
+        <div className="header-top">
+          <h1>Court Bundle Builder</h1>
+          <UserMenu />
+        </div>
         <p>Create professional, court-ready bundles in 5 simple steps</p>
 
         <div className="workflow-progress">
@@ -345,13 +383,9 @@ function App() {
       </header>
 
       <main id="main-content" className="app-main" role="main" aria-label="Court Bundle Builder Workflow">
-        <section className="section" aria-labelledby="pricing-heading">
-          <PricingDisplay />
-        </section>
-
         <section className="section" aria-labelledby="bundle-info-heading">
           <div className="section-header-with-actions">
-            <h2 id="bundle-info-heading">📋 Step 1: Bundle Information</h2>
+            <h2 id="bundle-info-heading">Step 1: Bundle Information</h2>
             <SaveLoadButtons
               onSave={handleSave}
               onLoad={handleLoad}
@@ -371,7 +405,7 @@ function App() {
         </section>
 
         <section className="section" aria-labelledby="page-settings-heading">
-          <h2 id="page-settings-heading">🔢 Step 2: Page Number Settings</h2>
+          <h2 id="page-settings-heading">Step 2: Page Number Settings</h2>
           <div className="section-help">
             <p>
               <strong>Configure page numbering:</strong> Choose where page numbers appear on each page (e.g., bottom center is standard for court bundles).
@@ -385,7 +419,7 @@ function App() {
         </section>
 
         <section className="section" aria-labelledby="sections-heading">
-          <h2 id="sections-heading">📑 Step 3: Organize Your Sections</h2>
+          <h2 id="sections-heading">Step 3: Organize Your Sections</h2>
           <div className="section-help">
             <p>
               <strong>Create sections:</strong> Organize your documents into logical sections (e.g., "Witness Statements", "Evidence", "Correspondence").
@@ -404,7 +438,7 @@ function App() {
         </section>
 
         <section className="section" aria-labelledby="documents-heading">
-          <h2 id="documents-heading">📄 Step 4: Upload and Manage Documents</h2>
+          <h2 id="documents-heading">Step 4: Upload and Manage Documents</h2>
           <div className="section-help">
             <p>
               <strong>Add your PDF documents:</strong> Click the upload button below to add PDFs to your bundle. After uploading, you can:
@@ -428,12 +462,13 @@ function App() {
             onUpdateDocumentTitle={handleUpdateDocumentTitle}
             onUpdateSelectedPages={handleUpdateSelectedPages}
             onUpdateDocumentFile={handleUpdateDocumentFile}
+            onSortSectionByDate={handleSortSectionByDate}
           />
         </section>
 
         {totalDocs > 0 && (
           <section className="section" aria-labelledby="generate-heading">
-            <h2 id="generate-heading">✅ Step 5: Generate Your Bundle</h2>
+            <h2 id="generate-heading">Step 5: Generate Your Bundle</h2>
             <div className="section-help">
               <p>
                 <strong>You're ready to generate!</strong> Your bundle will include:
@@ -445,9 +480,6 @@ function App() {
                 <li><strong>Sequential page numbering</strong> throughout the bundle</li>
                 <li><strong>Bookmarks</strong> for easy navigation in PDF readers</li>
               </ul>
-              <p style={{ marginTop: 'var(--spacing-md)' }}>
-                Documents under 20 pages total are <strong>free</strong>. Larger bundles require a small fee.
-              </p>
             </div>
             <BundleGenerator
               metadata={metadata}
