@@ -3,21 +3,21 @@
    ======================================== */
 
 :root {
-  /* Primary Colors - Charcoal */
-  --color-primary-dark: #2C3E50;
-  --color-primary: #34495E;
-  --color-primary-light: #475A6F;
+  /* Primary Colors - Forest Green */
+  --color-primary-dark: #14532D;
+  --color-primary: #1B4D3E;
+  --color-primary-light: #40916C;
 
-  /* Accent Colors - Teal */
-  --color-accent-dark: #138D75;
-  --color-accent: #16A085;
-  --color-accent-light: #48C9B0;
+  /* Accent Colors - Green */
+  --color-accent-dark: #166534;
+  --color-accent: #22C55E;
+  --color-accent-light: #4ADE80;
 
   /* Semantic Colors */
-  --color-success: #27AE60;
-  --color-warning: #F39C12;
-  --color-error: #E74C3C;
-  --color-info: #3498DB;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
 
   /* Neutral Colors */
   --color-text-primary: #2C3E50;
@@ -72,7 +72,7 @@
   --transition-slow: 300ms ease-in-out;
 
   /* Focus Ring for Accessibility */
-  --focus-ring: 0 0 0 3px rgba(22, 160, 133, 0.3);
+  --focus-ring: 0 0 0 3px rgba(34, 197, 94, 0.3);
 }
 
 /* ========================================

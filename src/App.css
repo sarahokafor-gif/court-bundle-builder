@@ -4,7 +4,7 @@
 }
 
 .app-header {
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
   color: white;
   padding: var(--spacing-2xl);
   text-align: center;
@@ -40,7 +40,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
   color: white;
   gap: 1rem;
 }
@@ -148,7 +148,7 @@
 
 /* Help Text */
 .section-help {
-  background: linear-gradient(135deg, #E8F6F3 0%, #D5F3ED 100%);
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
   border-left: 4px solid var(--color-accent);
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
@@ -249,7 +249,7 @@
 
 /* Footer */
 .app-footer {
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
   color: white;
   padding: var(--spacing-xl) var(--spacing-lg);
   margin-top: var(--spacing-2xl);
