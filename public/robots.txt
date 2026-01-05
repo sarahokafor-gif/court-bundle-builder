@@ -1,0 +1,6 @@
+# Court Bundle Builder - robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://court-bundle-builder-2vf.pages.dev/sitemap.xml
