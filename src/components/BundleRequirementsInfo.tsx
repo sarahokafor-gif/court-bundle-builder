@@ -6,7 +6,7 @@ import './BundleRequirementsInfo.css'
 export default function BundleRequirementsInfo() {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const { version, last_updated, bundle_types } = bundleRequirementsData
+  const { version, last_updated, next_review_due, bundle_types } = bundleRequirementsData
 
   return (
     <div className="bundle-requirements-info">
@@ -25,13 +25,18 @@ export default function BundleRequirementsInfo() {
       {isExpanded && (
         <div className="requirements-content">
           <div className="requirements-header">
-            <p className="last-updated">
-              Last updated: <strong>{last_updated}</strong>
-            </p>
+            <div className="review-status">
+              <p className="last-updated">
+                Last verified: <strong>{last_updated}</strong>
+              </p>
+              <p className="next-review">
+                Next review due: <strong>{next_review_due}</strong>
+              </p>
+            </div>
             <p className="requirements-description">
               This guide contains official court bundle requirements from Practice Directions
-              and court guidance. All information is sourced from official court websites and
-              regularly reviewed for accuracy.
+              and court guidance. Requirements are reviewed monthly and sourced from official
+              court websites.
             </p>
           </div>
 

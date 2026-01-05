@@ -1,6 +1,8 @@
 {
-  "version": "1.0.0",
-  "last_updated": "2025-01-15",
+  "version": "1.0.1",
+  "last_updated": "2025-01-05",
+  "next_review_due": "2025-02-05",
+  "review_frequency": "monthly",
   "bundle_types": {
     "family_children": {
       "name": "Family Court (Children Cases)",
