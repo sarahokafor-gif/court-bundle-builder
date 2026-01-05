@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Court Bundle Builder//Monthly PD Review//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:20250205T090000
+DTEND:20250205T093000
+RRULE:FREQ=MONTHLY;BYMONTHDAY=5
+DTSTAMP:20250105T120000Z
+UID:court-bundle-pd-review@courtbundlebuilder.co.uk
+SUMMARY:Court Bundle Builder - Monthly PD Review
+DESCRIPTION:Monthly review of Practice Directions for Court Bundle Builder app.\n\nChecklist:\n1. Review judiciary.uk for PD updates\n2. Review justice.gov.uk for CPR/FPR changes\n3. Update bundleRequirements.json if needed\n4. Bump version and dates\n5. Commit and deploy\n\nSee MAINTENANCE.md for full guide.
+LOCATION:https://courtbundlebuilder.co.uk
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Court Bundle Builder PD Review Due
+TRIGGER:-PT30M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
