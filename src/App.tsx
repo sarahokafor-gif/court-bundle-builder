@@ -491,6 +491,22 @@ function App() {
       </main>
 
       <DocumentPreview document={previewDoc} onClose={() => setPreviewDoc(null)} />
+
+      <footer className="app-footer">
+        <div className="footer-content">
+          <p className="copyright">
+            © {new Date().getFullYear()} Chambers of Sarah Okafor. All rights reserved.
+          </p>
+          <p className="footer-tagline">
+            Free legal technology tools for professionals
+          </p>
+          <div className="footer-links">
+            <a href="https://www.facebook.com/sarah.okafor" target="_blank" rel="noopener noreferrer">Facebook</a>
+            <span className="footer-divider">|</span>
+            <a href="mailto:contact@courtbundlebuilder.co.uk">Contact</a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
