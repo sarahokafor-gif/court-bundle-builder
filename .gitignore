@@ -36,3 +36,4 @@ dist-ssr
 
 # NPM registry config
 .npmrc
+package-lock.json
