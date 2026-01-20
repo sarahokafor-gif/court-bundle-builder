@@ -189,6 +189,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
+  padding-right: var(--spacing-xl, 2rem); /* Extra right padding for action buttons */
   border-bottom: 1px solid var(--color-border-light);
   transition: background-color var(--transition-base), transform var(--transition-base);
   background-color: white;
@@ -417,6 +418,7 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-shrink: 0; /* Prevent buttons from being compressed */
 }
 
 .section-selector {
