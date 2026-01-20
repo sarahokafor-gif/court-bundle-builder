@@ -53,13 +53,47 @@ function App() {
   const isInitialMount = useRef(true)
 
   const handleAddDocuments = (newDocs: Document[]) => {
-    // Add to the first section
     setSections(prev => {
-      const updated = [...prev]
-      updated[0] = {
-        ...updated[0],
-        documents: [...updated[0].documents, ...newDocs],
+      const updated = prev.map(section => ({ ...section, documents: [...section.documents] }))
+      const unmatchedDocs: Document[] = []
+
+      for (const newDoc of newDocs) {
+        let matched = false
+
+        // Try to match with existing documents that need re-upload
+        for (const section of updated) {
+          const matchIndex = section.documents.findIndex(doc =>
+            doc.needsReupload &&
+            (doc.originalFileName === newDoc.name || doc.name === newDoc.name)
+          )
+
+          if (matchIndex !== -1) {
+            // Found a match - update the existing document with the uploaded file
+            const existingDoc = section.documents[matchIndex]
+            section.documents[matchIndex] = {
+              ...existingDoc,
+              file: newDoc.file,
+              pageCount: newDoc.pageCount,
+              thumbnail: newDoc.thumbnail,
+              needsReupload: false, // Clear the re-upload flag
+              originalFileName: undefined, // No longer needed
+            }
+            matched = true
+            break
+          }
+        }
+
+        if (!matched) {
+          // No match found - add as new document
+          unmatchedDocs.push(newDoc)
+        }
       }
+
+      // Add any unmatched documents to the first section
+      if (unmatchedDocs.length > 0) {
+        updated[0].documents = [...updated[0].documents, ...unmatchedDocs]
+      }
+
       return updated
     })
   }
