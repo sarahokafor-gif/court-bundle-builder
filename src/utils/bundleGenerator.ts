@@ -35,6 +35,38 @@ function getSectionPrefix(sectionIndex: number): string {
 }
 
 /**
+ * Extract section prefix letter from section name
+ * Matches patterns like "Section B", "SECTION B:", "Section B -", etc.
+ * Returns the letter(s) found, or null if no match
+ */
+function extractPrefixFromName(sectionName: string): string | null {
+  // Match "Section X" or "SECTION X" where X is one or more letters
+  const match = sectionName.match(/^section\s+([A-Z]+)/i)
+  if (match) {
+    return match[1].toUpperCase()
+  }
+  return null
+}
+
+/**
+ * Get the appropriate prefix for a section
+ * Priority: 1) Extract from name, 2) Use stored pagePrefix, 3) Generate from index
+ */
+function getSectionPrefixForSection(section: { name: string; pagePrefix?: string }, fallbackIndex: number): string {
+  // First try to extract from the section name (most reliable)
+  const extractedPrefix = extractPrefixFromName(section.name)
+  if (extractedPrefix) {
+    return extractedPrefix
+  }
+  // Fall back to stored pagePrefix if available
+  if (section.pagePrefix) {
+    return section.pagePrefix
+  }
+  // Last resort: generate from index
+  return getSectionPrefix(fallbackIndex)
+}
+
+/**
  * Generates a table of contents page for the bundle
  * Returns the number of index pages created
  */
@@ -739,14 +771,14 @@ export async function generateBundlePreview(
     let currentPageIndex = 0
 
     // Filter to only sections with documents and assign sequential prefixes
-    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
+    const sectionsToInclude = sections.filter(s => s.documents.length > 0 || s.addDivider)
 
     // Collect document pages and build index entries
-    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
-      const section = sectionsWithDocs[sectionIdx]
+    for (let sectionIdx = 0; sectionIdx < sectionsToInclude.length; sectionIdx++) {
+      const section = sectionsToInclude[sectionIdx]
 
-      // Auto-assign section prefix based on order (A, B, C, D...)
-      const sectionPrefix = getSectionPrefix(sectionIdx)
+      // Get section prefix: extract from name, use stored prefix, or generate from index
+      const sectionPrefix = getSectionPrefixForSection(section, sectionIdx)
       let sectionPageNum = 1 // Always start at 1 for each section
 
       let dividerPageNumber = ''
@@ -878,13 +910,13 @@ export async function generateIndexOnly(
     let currentPageIndex = 0
 
     // Filter to only sections with documents and assign sequential prefixes
-    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
+    const sectionsToInclude = sections.filter(s => s.documents.length > 0 || s.addDivider)
 
-    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
-      const section = sectionsWithDocs[sectionIdx]
+    for (let sectionIdx = 0; sectionIdx < sectionsToInclude.length; sectionIdx++) {
+      const section = sectionsToInclude[sectionIdx]
 
-      // Auto-assign section prefix based on order (A, B, C, D...)
-      const sectionPrefix = getSectionPrefix(sectionIdx)
+      // Get section prefix: extract from name, use stored prefix, or generate from index
+      const sectionPrefix = getSectionPrefixForSection(section, sectionIdx)
       let sectionPageNum = 1 // Always start at 1 for each section
 
       let dividerPageIndex = -1
@@ -995,14 +1027,14 @@ export async function generateBundle(
     let currentPageIndex = 0
 
     // Filter to only sections with documents and assign sequential prefixes
-    const sectionsWithDocs = sections.filter(s => s.documents.length > 0)
+    const sectionsToInclude = sections.filter(s => s.documents.length > 0 || s.addDivider)
 
     // Collect document pages and build index entries
-    for (let sectionIdx = 0; sectionIdx < sectionsWithDocs.length; sectionIdx++) {
-      const section = sectionsWithDocs[sectionIdx]
+    for (let sectionIdx = 0; sectionIdx < sectionsToInclude.length; sectionIdx++) {
+      const section = sectionsToInclude[sectionIdx]
 
-      // Auto-assign section prefix based on order (A, B, C, D...)
-      const sectionPrefix = getSectionPrefix(sectionIdx)
+      // Get section prefix: extract from name, use stored prefix, or generate from index
+      const sectionPrefix = getSectionPrefixForSection(section, sectionIdx)
       let sectionPageNum = 1 // Always start at 1 for each section
 
       let dividerPageNumber = ''
