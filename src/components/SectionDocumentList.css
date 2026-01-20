@@ -185,14 +185,16 @@
   border: 1px solid var(--color-accent);
 }
 
+/* Single-row document item layout */
 .document-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--color-border-light);
-  transition: background-color var(--transition-base), transform var(--transition-base);
+  transition: background-color var(--transition-base);
   background-color: white;
+  cursor: grab;
 }
 
 .document-item:last-child {
@@ -200,27 +202,10 @@
 }
 
 .document-item:hover {
-  background-color: var(--color-bg-secondary);
+  background-color: #f0f7ff;
 }
 
-/* Drag-and-Drop Styling */
-.document-drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-sm);
-  cursor: grab;
-  color: #999;
-  transition: color var(--transition-fast);
-  touch-action: none;
-  margin-right: var(--spacing-sm);
-}
-
-.document-drag-handle:hover {
-  color: var(--color-accent);
-}
-
-.document-drag-handle:active {
+.document-item:active {
   cursor: grabbing;
 }
 
@@ -241,13 +226,15 @@
   opacity: 0.95;
   transform: rotate(2deg);
   z-index: 9999;
+  padding: 0.75rem 1rem;
 }
 
-.document-info {
+/* Document icon wrapper */
+.document-icon-wrapper {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  flex: 1;
+  justify-content: center;
 }
 
 .document-icon {
@@ -255,50 +242,84 @@
 }
 
 .document-thumbnail {
-  width: 48px;
-  height: 64px;
+  width: 32px;
+  height: 40px;
   object-fit: cover;
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
-  flex-shrink: 0;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.document-thumbnail:hover {
-  transform: scale(1.1);
-  box-shadow: var(--shadow-md);
-  cursor: pointer;
-  border-color: var(--color-accent);
-}
-
-.document-details {
+/* Document name section - takes up available space */
+.document-name-section {
+  flex: 1;
+  min-width: 150px;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
-.document-name {
-  font-weight: 600;
+.document-name-input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #f9f9f9;
+  width: 100%;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.document-name-input:hover {
+  border-color: #bbb;
+  background: #fff;
+}
+
+.document-name-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.document-name-display {
+  font-weight: 500;
   color: #333;
+  font-size: 0.9rem;
 }
 
-.document-pages {
-  font-size: 0.85rem;
-  color: #666;
+.document-page-count {
+  font-size: 0.75rem;
+  color: #888;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .selected-pages-badge {
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background: #f57c00;
   color: white;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.65rem;
   font-weight: 700;
-  white-space: nowrap;
+}
+
+/* Date section */
+.document-date-section {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.date-icon {
+  font-size: 0.9rem;
+}
+
+/* Section selector */
+.document-section-selector {
+  flex-shrink: 0;
 }
 
 .edit-pdf-button {
@@ -367,19 +388,20 @@
 
 /* Date Input */
 .document-date-input {
-  padding: 0.4rem 0.5rem;
+  padding: 0.35rem 0.5rem;
   border: 1px solid #ffb74d;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  background: white;
+  background: #fffde7;
   color: #1a1a1a;
   cursor: pointer;
+  width: 130px;
 }
 
 .document-date-input:hover {
   border-color: #e65100;
-  background: #fffde7;
+  background: #fff8e1;
 }
 
 .document-date-input:focus {
@@ -390,8 +412,8 @@
 
 .document-date-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 2px;
+  border-radius: 2px;
   background-color: #ff9800;
 }
 
@@ -399,98 +421,33 @@
   background-color: #e65100;
 }
 
-/* Document Row Layout */
-.document-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: var(--spacing-sm);
-}
-
-.document-row-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.document-row-right {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-  min-width: 180px;
-}
-
-/* Box styling for section selector and date */
-.section-selector-box,
-.date-input-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
-.date-input-box {
-  background: #fff8e1;
-  border-color: #ffb74d;
-}
-
-.box-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #555;
-  white-space: nowrap;
-}
-
-.date-input-box .box-label {
-  color: #e65100;
-}
-
-/* Action button group (3 buttons in a row) */
-.action-btn-group {
+/* Document actions - horizontal button row */
+.document-actions {
   display: flex;
   gap: 0.4rem;
+  flex-shrink: 0;
 }
 
-/* Action buttons - all with solid colors, bigger */
+/* Action buttons - compact with solid colors */
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
   border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity 0.2s, transform 0.1s;
   color: white;
-  flex: 1;
+  white-space: nowrap;
 }
 
 .action-btn:hover {
-  opacity: 0.85;
+  opacity: 0.9;
   transform: translateY(-1px);
-}
-
-/* View button spans full width */
-.document-row-right > .view-btn {
-  width: 100%;
-}
-
-.redact-btn {
-  background: #7b1fa2;
-}
-
-.pages-btn {
-  background: #f57c00;
 }
 
 .view-btn {
@@ -501,24 +458,34 @@
   background: #d32f2f;
 }
 
+.pages-btn {
+  background: #f57c00;
+}
+
+.redact-btn {
+  background: #7b1fa2;
+}
+
 .section-selector {
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  background: white;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: #f5f5f5;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: border-color 0.2s;
+  max-width: 150px;
 }
 
 .section-selector:hover {
   border-color: var(--color-accent);
+  background: #fff;
 }
 
 .section-selector:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: var(--focus-ring);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
 .action-button {
@@ -644,29 +611,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-sm);
+  padding: 0.25rem;
   background: none;
   border: none;
   cursor: pointer;
-  color: #999;
-  transition: color var(--transition-fast), transform var(--transition-fast);
-  margin-right: var(--spacing-xs);
+  color: #bbb;
+  transition: color 0.2s;
+  flex-shrink: 0;
 }
 
 .document-select-checkbox:hover {
   color: var(--color-accent);
-  transform: scale(1.1);
 }
 
 .document-select-checkbox:focus {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
 }
 
 .document-item.selected {
   background-color: #e3f2fd;
-  border-left: 4px solid var(--color-accent);
+  border-left: 3px solid var(--color-accent);
 }
 
 .document-item.selected:hover {
@@ -745,6 +711,21 @@
 }
 
 /* Responsive adjustments */
+@media (max-width: 900px) {
+  .document-item {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .document-name-section {
+    flex: 1 1 200px;
+  }
+
+  .document-actions {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 768px) {
   .document-guide {
     padding: 1rem;
@@ -790,14 +771,25 @@
     padding: 0.4rem 0.75rem;
   }
 
-  .date-input-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
+  .document-item {
+    padding: 0.5rem;
+  }
+
+  .document-name-section {
+    min-width: 120px;
   }
 
   .document-date-input {
-    width: 100%;
-    min-width: unset;
+    width: 110px;
+  }
+
+  .section-selector {
+    max-width: 120px;
+  }
+
+  .action-btn {
+    padding: 0.3rem 0.4rem;
+    font-size: 0.7rem;
   }
 }
 

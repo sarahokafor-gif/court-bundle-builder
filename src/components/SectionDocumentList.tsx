@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
+import { Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -71,134 +71,138 @@ function SortableDocumentItem({
       ref={setNodeRef}
       style={style}
       className={`document-item ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
+      {...attributes}
+      {...listeners}
     >
+      {/* Checkbox */}
       <button
         className="document-select-checkbox"
-        onClick={() => onToggleSelection(doc.id)}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSelection(doc.id)
+        }}
         aria-label={isSelected ? 'Deselect document' : 'Select document'}
         title={isSelected ? 'Deselect document' : 'Select document'}
       >
-        {isSelected ? <CheckSquare size={20} /> : <Square size={20} />}
+        {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
       </button>
 
-      <div className="document-drag-handle" {...attributes} {...listeners}>
-        <GripVertical size={18} />
-      </div>
-
-      <div className="document-info">
+      {/* Document Icon */}
+      <div className="document-icon-wrapper">
         {doc.thumbnail ? (
           <img src={doc.thumbnail} alt={`${doc.name} preview`} className="document-thumbnail" />
         ) : (
-          <FileText size={18} className="document-icon" />
+          <FileText size={20} className="document-icon" />
         )}
-        <div className="document-details">
-          <div className="document-name">{doc.name}</div>
-          <div className="document-pages">
-            {doc.pageCount} page{doc.pageCount !== 1 ? 's' : ''}
-            {doc.selectedPages && doc.selectedPages.length !== doc.pageCount && (
-              <span className="selected-pages-badge">
-                {doc.selectedPages.length} selected
-              </span>
-            )}
-          </div>
+      </div>
 
-          {/* Row 1: Title input + View button */}
-          <div className="document-row">
-            <div className="document-row-left">
-              <label className="sr-only" htmlFor={`title-${doc.id}`}>Custom title for {doc.name}</label>
-              <input
-                id={`title-${doc.id}`}
-                type="text"
-                className="document-title-input"
-                value={doc.customTitle || ''}
-                onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
-                placeholder="Custom title for index (optional)"
-                aria-label={`Custom title for ${doc.name}`}
-              />
-            </div>
-            <div className="document-row-right">
-              <button
-                className="action-btn view-btn"
-                onClick={() => onPreview(doc)}
-                title="Preview document"
-              >
-                <Eye size={16} />
-                View
-              </button>
-            </div>
-          </div>
+      {/* Document Name (editable) */}
+      <div className="document-name-section">
+        <input
+          type="text"
+          className="document-name-input"
+          value={doc.customTitle || doc.name}
+          onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
+          placeholder={doc.name}
+          aria-label={`Document name: ${doc.name}`}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="document-page-count">
+          {doc.pageCount} pg{doc.pageCount !== 1 ? 's' : ''}
+          {doc.selectedPages && doc.selectedPages.length !== doc.pageCount && (
+            <span className="selected-pages-badge">{doc.selectedPages.length} sel</span>
+          )}
+        </span>
+      </div>
 
-          {/* Row 2: Section + Date + Action buttons */}
-          <div className="document-row">
-            <div className="document-row-left">
-              {sections.length > 1 && (
-                <div className="section-selector-box">
-                  <label className="box-label">Move to:</label>
-                  <select
-                    className="section-selector"
-                    value={section.id}
-                    onChange={(e) => onMoveToSection(doc.id, section.id, e.target.value)}
-                    title="Move to section"
-                  >
-                    {sections.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-              <div className="date-input-box">
-                <label className="box-label" htmlFor={`date-${doc.id}`}>
-                  📅 Date:
-                </label>
-                <input
-                  id={`date-${doc.id}`}
-                  type="date"
-                  className="document-date-input"
-                  value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      const [year, month, day] = e.target.value.split('-')
-                      onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
-                    } else {
-                      onUpdateDocumentDate(section.id, doc.id, '')
-                    }
-                  }}
-                  aria-label={`Set date for ${doc.name}`}
-                />
-              </div>
-            </div>
-            <div className="document-row-right">
-              <div className="action-btn-group">
-                <button
-                  className="action-btn delete-btn"
-                  onClick={() => onRemoveDocument(section.id, doc.id)}
-                  title="Delete document"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-                <button
-                  className="action-btn pages-btn"
-                  onClick={() => setManagingDocument({ sectionId: section.id, doc })}
-                  title="Select/Remove pages"
-                >
-                  <Edit3 size={16} />
-                  Pages
-                </button>
-                <button
-                  className="action-btn redact-btn"
-                  onClick={() => setEditingDocument({ sectionId: section.id, doc })}
-                  title="Redact/Erase content"
-                >
-                  <Pen size={16} />
-                  Redact
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Date Picker */}
+      <div className="document-date-section">
+        <span className="date-icon">📅</span>
+        <input
+          type="date"
+          className="document-date-input"
+          value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
+          onChange={(e) => {
+            if (e.target.value) {
+              const [year, month, day] = e.target.value.split('-')
+              onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
+            } else {
+              onUpdateDocumentDate(section.id, doc.id, '')
+            }
+          }}
+          aria-label={`Set date for ${doc.name}`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
+      {/* Section Selector */}
+      {sections.length > 1 && (
+        <div className="document-section-selector">
+          <select
+            className="section-selector"
+            value={section.id}
+            onChange={(e) => {
+              e.stopPropagation()
+              onMoveToSection(doc.id, section.id, e.target.value)
+            }}
+            title="Move to section"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="document-actions">
+        <button
+          className="action-btn view-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onPreview(doc)
+          }}
+          title="Preview document"
+        >
+          <Eye size={16} />
+          View
+        </button>
+        <button
+          className="action-btn delete-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemoveDocument(section.id, doc.id)
+          }}
+          title="Delete document"
+        >
+          <Trash2 size={16} />
+          Del
+        </button>
+        <button
+          className="action-btn pages-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            setManagingDocument({ sectionId: section.id, doc })
+          }}
+          title="Select/Remove pages"
+        >
+          <Edit3 size={16} />
+          Pages
+        </button>
+        <button
+          className="action-btn redact-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            setEditingDocument({ sectionId: section.id, doc })
+          }}
+          title="Redact/Erase content"
+        >
+          <Pen size={16} />
+          Redact
+        </button>
       </div>
     </div>
   )
@@ -376,10 +380,10 @@ export default function SectionDocumentList({
       <div className="document-guide" role="note" aria-label="Instructions for managing documents">
         <h3 className="guide-title">📋 How to Organise Your Documents</h3>
         <ol className="guide-steps">
-          <li><strong>Set document dates:</strong> Use the date picker on each document to enter when it was created or received</li>
-          <li><strong>Sort automatically:</strong> Click the yellow <strong>"SORT BY DATE"</strong> button in any section header to arrange documents (undated first, then oldest to newest)</li>
-          <li><strong>Drag to reorder:</strong> Use the grip handle (⋮⋮) on the left to manually drag documents into your preferred order</li>
-          <li><strong>Move between sections:</strong> Use the dropdown menu to move a document to a different section</li>
+          <li><strong>Set document dates:</strong> Use the 📅 date picker on each row</li>
+          <li><strong>Sort automatically:</strong> Click the yellow <strong>"SORT BY DATE"</strong> button in any section header</li>
+          <li><strong>Drag to reorder:</strong> Click and drag any document row to manually reorder</li>
+          <li><strong>Move between sections:</strong> Use the dropdown menu on each row</li>
         </ol>
         {totalDocs > 0 && (
           <p className="guide-status" aria-live="polite">
@@ -536,21 +540,16 @@ export default function SectionDocumentList({
         <DragOverlay>
           {activeDocument && activeSection && (
             <div className="document-item dragging-overlay">
-              <div className="document-drag-handle">
-                <GripVertical size={18} />
-              </div>
-              <div className="document-info">
+              <div className="document-icon-wrapper">
                 {activeDocument.thumbnail ? (
                   <img src={activeDocument.thumbnail} alt={`${activeDocument.name} preview`} className="document-thumbnail" />
                 ) : (
-                  <FileText size={18} className="document-icon" />
+                  <FileText size={20} className="document-icon" />
                 )}
-                <div className="document-details">
-                  <div className="document-name">{activeDocument.name}</div>
-                  <div className="document-pages">
-                    {activeDocument.pageCount} page{activeDocument.pageCount !== 1 ? 's' : ''}
-                  </div>
-                </div>
+              </div>
+              <div className="document-name-section">
+                <span className="document-name-display">{activeDocument.customTitle || activeDocument.name}</span>
+                <span className="document-page-count">{activeDocument.pageCount} pgs</span>
               </div>
             </div>
           )}
