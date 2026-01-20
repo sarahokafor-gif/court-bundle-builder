@@ -1019,8 +1019,13 @@ export async function generateBundle(
   sections: Section[],
   pageNumberSettings: PageNumberSettings
 ): Promise<void> {
+  console.log('[generateBundle] Starting bundle generation...')
+  console.log('[generateBundle] Sections:', sections.length)
+  console.log('[generateBundle] Total documents:', sections.reduce((sum, s) => sum + s.documents.length, 0))
+
   try {
     // PHASE 1: Build a temporary PDF with just documents to calculate index entries
+    console.log('[generateBundle] PHASE 1: Building temporary PDF...')
     const tempPdf = await PDFDocument.create()
     const indexEntries: IndexEntry[] = []
     const documentPageNumbers: string[] = []
@@ -1061,37 +1066,47 @@ export async function generateBundle(
 
       // Load documents
       for (const doc of section.documents) {
-        const pdfDoc = await loadPdfFromFile(doc.file)
+        console.log(`[generateBundle] Loading document: "${doc.name}", file size: ${doc.file.size} bytes`)
+        try {
+          const pdfDoc = await loadPdfFromFile(doc.file)
+          console.log(`[generateBundle] Loaded "${doc.name}" successfully, pages: ${pdfDoc.getPageCount()}`)
 
-        // Determine which pages to include (use selectedPages if defined, otherwise all pages)
-        const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
-          ? doc.selectedPages
-          : pdfDoc.getPageIndices()
+          // Determine which pages to include (use selectedPages if defined, otherwise all pages)
+          const pageIndices = doc.selectedPages !== undefined && doc.selectedPages.length > 0
+            ? doc.selectedPages
+            : pdfDoc.getPageIndices()
 
-        const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
+          const copiedPages = await tempPdf.copyPages(pdfDoc, pageIndices)
+          console.log(`[generateBundle] Copied ${copiedPages.length} pages from "${doc.name}"`)
 
-        const docStartPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
-        const docStartPageIndex = currentPageIndex
+          const docStartPageNumber = formatPageNumber(sectionPrefix, sectionPageNum)
+          const docStartPageIndex = currentPageIndex
 
-        copiedPages.forEach((page) => {
-          tempPdf.addPage(page)
-          documentPageNumbers.push(formatPageNumber(sectionPrefix, sectionPageNum))
-          sectionPageNum++
-          currentPageIndex++
-        })
+          copiedPages.forEach((page) => {
+            tempPdf.addPage(page)
+            documentPageNumbers.push(formatPageNumber(sectionPrefix, sectionPageNum))
+            sectionPageNum++
+            currentPageIndex++
+          })
 
-        const docEndPageNumber = formatPageNumber(sectionPrefix, sectionPageNum - 1)
+          const docEndPageNumber = formatPageNumber(sectionPrefix, sectionPageNum - 1)
 
-        indexEntries.push({
-          title: doc.customTitle || doc.name.replace('.pdf', ''),
-          startPage: docStartPageNumber,
-          endPage: docEndPageNumber,
-          startPageIndex: docStartPageIndex,
-          indent: true,
-          documentDate: doc.documentDate,
-        })
+          indexEntries.push({
+            title: doc.customTitle || doc.name.replace('.pdf', ''),
+            startPage: docStartPageNumber,
+            endPage: docEndPageNumber,
+            startPageIndex: docStartPageIndex,
+            indent: true,
+            documentDate: doc.documentDate,
+          })
+        } catch (docError) {
+          console.error(`[generateBundle] ERROR loading "${doc.name}":`, docError)
+          throw docError
+        }
       }
     }
+
+    console.log('[generateBundle] PHASE 1 complete. Total pages in temp PDF:', tempPdf.getPageCount())
 
     // PHASE 2: Count how many index pages we'll need (no links needed for counting)
     const indexCountPdf = await PDFDocument.create()
@@ -1140,7 +1155,10 @@ export async function generateBundle(
 
     // Always generate as single PDF (no automatic volume splitting)
     // Users can manually split if needed for court requirements
+    console.log('[generateBundle] Saving final PDF...')
     const pdfBytes = await finalPdf.save()
+    console.log('[generateBundle] PDF saved, size:', pdfBytes.byteLength, 'bytes')
+
     const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
     const url = URL.createObjectURL(blob)
 
@@ -1152,8 +1170,9 @@ export async function generateBundle(
     document.body.removeChild(link)
 
     URL.revokeObjectURL(url)
+    console.log('[generateBundle] Bundle download triggered successfully!')
   } catch (error) {
-    console.error('Error generating bundle:', error)
+    console.error('[generateBundle] ERROR:', error)
     throw error
   }
 }
