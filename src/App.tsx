@@ -13,6 +13,7 @@ import PageNumberSettingsComponent from './components/PageNumberSettings'
 import SaveLoadButtons from './components/SaveLoadButtons'
 import BundleRequirementsInfo from './components/BundleRequirementsInfo'
 import AutoSaveRecovery from './components/AutoSaveRecovery'
+import HelpFAQ from './components/HelpFAQ'
 import { saveBundle, loadBundle, deserializeSections, sortDocumentsByDate } from './utils/saveLoad'
 import {
   autoSaveToLocalStorage,
@@ -464,6 +465,8 @@ function App() {
       </header>
 
       <main id="main-content" className="app-main" role="main" aria-label="Court Bundle Builder Workflow">
+        <HelpFAQ />
+
         <section className="section" aria-labelledby="bundle-info-heading">
           <div className="section-header-with-actions">
             <h2 id="bundle-info-heading">Step 1: Bundle Information</h2>

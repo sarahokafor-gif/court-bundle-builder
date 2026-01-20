@@ -4,24 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Court Bundle Builder - A React + TypeScript + Vite application for creating and managing court bundles (legal document collections). Users can organize documents into sections with optional divider pages, preview documents, add case metadata, and generate a single merged PDF with a hierarchical index and page numbering.
+Court Bundle Builder - A React + TypeScript + Vite application for creating and managing court bundles (legal document collections). Users can organize documents into sections, preview and edit PDFs, add case metadata, and generate a single merged PDF with a hierarchical index, clickable bookmarks, and page numbering.
+
+**Live Site:** https://courtbundlebuilder.co.uk (deployed via Cloudflare Pages)
 
 ## Development Commands
 
 ```bash
 npm install          # Install dependencies
-npm run dev          # Start development server (port 3000)
-npm run build        # Build for production
+npm run dev          # Start development server (port 5173)
+npm run build        # Build for production (outputs to dist/)
 npm run preview      # Preview production build
 npm run lint         # Lint TypeScript/TSX files
 npm run type-check   # Run TypeScript compiler without emitting files
+```
+
+## Deployment
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name court-bundle-builder
 ```
 
 ## Tech Stack
 
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite 5
-- **PDF Processing**: pdf-lib for merging PDFs, creating index pages, and adding page numbers
+- **PDF Processing**:
+  - `pdf-lib` - Merging PDFs, creating index/divider pages, adding page numbers, burning redactions
+  - `pdfjs-dist` - PDF rendering for preview and editing canvas
+- **Authentication**: Firebase Authentication (email/password)
+- **Drag & Drop**: @dnd-kit/core and @dnd-kit/sortable
 - **Icons**: lucide-react
 - **Styling**: Plain CSS with component-specific stylesheets
 
@@ -31,92 +44,230 @@ npm run type-check   # Run TypeScript compiler without emitting files
 
 ```
 src/
-├── components/               # React components
-│   ├── MetadataForm          # Form for case information (name, number, court, date)
-│   ├── SectionManager        # Create, rename, delete sections; toggle dividers
-│   ├── DocumentUploader      # File upload interface for PDFs
-│   ├── SectionDocumentList   # Display documents organized by section
-│   ├── DocumentPreview       # Modal for previewing PDFs
-│   └── BundleGenerator       # Generate and download final bundle
+├── components/
+│   ├── Auth/
+│   │   ├── AuthModal.tsx         # Login/Register modal
+│   │   └── UserMenu.tsx          # User dropdown menu
+│   ├── AutoSaveRecovery.tsx      # Auto-save recovery prompt
+│   ├── BundleGenerator.tsx       # Generate and download bundle
+│   ├── BundleRequirementsInfo.tsx # Court bundle requirements guide
+│   ├── BundleTypeSelector.tsx    # Select bundle type (CoP, Family, etc.)
+│   ├── DocumentPreview.tsx       # PDF preview modal (iframe-based)
+│   ├── DocumentUploader.tsx      # File upload interface
+│   ├── HelpFAQ.tsx               # Help/FAQ accordion component
+│   ├── MetadataForm.tsx          # Case information form
+│   ├── PageManager.tsx           # Select/remove specific pages
+│   ├── PageNumberSettings.tsx    # Configure page number position/style
+│   ├── PDFEditor.tsx             # Redact/erase tool with canvas
+│   ├── SaveLoadButtons.tsx       # Save/load bundle JSON files
+│   ├── SectionDocumentList.tsx   # Document list with drag-drop
+│   ├── SectionManager.tsx        # Create/rename/delete sections
+│   └── TemplateSelector.tsx      # Pre-built section templates
+├── contexts/
+│   └── AuthContext.tsx           # Firebase auth context provider
+├── data/
+│   └── bundleRequirements.json   # Court bundle requirements data
 ├── utils/
-│   ├── pdfUtils.ts           # PDF file utilities (page counting, loading)
-│   └── bundleGenerator.ts    # Core bundle generation logic (with sections & dividers)
-├── types.ts                  # TypeScript type definitions
-├── App.tsx                   # Main application component
-└── main.tsx                  # Application entry point
+│   ├── bundleGenerator.ts        # Core bundle generation logic
+│   ├── pdfEditing.ts             # Burn redactions into PDF
+│   ├── pdfThumbnail.ts           # Generate PDF thumbnails
+│   ├── pdfUtils.ts               # PDF utilities (page count, loading)
+│   ├── pricing.ts                # Pricing logic (if applicable)
+│   └── saveLoad.ts               # Save/load bundle to JSON with base64 PDFs
+├── types.ts                      # TypeScript type definitions
+├── firebase.ts                   # Firebase configuration
+├── App.tsx                       # Main application component
+├── App.css                       # Main application styles
+└── main.tsx                      # Application entry point
 ```
 
 ### Key Components
 
-**App.tsx**: Main container that manages state for bundle metadata, sections, and documents. Coordinates data flow between child components. Handles section management, document operations (add/remove/reorder/move), and preview state.
+**App.tsx**: Main container managing state for metadata, sections, documents, and modals. Coordinates all child components.
 
-**MetadataForm**: Collects case information (case name, case number, court, date) stored in BundleMetadata type.
+**SectionDocumentList.tsx**: Displays documents in a single-row layout with:
+- Drag handle (GripVertical icon) for reordering via @dnd-kit
+- Checkbox for batch selection
+- Editable document title
+- Date picker for document dates
+- Section dropdown for moving between sections
+- Action buttons: View, Delete, Pages, Redact
 
-**SectionManager**: UI for managing sections - create new sections, rename existing ones, delete empty sections, and toggle divider pages for each section. Shows document count per section.
+**PDFEditor.tsx**: Full-screen modal for PDF redaction/erasing:
+- Canvas-based rendering using pdfjs-dist
+- Two tools: Redact (black box) and Erase (white box)
+- Draw rectangles to mark areas
+- Click existing rectangles to delete them
+- Hover highlighting shows deletable areas
+- Zoom in/out, rotate, fit-to-width, fit-to-page
+- Mouse wheel scrolling for page navigation
+- Saves edits by burning rectangles into PDF
 
-**DocumentUploader**: File input for uploading PDFs. Validates file types, extracts page counts, creates Document objects, and adds them to the first section.
+**PageManager.tsx**: Modal for selecting/removing specific pages:
+- Thumbnail grid of all pages
+- Click to toggle page selection
+- Only selected pages included in final bundle
 
-**SectionDocumentList**: Displays documents organized by section. Each section shows as a collapsible block with its documents. Features include: reordering within section (up/down arrows), moving documents between sections (dropdown), preview button (eye icon), and remove button.
+**SaveLoadButtons.tsx**: Save and load bundle state:
+- Save: Exports JSON file with base64-encoded PDFs embedded
+- Load: Imports JSON and reconstructs File objects from base64
 
-**DocumentPreview**: Full-screen modal that displays PDF in an iframe. Shows document name, page count, and close button. Auto-manages blob URLs for PDF preview.
-
-**BundleGenerator**: Triggers bundle generation via bundleGenerator.ts utility. Displays summary showing section count, document count, and total pages before generation.
+**DocumentPreview.tsx**: Full-screen PDF preview using iframe with blob URL.
 
 ### PDF Processing Flow
 
-1. **Upload**: User uploads PDFs → `pdfUtils.getPdfPageCount()` extracts page count → Document objects created and added to first section
-2. **Organize**: User creates sections, assigns documents to sections, enables divider pages, reorders documents within sections
-3. **Preview**: Click eye icon to view any document in full-screen modal
+1. **Upload**: User uploads PDFs → `getPdfPageCount()` extracts page count → `generatePDFThumbnail()` creates preview → Document objects created
+
+2. **Organize**:
+   - Drag documents by grip handle to reorder
+   - Use section dropdown to move between sections
+   - Set document dates for chronological sorting
+   - Click "Sort by Date" to auto-arrange
+
+3. **Edit**:
+   - **View**: Preview document in full-screen modal
+   - **Pages**: Select which pages to include
+   - **Redact**: Draw black/white boxes on PDF pages
+
 4. **Generate**:
-   - `bundleGenerator.generateBundle()` creates new PDFDocument
-   - Iterates through sections in order:
-     - If section has `addDivider: true`, creates a divider page with section name
-     - Merges all documents in that section
-   - Generates hierarchical index page:
-     - Section headers (bold, uppercase) with divider page numbers
-     - Document entries (indented) with page ranges
-   - Inserts index as first page
-   - Adds page numbers to all pages
-   - Downloads merged PDF
+   - `bundleGenerator.generateBundle()` creates merged PDF
+   - Processes sections in order with optional divider pages
+   - Generates clickable index with bookmarks
+   - Adds page numbers (configurable position/style)
+   - Downloads final PDF
 
 ### Types (src/types.ts)
 
-- **Document**: Represents an uploaded PDF (id, file, name, pageCount, order)
-- **Section**: Organizational unit containing documents (id, name, documents, addDivider, order)
-- **BundleMetadata**: Case information (caseName, caseNumber, court, date)
-- **Bundle**: Combines metadata and sections (used for type safety)
+```typescript
+interface Document {
+  id: string
+  file: File
+  name: string
+  pageCount: number
+  order: number
+  thumbnail?: string
+  documentDate?: string        // DD-MM-YYYY format
+  customTitle?: string
+  selectedPages?: number[]     // Pages to include (1-indexed)
+  needsReupload?: boolean      // For loaded bundles missing PDF data
+  originalFileName?: string
+}
+
+interface Section {
+  id: string
+  name: string
+  documents: Document[]
+  addDivider: boolean
+  order: number
+  pagePrefix?: string          // e.g., "A", "B" for section-based numbering
+  startPage?: number
+}
+
+interface BundleMetadata {
+  caseName: string
+  caseNumber: string
+  court: string
+  date: string
+  bundleType?: string
+  isAdversarial?: boolean
+  applicants?: Party[]
+  respondents?: Party[]
+}
+
+interface Rectangle {
+  x: number
+  y: number
+  width: number
+  height: number
+  page: number
+  type: 'redact' | 'erase'
+}
+
+interface SavedBundle {
+  metadata: BundleMetadata
+  sections: SerializedSection[]
+  pageNumberSettings: PageNumberSettings
+  savedAt: string
+  version: string              // "1.0" = PDFs embedded, "2.0" = metadata only
+}
+```
 
 ### State Management
 
 State is managed in App.tsx using React hooks:
 - `metadata` (BundleMetadata): Case information
-- `sections` (Section[]): Array of sections, each containing documents
+- `sections` (Section[]): Array of sections with documents
 - `previewDoc` (Document | null): Currently previewed document
+- `pageNumberSettings` (PageNumberSettings): Page number configuration
 
-The app starts with one default section called "Main Documents". Documents are organized within sections. Section operations include add/remove/rename/reorder. Document operations include add/remove/reorder-within-section/move-between-sections.
+### Key Implementation Details
 
-## Key Implementation Details
+**Drag and Drop**: Uses @dnd-kit with dedicated drag handle. The `{...listeners}` are attached only to the drag handle element, not the entire row, so button clicks work properly.
 
-- **Section-Based Organization**: Documents are organized into sections. Each section can optionally have a divider page that appears before its documents in the final bundle.
+**PDF Editing**:
+- PDFEditor renders pages on HTML canvas using pdfjs-dist
+- Rectangles are drawn as overlays during editing
+- On save, `burnRectanglesIntoPDF()` uses pdf-lib to permanently draw rectangles onto the PDF
 
-- **Divider Pages**: Visually distinct pages created with pdf-lib featuring centered section name in white text on blue background with decorative lines. These act as visual separators in the bundle.
+**Save/Load**:
+- `saveLoad.ts` serializes sections with PDFs as base64 strings
+- `fileToBase64()` converts File to base64
+- `base64ToFile()` reconstructs File from base64
+- `isValidPdfBase64()` validates PDF data before reconstruction
 
-- **Index Page Generation**: Creates a hierarchical table of contents showing:
-  - Section headers (bold, uppercase) with page number of divider (if enabled)
-  - Document entries (indented) with page ranges
-  - Uses pdf-lib with automatic text truncation and pagination
+**Index Generation**: Creates hierarchical table of contents with:
+- Section headers (bold, uppercase)
+- Document entries with page ranges
+- Clickable internal links (PDF bookmarks)
 
-- **Document Preview**: Uses iframe with blob URLs to display PDFs. URLs are automatically created when opening preview and revoked when closing.
+**Page Numbering**: Configurable via PageNumberSettings:
+- Position: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right
+- Font size and bold option
+- Optional section prefixes (A001, B001, etc.)
 
-- **Page Numbering**: Applied after merge, numbers start at 1 (index page is page 1). Divider pages and all document pages receive sequential numbers.
+## Firebase Configuration
 
-- **File Download**: Generated PDF is saved as `{caseNumber}_{caseName}.pdf` and auto-downloaded via blob URL.
+Project: `court-bundle-builder`
+- Authentication: Email/password
+- Console: https://console.firebase.google.com (select court-bundle-builder project)
 
-- **Error Handling**: File validation checks for PDF type, page count extraction errors alert user. Empty sections are skipped during bundle generation.
+View registered users: Authentication → Users
 
-## Development Notes
+## Common Development Tasks
 
-- All components have corresponding CSS files for styling
-- TypeScript strict mode is enabled
-- The app is fully client-side (no backend required)
-- PDF processing happens entirely in the browser using pdf-lib
+### Adding a new document action button
+
+1. Add button in `SectionDocumentList.tsx` within the `.document-actions` div
+2. Use `onClick={(e) => { e.stopPropagation(); /* handler */ }}` pattern
+3. Add corresponding CSS in `SectionDocumentList.css`
+
+### Modifying PDF generation
+
+Edit `src/utils/bundleGenerator.ts`:
+- `generateBundle()` - Main entry point
+- Index page creation uses pdf-lib drawing functions
+- Divider pages use `createDividerPage()`
+
+### Updating save/load format
+
+Edit `src/utils/saveLoad.ts`:
+- `serializeSections()` - Convert to JSON-safe format
+- `deserializeSections()` - Reconstruct from JSON
+- Update `SavedBundle` interface version if format changes
+
+## Troubleshooting
+
+**Buttons not responding to clicks**: Check if drag listeners are attached to entire container instead of drag handle only.
+
+**PDF preview not working**: Verify File object is valid, check browser console for blob URL errors.
+
+**Bundle generation fails**: Check console for pdf-lib errors, ensure all documents have valid File objects.
+
+**Save file too large**: PDFs are base64-encoded (33% larger). Consider version 2.0 format (metadata only, re-upload PDFs on load).
+
+## Recent Changes (January 2026)
+
+- Fixed click handlers blocked by @dnd-kit drag listeners - moved listeners to dedicated drag handle
+- Added GripVertical icon as visual drag indicator
+- Enhanced save/load with PDF validation and detailed logging
+- Added extensive console logging for debugging PDF operations

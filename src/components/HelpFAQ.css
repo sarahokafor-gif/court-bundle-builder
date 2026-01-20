@@ -1,0 +1,240 @@
+.help-faq {
+  margin-bottom: var(--spacing-lg);
+  border: 2px solid #7c3aed;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  overflow: hidden;
+}
+
+.help-faq-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.help-faq-toggle:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.help-faq-toggle svg:last-child {
+  margin-left: auto;
+}
+
+.help-faq-content {
+  padding: 1.5rem;
+}
+
+.help-faq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.help-faq-intro {
+  margin: 0;
+  color: #4c1d95;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.help-faq-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.help-faq-actions .btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  background: white;
+  border: 1px solid #7c3aed;
+  color: #7c3aed;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.help-faq-actions .btn:hover {
+  background: #7c3aed;
+  color: white;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.faq-item {
+  background: white;
+  border: 1px solid #ddd6fe;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.faq-item:hover {
+  border-color: #7c3aed;
+}
+
+.faq-item.open {
+  border-color: #7c3aed;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+  transition: background 0.2s;
+}
+
+.faq-question:hover {
+  background: #f5f3ff;
+}
+
+.faq-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border-radius: 8px;
+  color: #7c3aed;
+  flex-shrink: 0;
+}
+
+.faq-question-text {
+  flex: 1;
+}
+
+.faq-question svg:last-child {
+  color: #7c3aed;
+  flex-shrink: 0;
+}
+
+.faq-answer {
+  padding: 0 1rem 1rem 1rem;
+  padding-left: calc(1rem + 32px + 0.75rem); /* Align with question text */
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-answer p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.help-faq-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd6fe;
+}
+
+.help-faq-footer p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.help-faq-footer strong {
+  color: #4c1d95;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .help-faq-toggle {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .help-faq-content {
+    padding: 1rem;
+  }
+
+  .help-faq-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .help-faq-actions {
+    justify-content: flex-start;
+  }
+
+  .faq-question {
+    padding: 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .faq-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .faq-answer {
+    padding-left: calc(0.875rem + 28px + 0.75rem);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .help-faq {
+    border: 3px solid #000;
+  }
+
+  .help-faq-toggle {
+    background: #000;
+  }
+
+  .faq-item {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .faq-answer {
+    animation: none;
+  }
+
+  .help-faq-toggle,
+  .faq-question,
+  .faq-item {
+    transition: none;
+  }
+}
