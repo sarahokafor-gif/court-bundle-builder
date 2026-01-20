@@ -21,6 +21,12 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
     0
   )
 
+  // Check for documents that need re-upload (loaded from save file without embedded PDFs)
+  const docsNeedingReupload = sections.flatMap(section =>
+    section.documents.filter(doc => doc.needsReupload)
+  )
+  const hasDocsNeedingReupload = docsNeedingReupload.length > 0
+
   const handleGenerateIndexOnly = async () => {
     if (!metadata.caseName || !metadata.caseNumber) {
       alert('Please fill in at least the case name and case number before generating the index.')
@@ -45,6 +51,12 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
       return
     }
 
+    if (hasDocsNeedingReupload) {
+      const docNames = docsNeedingReupload.map(d => d.name).join(', ')
+      alert(`The following documents need to be re-uploaded before generating the bundle:\n\n${docNames}\n\nPlease re-upload the PDF files for these documents (look for the orange "Re-upload" badge).`)
+      return
+    }
+
     setIsGenerating(true)
 
     try {
@@ -61,6 +73,12 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
   const handleDownload = async () => {
     if (!metadata.caseName || !metadata.caseNumber) {
       alert('Please fill in at least the case name and case number before generating the bundle.')
+      return
+    }
+
+    if (hasDocsNeedingReupload) {
+      const docNames = docsNeedingReupload.map(d => d.name).join(', ')
+      alert(`The following documents need to be re-uploaded before generating the bundle:\n\n${docNames}\n\nPlease re-upload the PDF files for these documents (look for the orange "Re-upload" badge).`)
       return
     }
 
@@ -102,6 +120,19 @@ export default function BundleGenerator({ metadata, sections, pageNumberSettings
           </div>
         </div>
       </div>
+
+      {/* Warning banner for documents needing re-upload */}
+      {hasDocsNeedingReupload && (
+        <div className="reupload-warning-banner">
+          <div className="warning-badge">⚠️ ACTION REQUIRED</div>
+          <div className="warning-message">
+            <strong>{docsNeedingReupload.length} document{docsNeedingReupload.length > 1 ? 's need' : ' needs'} re-upload</strong>
+            <br />
+            Documents loaded from save files require PDF re-upload before generating the bundle.
+            Look for the orange "Re-upload" badge on affected documents.
+          </div>
+        </div>
+      )}
 
       {/* Free Access Banner */}
       <div className="free-access-banner">
