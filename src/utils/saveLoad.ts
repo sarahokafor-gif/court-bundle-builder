@@ -98,6 +98,21 @@ function createPlaceholderFile(fileName: string): File {
 }
 
 /**
+ * Validates if base64 data represents a valid PDF (basic check)
+ */
+function isValidPdfBase64(base64: string): boolean {
+  if (!base64 || base64.length < 100) return false // Too small to be a real PDF
+
+  try {
+    // Decode first few bytes and check for PDF header
+    const firstBytes = atob(base64.substring(0, 20))
+    return firstBytes.startsWith('%PDF')
+  } catch {
+    return false
+  }
+}
+
+/**
  * Deserializes sections with embedded PDF files
  * Handles both v1.0 (with embedded PDFs) and v2.0 (metadata only) formats
  */
@@ -106,13 +121,15 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
     id: section.id,
     name: section.name,
     documents: section.documents.map((doc) => {
-      // Check if PDF data is embedded (v1.0) or missing (v2.0)
-      const hasEmbeddedPdf = doc.fileData && doc.fileData.length > 0
+      // Check if PDF data is embedded (v1.0) and valid, or missing (v2.0)
+      const hasValidEmbeddedPdf = doc.fileData && doc.fileData.length > 0 && isValidPdfBase64(doc.fileData)
       const fileName = doc.fileName || doc.name
+
+      console.log(`[deserialize] Document "${doc.name}": fileData length=${doc.fileData?.length || 0}, valid=${hasValidEmbeddedPdf}`)
 
       return {
         id: doc.id,
-        file: hasEmbeddedPdf
+        file: hasValidEmbeddedPdf
           ? base64ToFile(doc.fileData, fileName)
           : createPlaceholderFile(fileName),
         name: doc.name,
@@ -120,7 +137,7 @@ export function deserializeSections(serializedSections: SerializedSection[]): Se
         order: doc.order,
         documentDate: doc.documentDate,
         customTitle: doc.customTitle,
-        needsReupload: !hasEmbeddedPdf, // Flag documents that need PDF re-upload
+        needsReupload: !hasValidEmbeddedPdf, // Flag documents that need PDF re-upload
         originalFileName: fileName, // Store original filename for matching during re-upload
       }
     }),
