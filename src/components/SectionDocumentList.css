@@ -194,7 +194,31 @@
   border-bottom: 1px solid var(--color-border-light);
   transition: background-color var(--transition-base);
   background-color: white;
+  cursor: default;
+}
+
+/* Drag handle - only this triggers drag */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: #999;
   cursor: grab;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #666;
+  background-color: #f0f0f0;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  color: var(--color-accent);
+  background-color: #e3f2fd;
 }
 
 .document-item:last-child {
@@ -203,10 +227,6 @@
 
 .document-item:hover {
   background-color: #f0f7ff;
-}
-
-.document-item:active {
-  cursor: grabbing;
 }
 
 .document-item.dragging {

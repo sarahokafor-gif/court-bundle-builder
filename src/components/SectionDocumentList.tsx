@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown, Upload } from 'lucide-react'
+import { Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown, Upload, GripVertical } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -75,8 +75,16 @@ function SortableDocumentItem({
       style={style}
       className={`document-item ${isDragging ? 'dragging' : ''} ${isSelected ? 'selected' : ''}`}
       {...attributes}
-      {...listeners}
     >
+      {/* Drag Handle - only this element triggers drag */}
+      <div
+        className="drag-handle"
+        {...listeners}
+        title="Drag to reorder"
+      >
+        <GripVertical size={18} />
+      </div>
+
       {/* Checkbox */}
       <button
         className="document-select-checkbox"
