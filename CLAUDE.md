@@ -229,9 +229,52 @@ State is managed in App.tsx using React hooks:
 
 Project: `court-bundle-builder`
 - Authentication: Email/password
+- Cloud Functions: User registration notifications
 - Console: https://console.firebase.google.com (select court-bundle-builder project)
 
 View registered users: Authentication → Users
+
+### Cloud Functions
+
+Located in `/functions` directory. Two functions are deployed:
+
+1. **onUserCreated**: Triggered when a new user registers. Sends an email notification with user details.
+2. **weeklyUserSummary**: Scheduled function (Mondays 9am London time). Sends summary of total users and new registrations.
+
+#### Setup Email Notifications
+
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Configure email credentials (use Gmail App Password, not regular password)
+firebase functions:config:set gmail.email="your-email@gmail.com"
+firebase functions:config:set gmail.password="your-app-password"
+
+# Optionally set different notification recipient
+firebase functions:config:set notification.email="notifications@yourdomain.com"
+
+# Deploy functions
+cd functions && npm run deploy
+```
+
+#### Creating a Gmail App Password
+
+1. Go to https://myaccount.google.com/apppasswords
+2. Enable 2-Step Verification if needed
+3. Create App Password for "Mail" → "Other (Court Bundle Builder)"
+4. Use the 16-character password generated
+
+#### View Function Logs
+
+```bash
+firebase functions:log
+```
+
+Or in Firebase Console: Functions → Logs
 
 ## Common Development Tasks
 
@@ -271,3 +314,6 @@ Edit `src/utils/saveLoad.ts`:
 - Added GripVertical icon as visual drag indicator
 - Enhanced save/load with PDF validation and detailed logging
 - Added extensive console logging for debugging PDF operations
+- Added HelpFAQ component with 15 FAQ items explaining all app features
+- Added Firebase Cloud Functions for user registration email notifications
+- Added weekly user summary scheduled function (Mondays 9am)
