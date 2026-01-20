@@ -57,19 +57,41 @@ function App() {
       const updated = prev.map(section => ({ ...section, documents: [...section.documents] }))
       const unmatchedDocs: Document[] = []
 
+      // Debug: Log documents needing re-upload
+      const docsNeedingReupload = updated.flatMap(section =>
+        section.documents.filter(doc => doc.needsReupload).map(doc => ({
+          name: doc.name,
+          originalFileName: doc.originalFileName,
+          needsReupload: doc.needsReupload
+        }))
+      )
+      console.log('[handleAddDocuments] Documents needing re-upload:', docsNeedingReupload)
+      console.log('[handleAddDocuments] Uploaded files:', newDocs.map(d => ({ name: d.name, fileName: d.file.name })))
+
       for (const newDoc of newDocs) {
         let matched = false
 
         // Try to match with existing documents that need re-upload
         for (const section of updated) {
-          const matchIndex = section.documents.findIndex(doc =>
-            doc.needsReupload &&
-            (doc.originalFileName === newDoc.name || doc.name === newDoc.name)
-          )
+          const matchIndex = section.documents.findIndex(doc => {
+            if (!doc.needsReupload) return false
+
+            // Try multiple matching strategies
+            const uploadedFileName = newDoc.file.name
+            const matches =
+              doc.originalFileName === uploadedFileName ||
+              doc.originalFileName === newDoc.name ||
+              doc.name === uploadedFileName ||
+              doc.name === newDoc.name
+
+            console.log(`[handleAddDocuments] Comparing: uploaded="${uploadedFileName}" vs doc.originalFileName="${doc.originalFileName}", doc.name="${doc.name}" => ${matches}`)
+            return matches
+          })
 
           if (matchIndex !== -1) {
             // Found a match - update the existing document with the uploaded file
             const existingDoc = section.documents[matchIndex]
+            console.log(`[handleAddDocuments] ✓ MATCHED! Replacing "${existingDoc.name}" with uploaded file`)
             section.documents[matchIndex] = {
               ...existingDoc,
               file: newDoc.file,
@@ -85,6 +107,7 @@ function App() {
 
         if (!matched) {
           // No match found - add as new document
+          console.log(`[handleAddDocuments] ✗ No match found for "${newDoc.file.name}", adding as new document`)
           unmatchedDocs.push(newDoc)
         }
       }

@@ -235,6 +235,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* Needs re-upload badge */
+.needs-reupload-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 12px;
+  cursor: help;
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 .document-icon {

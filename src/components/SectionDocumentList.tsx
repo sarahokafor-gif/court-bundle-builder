@@ -94,6 +94,9 @@ function SortableDocumentItem({
         ) : (
           <FileText size={20} className="document-icon" />
         )}
+        {doc.needsReupload && (
+          <span className="needs-reupload-badge" title={`Re-upload PDF: ${doc.originalFileName}`}>⚠️</span>
+        )}
       </div>
 
       {/* Document Name (editable) */}
