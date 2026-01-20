@@ -158,21 +158,21 @@ function SortableDocumentItem({
           onClick={() => setEditingDocument({ sectionId: section.id, doc })}
           title="Edit PDF - Redact/Erase"
         >
-          <Pen size={16} />
+          <Pen size={18} />
         </button>
         <button
           className="action-button manage-pages-button"
           onClick={() => setManagingDocument({ sectionId: section.id, doc })}
           title="Manage Pages - Select/Remove pages"
         >
-          <Edit3 size={16} />
+          <Edit3 size={18} />
         </button>
         <button
-          className="action-button"
+          className="action-button preview-button"
           onClick={() => onPreview(doc)}
-          title="Preview"
+          title="Preview Document"
         >
-          <Eye size={16} />
+          <Eye size={18} />
         </button>
         <button
           className="action-button delete-button"

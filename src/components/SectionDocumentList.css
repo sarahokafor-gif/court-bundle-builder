@@ -85,7 +85,7 @@
   margin-bottom: var(--spacing-xl);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .section-block-header {
@@ -95,6 +95,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .section-block-title {
@@ -460,6 +461,20 @@
 .action-button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.preview-button {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 2px solid #1976d2;
+  color: #1565c0;
+}
+
+.preview-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border-color: #0d47a1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 }
 
 .delete-button {
