@@ -305,16 +305,11 @@
   background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
   border: 2px solid #6a1b9a;
   color: white;
-  font-weight: 600;
-  font-size: 0.8rem;
-  padding: 0.5rem 0.75rem;
-  gap: 0.35rem;
 }
 
 .edit-pdf-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
   border-color: #4a148c;
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
 }
 
@@ -322,16 +317,11 @@
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
   border: 2px solid #e65100;
   color: white;
-  font-weight: 600;
-  font-size: 0.8rem;
-  padding: 0.5rem 0.75rem;
-  gap: 0.35rem;
 }
 
 .manage-pages-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #fb8c00 0%, #e65100 100%);
   border-color: #bf360c;
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
@@ -430,9 +420,12 @@
 
 .document-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: center;
-  flex-shrink: 0; /* Prevent buttons from being compressed */
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 320px;
 }
 
 .section-selector {
@@ -456,18 +449,18 @@
 }
 
 .action-button {
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   background: white;
   border: 2px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
   transition: all var(--transition-base);
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   white-space: nowrap;
 }
 

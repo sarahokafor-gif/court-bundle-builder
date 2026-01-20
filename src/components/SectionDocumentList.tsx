@@ -158,7 +158,7 @@ function SortableDocumentItem({
           onClick={() => setEditingDocument({ sectionId: section.id, doc })}
           title="Edit PDF - Redact/Erase"
         >
-          <Pen size={16} />
+          <Pen size={14} />
           <span>Redact</span>
         </button>
         <button
@@ -166,7 +166,7 @@ function SortableDocumentItem({
           onClick={() => setManagingDocument({ sectionId: section.id, doc })}
           title="Manage Pages - Select/Remove pages"
         >
-          <Edit3 size={16} />
+          <Edit3 size={14} />
           <span>Pages</span>
         </button>
         <button
@@ -174,7 +174,7 @@ function SortableDocumentItem({
           onClick={() => onPreview(doc)}
           title="Preview Document"
         >
-          <Eye size={16} />
+          <Eye size={14} />
           <span>View</span>
         </button>
         <button
@@ -182,7 +182,7 @@ function SortableDocumentItem({
           onClick={() => onRemoveDocument(section.id, doc.id)}
           title="Delete Document"
         >
-          <Trash2 size={16} />
+          <Trash2 size={14} />
           <span>Delete</span>
         </button>
       </div>
