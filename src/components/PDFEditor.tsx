@@ -40,9 +40,19 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
   // Load PDF
   useEffect(() => {
     const loadPdf = async () => {
+      console.log('[PDFEditor] Loading PDF:', document.name)
+      console.log('[PDFEditor] File object:', document.file)
+      console.log('[PDFEditor] File size:', document.file.size, 'bytes')
+      console.log('[PDFEditor] File type:', document.file.type)
+
       try {
+        console.log('[PDFEditor] Getting arrayBuffer...')
         const arrayBuffer = await document.file.arrayBuffer()
+        console.log('[PDFEditor] ArrayBuffer size:', arrayBuffer.byteLength, 'bytes')
+
+        console.log('[PDFEditor] Loading with pdfjs-dist...')
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        console.log('[PDFEditor] PDF loaded, pages:', pdf.numPages)
         setPdfDoc(pdf)
 
         // Calculate optimal scale to fit window
@@ -57,10 +67,11 @@ export default function PDFEditor({ document, onClose, onSave }: PDFEditorProps)
           const optimalScale = Math.min(scaleHeight, scaleWidth, 3) // Max 3x zoom
 
           setScale(Math.max(optimalScale, 0.5)) // Min 0.5x zoom
+          console.log('[PDFEditor] Scale set to:', Math.max(optimalScale, 0.5))
         }
       } catch (error) {
-        console.error('Error loading PDF:', error)
-        alert('Failed to load PDF')
+        console.error('[PDFEditor] ERROR loading PDF:', error)
+        alert('Failed to load PDF: ' + (error instanceof Error ? error.message : 'Unknown error'))
       }
     }
     loadPdf()
