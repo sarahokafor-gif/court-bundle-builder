@@ -13,7 +13,28 @@ export default function DocumentPreview({ document, onClose }: DocumentPreviewPr
 
   useEffect(() => {
     if (document) {
+      console.log('[Preview] Document file:', document.file)
+      console.log('[Preview] File size:', document.file.size, 'bytes')
+      console.log('[Preview] File type:', document.file.type)
+
+      // Test: Try to read the file to verify its contents are accessible
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const arrayBuffer = e.target?.result as ArrayBuffer
+        if (arrayBuffer) {
+          const bytes = new Uint8Array(arrayBuffer)
+          const firstBytes = String.fromCharCode(...bytes.slice(0, 10))
+          console.log('[Preview] File contents verified - first 10 bytes:', firstBytes)
+          console.log('[Preview] Total bytes read:', bytes.length)
+        }
+      }
+      reader.onerror = (err) => {
+        console.error('[Preview] Error reading file:', err)
+      }
+      reader.readAsArrayBuffer(document.file)
+
       const url = URL.createObjectURL(document.file)
+      console.log('[Preview] Created blob URL:', url)
       setPreviewUrl(url)
 
       return () => {

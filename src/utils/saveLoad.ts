@@ -21,14 +21,26 @@ async function fileToBase64(file: File): Promise<string> {
  * Converts base64 string back to File
  */
 function base64ToFile(base64: string, fileName: string): File {
+  console.log(`[base64ToFile] Starting conversion for "${fileName}", base64 length: ${base64.length}`)
+
   const byteCharacters = atob(base64)
+  console.log(`[base64ToFile] Decoded to ${byteCharacters.length} bytes`)
+
   const byteNumbers = new Array(byteCharacters.length)
   for (let i = 0; i < byteCharacters.length; i++) {
     byteNumbers[i] = byteCharacters.charCodeAt(i)
   }
   const byteArray = new Uint8Array(byteNumbers)
   const blob = new Blob([byteArray], { type: 'application/pdf' })
-  return new File([blob], fileName, { type: 'application/pdf' })
+  const file = new File([blob], fileName, { type: 'application/pdf' })
+
+  console.log(`[base64ToFile] Created File: name="${file.name}", size=${file.size} bytes, type="${file.type}"`)
+
+  // Verify first bytes match PDF header
+  const firstBytes = byteCharacters.substring(0, 10)
+  console.log(`[base64ToFile] First 10 bytes: "${firstBytes}"`)
+
+  return file
 }
 
 /**
