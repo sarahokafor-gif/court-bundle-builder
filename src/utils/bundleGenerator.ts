@@ -146,24 +146,24 @@ async function generateIndexPage(
       // Litigation friend - CENTRED (if present)
       if (party.litigationFriend) {
         const litFriendText = `(${party.litigationFriend})`
-        const litFriendWidth = font.widthOfTextAtSize(litFriendText, fontSize - 2)
+        const litFriendWidth = fontBold.widthOfTextAtSize(litFriendText, fontSize - 2)
         page.drawText(litFriendText, {
           x: (width - litFriendWidth) / 2,
           y: yPosition,
           size: fontSize - 2,
-          font: font,
+          font: fontBold,
           color: rgb(0, 0, 0),
         })
         yPosition -= 16
       }
 
       // Designation - RIGHT ALIGNED (on same line as name or lit friend)
-      const designationWidth = font.widthOfTextAtSize(party.designation, fontSize - 2)
+      const designationWidth = fontBold.widthOfTextAtSize(party.designation, fontSize - 2)
       page.drawText(party.designation, {
         x: rightMargin - designationWidth,
         y: yPosition + (party.litigationFriend ? 16 : 18),
         size: fontSize - 2,
-        font: font,
+        font: fontBold,
         color: rgb(0, 0, 0),
       })
       yPosition -= 4
@@ -173,12 +173,12 @@ async function generateIndexPage(
 
     // Separator: -v- for adversarial, -and- for non-adversarial
     const separator = metadata.isAdversarial ? '-v-' : '-and-'
-    const separatorWidth = font.widthOfTextAtSize(separator, fontSize)
+    const separatorWidth = fontBold.widthOfTextAtSize(separator, fontSize)
     page.drawText(separator, {
       x: (width - separatorWidth) / 2,
       y: yPosition,
       size: fontSize,
-      font: font,
+      font: fontBold,
       color: rgb(0, 0, 0),
     })
     yPosition -= 25
@@ -200,24 +200,24 @@ async function generateIndexPage(
       // Litigation friend - CENTRED (if present)
       if (party.litigationFriend) {
         const litFriendText = `(${party.litigationFriend})`
-        const litFriendWidth = font.widthOfTextAtSize(litFriendText, fontSize - 2)
+        const litFriendWidth = fontBold.widthOfTextAtSize(litFriendText, fontSize - 2)
         page.drawText(litFriendText, {
           x: (width - litFriendWidth) / 2,
           y: yPosition,
           size: fontSize - 2,
-          font: font,
+          font: fontBold,
           color: rgb(0, 0, 0),
         })
         yPosition -= 16
       }
 
       // Designation - RIGHT ALIGNED (on same line as name or lit friend)
-      const designationWidth = font.widthOfTextAtSize(party.designation, fontSize - 2)
+      const designationWidth = fontBold.widthOfTextAtSize(party.designation, fontSize - 2)
       page.drawText(party.designation, {
         x: rightMargin - designationWidth,
         y: yPosition + (party.litigationFriend ? 16 : 18),
         size: fontSize - 2,
-        font: font,
+        font: fontBold,
         color: rgb(0, 0, 0),
       })
       yPosition -= 4
