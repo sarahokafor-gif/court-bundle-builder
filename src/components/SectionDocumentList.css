@@ -326,13 +326,14 @@
 }
 
 .document-title-input {
-  margin-top: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-family: inherit;
   width: 100%;
+  flex: 1;
+  background: #f5f5f5;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -364,29 +365,12 @@
   border: 0;
 }
 
-/* Date Input Wrapper */
-.date-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.5rem;
-  background: #fff3e0;
-  border: 1px solid #ff9800;
-  border-radius: 4px;
-}
-
-.date-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #e65100;
-  white-space: nowrap;
-}
-
+/* Date Input */
 .document-date-input {
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ff9800;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ffb74d;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   background: white;
   color: #1a1a1a;
@@ -395,12 +379,12 @@
 
 .document-date-input:hover {
   border-color: #e65100;
-  background: #fff8e1;
+  background: #fffde7;
 }
 
 .document-date-input:focus {
-  outline: 3px solid #ff9800;
-  outline-offset: 2px;
+  outline: 2px solid #ff9800;
+  outline-offset: 1px;
   border-color: #e65100;
 }
 
@@ -415,59 +399,90 @@
   background-color: #e65100;
 }
 
-/* Section selector row */
-.section-selector-row {
+/* Document Row Layout */
+.document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: var(--spacing-sm);
+}
+
+.document-row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.document-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  min-width: 180px;
+}
+
+/* Box styling for section selector and date */
+.section-selector-box,
+.date-input-box {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: var(--spacing-sm);
-  padding: 0.4rem 0.6rem;
-  background: #f0f4f8;
-  border-radius: var(--radius-sm);
-  border: 1px solid #d0d7de;
+  padding: 0.5rem 0.75rem;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 6px;
 }
 
-.section-label {
-  font-size: 0.8rem;
+.date-input-box {
+  background: #fff8e1;
+  border-color: #ffb74d;
+}
+
+.box-label {
+  font-size: 0.85rem;
   font-weight: 600;
   color: #555;
   white-space: nowrap;
 }
 
-/* Date and Actions row */
-.date-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: var(--spacing-sm);
-  flex-wrap: wrap;
+.date-input-box .box-label {
+  color: #e65100;
 }
 
-.document-actions {
+/* Action button group (3 buttons in a row) */
+.action-btn-group {
   display: flex;
-  gap: 0.3rem;
-  align-items: center;
-  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-/* Action buttons - all with solid colors */
+/* Action buttons - all with solid colors, bigger */
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.3rem 0.5rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.2s;
   color: white;
+  flex: 1;
 }
 
 .action-btn:hover {
-  opacity: 0.9;
+  opacity: 0.85;
   transform: translateY(-1px);
+}
+
+/* View button spans full width */
+.document-row-right > .view-btn {
+  width: 100%;
 }
 
 .redact-btn {

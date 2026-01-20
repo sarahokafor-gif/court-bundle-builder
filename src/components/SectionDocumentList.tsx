@@ -101,92 +101,101 @@ function SortableDocumentItem({
               </span>
             )}
           </div>
-          <label className="sr-only" htmlFor={`title-${doc.id}`}>Custom title for {doc.name}</label>
-          <input
-            id={`title-${doc.id}`}
-            type="text"
-            className="document-title-input"
-            value={doc.customTitle || ''}
-            onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
-            placeholder="Custom title for index (optional)"
-            aria-label={`Custom title for ${doc.name}`}
-          />
 
-          {/* Section selector row */}
-          {sections.length > 1 && (
-            <div className="section-selector-row">
-              <label className="section-label">Move to:</label>
-              <select
-                className="section-selector"
-                value={section.id}
-                onChange={(e) => onMoveToSection(doc.id, section.id, e.target.value)}
-                title="Move to section"
-              >
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Date and Actions row */}
-          <div className="date-actions-row">
-            <div className="date-input-wrapper">
-              <label className="date-label" htmlFor={`date-${doc.id}`}>
-                📅 Date:
-              </label>
+          {/* Row 1: Title input + View button */}
+          <div className="document-row">
+            <div className="document-row-left">
+              <label className="sr-only" htmlFor={`title-${doc.id}`}>Custom title for {doc.name}</label>
               <input
-                id={`date-${doc.id}`}
-                type="date"
-                className="document-date-input"
-                value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const [year, month, day] = e.target.value.split('-')
-                    onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
-                  } else {
-                    onUpdateDocumentDate(section.id, doc.id, '')
-                  }
-                }}
-                aria-label={`Set date for ${doc.name}`}
+                id={`title-${doc.id}`}
+                type="text"
+                className="document-title-input"
+                value={doc.customTitle || ''}
+                onChange={(e) => onUpdateDocumentTitle(section.id, doc.id, e.target.value)}
+                placeholder="Custom title for index (optional)"
+                aria-label={`Custom title for ${doc.name}`}
               />
             </div>
-
-            <div className="document-actions">
-              <button
-                className="action-btn redact-btn"
-                onClick={() => setEditingDocument({ sectionId: section.id, doc })}
-                title="Redact/Erase content"
-              >
-                <Pen size={14} />
-                Redact
-              </button>
-              <button
-                className="action-btn pages-btn"
-                onClick={() => setManagingDocument({ sectionId: section.id, doc })}
-                title="Select/Remove pages"
-              >
-                <Edit3 size={14} />
-                Pages
-              </button>
+            <div className="document-row-right">
               <button
                 className="action-btn view-btn"
                 onClick={() => onPreview(doc)}
                 title="Preview document"
               >
-                <Eye size={14} />
+                <Eye size={16} />
                 View
               </button>
-              <button
-                className="action-btn delete-btn"
-                onClick={() => onRemoveDocument(section.id, doc.id)}
-                title="Delete document"
-              >
-                <Trash2 size={14} />
-                Delete
-              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Section + Date + Action buttons */}
+          <div className="document-row">
+            <div className="document-row-left">
+              {sections.length > 1 && (
+                <div className="section-selector-box">
+                  <label className="box-label">Move to:</label>
+                  <select
+                    className="section-selector"
+                    value={section.id}
+                    onChange={(e) => onMoveToSection(doc.id, section.id, e.target.value)}
+                    title="Move to section"
+                  >
+                    {sections.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="date-input-box">
+                <label className="box-label" htmlFor={`date-${doc.id}`}>
+                  📅 Date:
+                </label>
+                <input
+                  id={`date-${doc.id}`}
+                  type="date"
+                  className="document-date-input"
+                  value={doc.documentDate ? doc.documentDate.split('-').reverse().join('-') : ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-')
+                      onUpdateDocumentDate(section.id, doc.id, `${day}-${month}-${year}`)
+                    } else {
+                      onUpdateDocumentDate(section.id, doc.id, '')
+                    }
+                  }}
+                  aria-label={`Set date for ${doc.name}`}
+                />
+              </div>
+            </div>
+            <div className="document-row-right">
+              <div className="action-btn-group">
+                <button
+                  className="action-btn delete-btn"
+                  onClick={() => onRemoveDocument(section.id, doc.id)}
+                  title="Delete document"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+                <button
+                  className="action-btn pages-btn"
+                  onClick={() => setManagingDocument({ sectionId: section.id, doc })}
+                  title="Select/Remove pages"
+                >
+                  <Edit3 size={16} />
+                  Pages
+                </button>
+                <button
+                  className="action-btn redact-btn"
+                  onClick={() => setEditingDocument({ sectionId: section.id, doc })}
+                  title="Redact/Erase content"
+                >
+                  <Pen size={16} />
+                  Redact
+                </button>
+              </div>
             </div>
           </div>
         </div>
