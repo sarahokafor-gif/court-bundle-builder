@@ -177,9 +177,9 @@ function SortableDocumentItem({
         <button
           className="action-button delete-button"
           onClick={() => onRemoveDocument(section.id, doc.id)}
-          title="Remove"
+          title="Delete Document"
         >
-          <Trash2 size={16} />
+          <Trash2 size={18} />
         </button>
       </div>
     </div>

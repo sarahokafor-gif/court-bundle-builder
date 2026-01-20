@@ -460,10 +460,18 @@
   cursor: not-allowed;
 }
 
+.delete-button {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  border: 2px solid #ef5350;
+  color: #c62828;
+}
+
 .delete-button:hover:not(:disabled) {
-  background-color: #fee;
-  border-color: #f44;
-  color: #f44;
+  background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+  border-color: #c62828;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
 }
 
 /* Batch Operations Toolbar */
