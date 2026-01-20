@@ -296,6 +296,30 @@ function App() {
     )
   }
 
+  const handleReplaceDocumentPdf = (sectionId: string, docId: string, newFile: File, pageCount: number, thumbnail?: string) => {
+    setSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              documents: section.documents.map(doc =>
+                doc.id === docId
+                  ? {
+                      ...doc,
+                      file: newFile,
+                      pageCount,
+                      thumbnail,
+                      needsReupload: false,
+                      originalFileName: undefined,
+                    }
+                  : doc
+              ),
+            }
+          : section
+      )
+    )
+  }
+
   // Check for auto-save on mount
   useEffect(() => {
     if (hasAutoSave()) {
@@ -520,6 +544,7 @@ function App() {
             onUpdateSelectedPages={handleUpdateSelectedPages}
             onUpdateDocumentFile={handleUpdateDocumentFile}
             onSortSectionByDate={handleSortSectionByDate}
+            onReplaceDocumentPdf={handleReplaceDocumentPdf}
           />
         </section>
 

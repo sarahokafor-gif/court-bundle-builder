@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Trash2, FileText, Eye, Layers, Edit3, Pen, CheckSquare, Square, ArrowUpDown, Upload } from 'lucide-react'
 import { DndContext, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -20,6 +20,7 @@ interface SectionDocumentListProps {
   onUpdateSelectedPages: (sectionId: string, docId: string, selectedPages: number[]) => void
   onUpdateDocumentFile: (sectionId: string, docId: string, modifiedFile: File) => void
   onSortSectionByDate: (sectionId: string) => void
+  onReplaceDocumentPdf?: (sectionId: string, docId: string, newFile: File, pageCount: number, thumbnail?: string) => void
 }
 
 interface SortableDocumentItemProps {
@@ -35,6 +36,7 @@ interface SortableDocumentItemProps {
   onUpdateDocumentTitle: (sectionId: string, docId: string, title: string) => void
   setManagingDocument: (value: { sectionId: string; doc: Document } | null) => void
   setEditingDocument: (value: { sectionId: string; doc: Document } | null) => void
+  onReplacePdf?: (sectionId: string, docId: string) => void
 }
 
 function SortableDocumentItem({
@@ -50,6 +52,7 @@ function SortableDocumentItem({
   onUpdateDocumentTitle,
   setManagingDocument,
   setEditingDocument,
+  onReplacePdf,
 }: SortableDocumentItemProps) {
   const {
     attributes,
@@ -162,6 +165,19 @@ function SortableDocumentItem({
 
       {/* Action Buttons */}
       <div className="document-actions">
+        {doc.needsReupload && onReplacePdf && (
+          <button
+            className="action-btn replace-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onReplacePdf(section.id, doc.id)
+            }}
+            title="Upload PDF for this document"
+          >
+            <Upload size={16} />
+            PDF
+          </button>
+        )}
         <button
           className="action-btn view-btn"
           onClick={(e) => {
@@ -222,11 +238,14 @@ export default function SectionDocumentList({
   onUpdateSelectedPages,
   onUpdateDocumentFile,
   onSortSectionByDate,
+  onReplaceDocumentPdf,
 }: SectionDocumentListProps) {
   const [managingDocument, setManagingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [editingDocument, setEditingDocument] = useState<{ sectionId: string; doc: Document } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set())
+  const [replacingDoc, setReplacingDoc] = useState<{ sectionId: string; docId: string } | null>(null)
+  const replaceFileInputRef = useRef<HTMLInputElement>(null)
 
   const totalDocs = sections.reduce((sum, section) => sum + section.documents.length, 0)
   const totalPages = sections.reduce(
@@ -340,6 +359,49 @@ export default function SectionDocumentList({
 
   const handleDragCancel = () => {
     setActiveId(null)
+  }
+
+  // Handle PDF replacement for a specific document
+  const handleReplacePdfClick = (sectionId: string, docId: string) => {
+    setReplacingDoc({ sectionId, docId })
+    replaceFileInputRef.current?.click()
+  }
+
+  const handleReplacePdfFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !replacingDoc || !onReplaceDocumentPdf) {
+      setReplacingDoc(null)
+      return
+    }
+
+    if (file.type !== 'application/pdf') {
+      alert('Please select a PDF file.')
+      setReplacingDoc(null)
+      return
+    }
+
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { getPdfPageCount } = await import('../utils/pdfUtils')
+      const { generatePDFThumbnail } = await import('../utils/pdfThumbnail')
+
+      const [pageCount, thumbnail] = await Promise.all([
+        getPdfPageCount(file),
+        generatePDFThumbnail(file),
+      ])
+
+      onReplaceDocumentPdf(replacingDoc.sectionId, replacingDoc.docId, file, pageCount, thumbnail)
+      console.log(`[ReplacePdf] Successfully replaced PDF for document ${replacingDoc.docId}`)
+    } catch (error) {
+      console.error('Error processing PDF:', error)
+      alert('Error processing the PDF file. Please try again.')
+    }
+
+    setReplacingDoc(null)
+    // Reset input
+    if (replaceFileInputRef.current) {
+      replaceFileInputRef.current.value = ''
+    }
   }
 
   if (totalDocs === 0) {
@@ -532,6 +594,7 @@ export default function SectionDocumentList({
                       onUpdateDocumentTitle={onUpdateDocumentTitle}
                       setManagingDocument={setManagingDocument}
                       setEditingDocument={setEditingDocument}
+                      onReplacePdf={onReplaceDocumentPdf ? handleReplacePdfClick : undefined}
                     />
                   ))}
                 </SortableContext>
@@ -591,6 +654,16 @@ export default function SectionDocumentList({
           }}
         />
       )}
+
+      {/* Hidden file input for PDF replacement */}
+      <input
+        ref={replaceFileInputRef}
+        type="file"
+        accept="application/pdf"
+        onChange={handleReplacePdfFileChange}
+        style={{ display: 'none' }}
+        aria-label="Replace PDF file"
+      />
     </div>
   )
 }
