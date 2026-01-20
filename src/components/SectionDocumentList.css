@@ -303,22 +303,36 @@
 
 .edit-pdf-button {
   background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+  border: 2px solid #6a1b9a;
   color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.35rem;
 }
 
 .edit-pdf-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
+  border-color: #4a148c;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
 }
 
 .manage-pages-button {
   background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  border: 2px solid #e65100;
   color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.35rem;
 }
 
 .manage-pages-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #fb8c00 0%, #e65100 100%);
+  border-color: #bf360c;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
 .document-title-input {
@@ -442,19 +456,23 @@
 }
 
 .action-button {
-  padding: var(--spacing-sm);
+  padding: 0.5rem 0.75rem;
   background: white;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.35rem;
   transition: all var(--transition-base);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .action-button:hover:not(:disabled) {
-  background-color: var(--color-bg-tertiary);
-  border-color: var(--color-accent);
+  transform: translateY(-2px);
 }
 
 .action-button:disabled {
@@ -463,31 +481,27 @@
 }
 
 .preview-button {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border: 2px solid #1976d2;
-  color: #1565c0;
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  border: 2px solid #0d47a1;
+  color: white;
 }
 
 .preview-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  background: linear-gradient(135deg, #1e88e5 0%, #1976d2 100%);
   border-color: #0d47a1;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
 }
 
 .delete-button {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  border: 2px solid #ef5350;
-  color: #c62828;
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  border: 2px solid #b71c1c;
+  color: white;
 }
 
 .delete-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
-  border-color: #c62828;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
+  border-color: #b71c1c;
+  box-shadow: 0 4px 12px rgba(198, 40, 40, 0.4);
 }
 
 /* Batch Operations Toolbar */
