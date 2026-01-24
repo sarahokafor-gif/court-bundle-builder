@@ -588,7 +588,11 @@ function App() {
             <a href="https://chronology-builder.pages.dev" target="_blank" rel="noopener noreferrer">
               Chronology Builder
             </a>{' '}
-            - Create court-ready chronologies
+            - Create court-ready chronologies |{' '}
+            <a href="https://image-resizer-74w.pages.dev" target="_blank" rel="noopener noreferrer">
+              Image Resizer
+            </a>{' '}
+            - Resize photos for social media & official use
           </p>
         </div>
         <div className="footer-content">
@@ -606,6 +610,8 @@ function App() {
             <a href="https://splitsmart.pages.dev" target="_blank" rel="noopener noreferrer">SplitSmart</a>
             <span className="footer-divider">|</span>
             <a href="https://chronology-builder.pages.dev" target="_blank" rel="noopener noreferrer">Chronology Builder</a>
+            <span className="footer-divider">|</span>
+            <a href="https://image-resizer-74w.pages.dev" target="_blank" rel="noopener noreferrer">Image Resizer</a>
           </div>
         </div>
       </footer>
