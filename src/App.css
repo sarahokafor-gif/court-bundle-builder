@@ -296,3 +296,27 @@
 .footer-divider {
   opacity: 0.5;
 }
+
+.footer-promo {
+  max-width: 1200px;
+  margin: 0 auto var(--spacing-lg) auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.footer-promo p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.footer-promo a {
+  color: white;
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+}
+
+.footer-promo a:hover {
+  opacity: 0.9;
+}

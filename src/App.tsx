@@ -578,6 +578,15 @@ function App() {
       <DocumentPreview document={previewDoc} onClose={() => setPreviewDoc(null)} />
 
       <footer className="app-footer">
+        <div className="footer-promo">
+          <p>
+            <strong>Also try:</strong>{' '}
+            <a href="https://splitsmart.pages.dev" target="_blank" rel="noopener noreferrer">
+              SplitSmart PDF Tool
+            </a>{' '}
+            - Free PDF splitting, merging, and redacting. Same trusted platform.
+          </p>
+        </div>
         <div className="footer-content">
           <p className="copyright">
             © {new Date().getFullYear()} Chambers of Sarah Okafor. All rights reserved.
@@ -589,6 +598,8 @@ function App() {
             <a href="https://www.facebook.com/sarah.okafor" target="_blank" rel="noopener noreferrer">Facebook</a>
             <span className="footer-divider">|</span>
             <a href="mailto:contact@courtbundlebuilder.co.uk">Contact</a>
+            <span className="footer-divider">|</span>
+            <a href="https://splitsmart.pages.dev" target="_blank" rel="noopener noreferrer">SplitSmart</a>
           </div>
         </div>
       </footer>
