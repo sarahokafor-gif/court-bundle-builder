@@ -582,9 +582,13 @@ function App() {
           <p>
             <strong>Also try:</strong>{' '}
             <a href="https://splitsmart.pages.dev" target="_blank" rel="noopener noreferrer">
-              SplitSmart PDF Tool
+              SplitSmart
             </a>{' '}
-            - Free PDF splitting, merging, and redacting. Same trusted platform.
+            - Split, merge & redact PDFs |{' '}
+            <a href="https://chronology-builder.pages.dev" target="_blank" rel="noopener noreferrer">
+              Chronology Builder
+            </a>{' '}
+            - Create court-ready chronologies
           </p>
         </div>
         <div className="footer-content">
@@ -600,6 +604,8 @@ function App() {
             <a href="mailto:contact@courtbundlebuilder.co.uk">Contact</a>
             <span className="footer-divider">|</span>
             <a href="https://splitsmart.pages.dev" target="_blank" rel="noopener noreferrer">SplitSmart</a>
+            <span className="footer-divider">|</span>
+            <a href="https://chronology-builder.pages.dev" target="_blank" rel="noopener noreferrer">Chronology Builder</a>
           </div>
         </div>
       </footer>
