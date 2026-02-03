@@ -2,17 +2,16 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 
-// Firebase configuration
-// These values are safe to expose in client-side code
-// Security is handled by Firebase Security Rules
+// Firebase configuration from environment variables
+// Set these in Cloudflare Pages dashboard under Settings > Environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCyImZnSeMTv4LUuHMW4eTsl5CK80SjoEA",
-  authDomain: "court-bundle-builder.firebaseapp.com",
-  projectId: "court-bundle-builder",
-  storageBucket: "court-bundle-builder.firebasestorage.app",
-  messagingSenderId: "726821679089",
-  appId: "1:726821679089:web:19efdaf18b05eb3f1e1e50",
-  measurementId: "G-M64BBWRBYC"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 }
 
 // Initialize Firebase
